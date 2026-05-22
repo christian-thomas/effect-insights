@@ -186,6 +186,65 @@ test('banner does not re-show on second visit with valid stored consent', async 
   await expect(page.locator('.effectcmp-card')).toBeHidden();
 });
 
+test('renders the bar-bottom layout pinned to the viewport bottom', async ({ page }) => {
+  const captor: ConsentPostCaptor = { body: null };
+  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        config: { ...sampleConfig, layout: 'bar-bottom' },
+        country: 'GB',
+      }),
+    });
+  });
+  await page.route('**/assets.effectcmp.com/consent', async (route) => {
+    await route.fulfill({
+      status: 202,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+
+  await page.goto('/');
+  const shell = page.locator('.effectcmp-shell');
+  await expect(shell).toBeVisible();
+  // Bar layout has the shell pinned with explicit bottom positioning.
+  const styles = await shell.evaluate((node) => {
+    const computed = window.getComputedStyle(node);
+    return { bottom: computed.bottom, position: computed.position };
+  });
+  expect(styles.position).toBe('fixed');
+  expect(styles.bottom).toBe('0px');
+  void captor;
+});
+
+test('renders the corner layout with the compact card in bottom-right', async ({ page }) => {
+  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        config: { ...sampleConfig, layout: 'corner' },
+        country: 'GB',
+      }),
+    });
+  });
+  await page.route('**/assets.effectcmp.com/consent', async (route) => {
+    await route.fulfill({ status: 202, body: '{}' });
+  });
+
+  await page.goto('/');
+  const shell = page.locator('.effectcmp-shell');
+  await expect(shell).toBeVisible();
+  const styles = await shell.evaluate((node) => {
+    const computed = window.getComputedStyle(node);
+    return { bottom: computed.bottom, right: computed.right };
+  });
+  expect(styles.bottom).toBe('16px');
+  expect(styles.right).toBe('16px');
+});
+
 test('does nothing dangerous if /config returns 404', async ({ page }) => {
   await page.route('**/assets.effectcmp.com/config/*', async (route) => {
     await route.fulfill({ status: 404, body: 'not found' });

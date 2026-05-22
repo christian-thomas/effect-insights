@@ -1,31 +1,75 @@
-import type { BannerColors } from './types';
+import type { BannerColors, BannerLayout } from './types';
 
 const PREFIX = 'effectcmp';
 
-/**
- * Generates a single scoped CSS string from the config colours. Returned as
- * text so the caller can attach it inside a <style> element inside the
- * banner root, avoiding any pollution of the host page's stylesheet.
- *
- * Class names are prefixed with `effectcmp-` to avoid collisions.
- */
-export const generateStyles = (colors: BannerColors): string => `
-.${PREFIX}-backdrop {
-  position: fixed; inset: 0; z-index: 2147483647;
+const layoutPositioning = (layout: BannerLayout): string => {
+  if (layout === 'modal') {
+    return `
+.${PREFIX}-shell {
+  position: fixed; inset: 0;
   background: rgba(0, 0, 0, 0.45);
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
+}
+.${PREFIX}-card { max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    `;
+  }
+  if (layout === 'bar-top' || layout === 'bar-bottom') {
+    const position = layout === 'bar-top' ? 'top: 0' : 'bottom: 0';
+    const shadow = layout === 'bar-top'
+      ? '0 4px 12px rgba(0, 0, 0, 0.08)'
+      : '0 -4px 12px rgba(0, 0, 0, 0.08)';
+    return `
+.${PREFIX}-shell {
+  position: fixed; left: 0; right: 0; ${position};
+  display: flex; justify-content: center;
+}
+.${PREFIX}-card {
+  width: 100%; max-width: 1280px;
+  border-radius: 0;
+  box-shadow: ${shadow};
+}
+    `;
+  }
+  // corner
+  return `
+.${PREFIX}-shell {
+  position: fixed; bottom: 16px; right: 16px;
+}
+.${PREFIX}-card {
+  width: 380px; max-width: calc(100vw - 32px); max-height: 80vh; overflow-y: auto;
+}
+@media (max-width: 480px) {
+  .${PREFIX}-shell { left: 16px; right: 16px; }
+  .${PREFIX}-card { width: auto; }
+}
+  `;
+};
+
+/**
+ * Generates a single scoped CSS string from the config colours + layout.
+ * Returned as text so the caller can attach it inside a <style> element
+ * inside the banner root, avoiding any pollution of the host page's
+ * stylesheet.
+ *
+ * Class names are prefixed with `effectcmp-` to avoid collisions.
+ */
+export const generateStyles = (
+  colors: BannerColors,
+  layout: BannerLayout = 'modal',
+): string => `
+.${PREFIX}-shell {
+  z-index: 2147483647;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: ${colors.text};
 }
+${layoutPositioning(layout)}
 .${PREFIX}-card {
   background: ${colors.background};
   color: ${colors.text};
-  max-width: 540px; width: 100%;
   border-radius: 8px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
   padding: 24px;
-  max-height: 90vh; overflow-y: auto;
   box-sizing: border-box;
 }
 .${PREFIX}-title {

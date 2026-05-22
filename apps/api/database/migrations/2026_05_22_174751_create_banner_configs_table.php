@@ -19,9 +19,14 @@ return new class extends Migration
             $table->unsignedInteger('version')->default(0);
             $table->boolean('is_draft')->default(true);
             $table->boolean('is_published')->default(false);
-            $table->json('colors');
-            $table->json('copy');
             $table->string('layout');
+            $table->string('locale_default', 8)->default('en');
+            $table->json('locales_enabled');                  // ['en', 'fr', ...]
+            $table->json('colors');
+            $table->json('copy');                             // { en: {...}, fr: {...} }
+            $table->json('gcm_defaults');                     // 7 GCM v2 signals
+            $table->json('geo_rules');                        // { mode, countries? }
+            $table->json('behaviour');                        // rePromptAfterDays etc
             $table->foreignUuid('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('published_at')->nullable();
             $table->timestamps();

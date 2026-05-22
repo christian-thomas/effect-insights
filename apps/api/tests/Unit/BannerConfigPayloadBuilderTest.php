@@ -38,8 +38,13 @@ class BannerConfigPayloadBuilderTest extends TestCase
             'is_draft' => false,
             'is_published' => true,
             'layout' => BannerConfig::LAYOUT_MODAL,
+            'locale_default' => 'en',
+            'locales_enabled' => ['en'],
             'colors' => BannerConfigService::defaultColors(),
             'copy' => BannerConfigService::defaultCopy(),
+            'gcm_defaults' => BannerConfigService::defaultGcmDefaults(),
+            'geo_rules' => BannerConfigService::defaultGeoRules(),
+            'behaviour' => BannerConfigService::defaultBehaviour(),
             'published_at' => CarbonImmutable::parse('2026-05-22T12:00:00Z'),
         ]);
         $config->setAttribute('id', '019e0000-0000-0000-0000-000000000003');
@@ -124,7 +129,7 @@ class BannerConfigPayloadBuilderTest extends TestCase
             $this->makeDomain(),
         );
 
-        $this->assertSame(['mode' => 'always'], $payload['geoRules']);
+        $this->assertSame(['mode' => 'always', 'countries' => []], $payload['geoRules']);
     }
 
     #[Test]

@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import {
   bannerDraftSchema,
+  type BannerCopy,
   type BannerDraftInput,
 } from '@effect-cmp/types/schemas/banner';
 import type { FormSubmitEvent } from '@nuxt/ui';
+import { geoCountries } from '~/components/banner/countries';
+import { defaultCopyForLocale } from '~/components/banner/defaults';
+import { localeLabel, supportedLocales } from '~/components/banner/locales';
 
 const route = useRoute();
 const toast = useToast();
@@ -20,6 +24,8 @@ const error = computed(() => slot.value.error);
 
 const state = reactive<BannerDraftInput>({
   layout: 'modal',
+  locale_default: 'en',
+  locales_enabled: ['en'],
   colors: {
     background: '#ffffff',
     text: '#111827',
@@ -28,33 +34,107 @@ const state = reactive<BannerDraftInput>({
     secondary: '#f3f4f6',
     secondaryText: '#111827',
   },
-  copy: {
-    title: '',
-    body: '',
-    acceptAllLabel: '',
-    rejectAllLabel: '',
-    customiseLabel: '',
-    savePreferencesLabel: '',
-    categoryDescriptions: {
-      necessary: '',
-      preferences: '',
-      statistics: '',
-      marketing: '',
-    },
+  copy: { en: defaultCopyForLocale() },
+  gcm_defaults: {
+    ad_storage: 'denied',
+    analytics_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    functionality_storage: 'granted',
+    personalization_storage: 'denied',
+    security_storage: 'granted',
+  },
+  geo_rules: { mode: 'always', countries: [] },
+  behaviour: {
+    rePromptAfterDays: 365,
+    honourGpc: true,
+    autoDenyOnDismiss: false,
+    crossSubdomainConsent: false,
   },
 });
+
+const activeLocale = ref<string>('en');
 
 const hydrateFromDraft = (): void => {
   if (!draft.value) return;
   state.layout = draft.value.layout;
+  state.locale_default = draft.value.localeDefault;
+  state.locales_enabled = [...draft.value.localesEnabled];
   state.colors = { ...draft.value.colors };
-  state.copy = {
-    ...draft.value.copy,
-    categoryDescriptions: { ...draft.value.copy.categoryDescriptions },
+  state.copy = Object.fromEntries(
+    Object.entries(draft.value.copy).map(([code, copyValue]) => [
+      code,
+      {
+        ...copyValue,
+        categoryDescriptions: { ...copyValue.categoryDescriptions },
+      },
+    ]),
+  );
+  state.gcm_defaults = { ...draft.value.gcmDefaults };
+  state.geo_rules = {
+    ...draft.value.geoRules,
+    countries: [...(draft.value.geoRules.countries ?? [])],
   };
+  state.behaviour = { ...draft.value.behaviour };
+  activeLocale.value = state.locale_default;
 };
 
 watch(draft, hydrateFromDraft, { immediate: true });
+
+const addLocale = (code: string): void => {
+  if (state.locales_enabled.includes(code)) return;
+  state.locales_enabled = [...state.locales_enabled, code];
+  if (!state.copy[code]) {
+    state.copy = { ...state.copy, [code]: defaultCopyForLocale() };
+  }
+  activeLocale.value = code;
+};
+
+const removeLocale = (code: string): void => {
+  if (code === state.locale_default) {
+    toast.add({
+      title: 'Cannot remove the default locale',
+      description: 'Change the default locale first, then remove this one.',
+      color: 'warning',
+      icon: 'i-lucide-triangle-alert',
+    });
+    return;
+  }
+  state.locales_enabled = state.locales_enabled.filter((entry) => entry !== code);
+  const { [code]: _removed, ...rest } = state.copy;
+  state.copy = rest;
+  if (activeLocale.value === code) {
+    activeLocale.value = state.locale_default;
+  }
+};
+
+const currentCopy = computed<BannerCopy | undefined>(
+  () => state.copy[activeLocale.value],
+);
+
+const updateCopy = (field: keyof BannerCopy, value: string): void => {
+  const target = state.copy[activeLocale.value];
+  if (!target) return;
+  state.copy = {
+    ...state.copy,
+    [activeLocale.value]: { ...target, [field]: value },
+  };
+};
+
+const updateCategoryDescription = (
+  category: keyof BannerCopy['categoryDescriptions'],
+  value: string,
+): void => {
+  const target = state.copy[activeLocale.value];
+  if (!target) return;
+  state.copy = {
+    ...state.copy,
+    [activeLocale.value]: {
+      ...target,
+      categoryDescriptions: { ...target.categoryDescriptions, [category]: value },
+    },
+  };
+};
 
 const saving = ref(false);
 const publishing = ref(false);
@@ -82,8 +162,6 @@ const onPublish = async (): Promise<void> => {
   }
   publishing.value = true;
   try {
-    // Always persist the latest form state before publishing so the user
-    // never accidentally publishes a stale draft.
     await bannerStore.saveDraft(domainId, state);
     await bannerStore.publish(domainId);
     toast.add({
@@ -103,6 +181,16 @@ const onPublish = async (): Promise<void> => {
     publishing.value = false;
   }
 };
+
+const gcmSignals = [
+  { key: 'analytics_storage', label: 'Analytics storage', hint: 'GA4, Hotjar, etc.' },
+  { key: 'ad_storage', label: 'Ad storage', hint: 'Google Ads cookies' },
+  { key: 'ad_user_data', label: 'Ad user data', hint: 'Sharing event data with Google for ads' },
+  { key: 'ad_personalization', label: 'Ad personalisation', hint: 'Personalised ad targeting' },
+  { key: 'personalization_storage', label: 'Personalisation storage', hint: 'Site-wide personalisation (recommendations)' },
+  { key: 'functionality_storage', label: 'Functionality storage', hint: 'Essential session/preference storage' },
+  { key: 'security_storage', label: 'Security storage', hint: 'Auth + anti-fraud cookies' },
+] as const;
 </script>
 
 <template>
@@ -165,49 +253,197 @@ const onPublish = async (): Promise<void> => {
 
       <UCard>
         <template #header>
-          <h3 class="font-semibold">Copy</h3>
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <h3 class="font-semibold">Copy</h3>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-gray-500">Default locale</span>
+              <USelect
+                v-model="state.locale_default"
+                :items="state.locales_enabled.map((code) => ({ label: localeLabel(code), value: code }))"
+                size="xs"
+              />
+              <UDropdownMenu
+                :items="
+                  supportedLocales
+                    .filter((entry) => !state.locales_enabled.includes(entry.code))
+                    .map((entry) => ({
+                      label: `${entry.emoji} ${entry.label}`,
+                      onSelect: () => addLocale(entry.code),
+                    }))
+                "
+              >
+                <UButton size="xs" icon="i-lucide-plus" label="Add locale" />
+              </UDropdownMenu>
+            </div>
+          </div>
         </template>
-        <div class="space-y-4">
-          <UFormField label="Title" name="copy.title">
-            <UInput v-model="state.copy.title" class="w-full" />
-          </UFormField>
-          <UFormField label="Body" name="copy.body" help="Recommended: under 300 characters.">
-            <UTextarea v-model="state.copy.body" :rows="4" class="w-full" />
-          </UFormField>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <UFormField label="Accept-all button" name="copy.acceptAllLabel">
-              <UInput v-model="state.copy.acceptAllLabel" class="w-full" />
+
+        <UTabs
+          v-model="activeLocale"
+          :items="state.locales_enabled.map((code) => ({ label: localeLabel(code), value: code }))"
+          class="mb-4"
+        />
+
+        <template v-if="currentCopy">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs text-gray-500">
+              Editing <code class="font-mono">{{ activeLocale }}</code>
+              <span v-if="activeLocale === state.locale_default" class="ml-2 text-gray-400">(default)</span>
+            </p>
+            <UButton
+              v-if="activeLocale !== state.locale_default"
+              size="xs"
+              variant="ghost"
+              color="error"
+              icon="i-lucide-trash-2"
+              :label="`Remove ${activeLocale}`"
+              @click="removeLocale(activeLocale)"
+            />
+          </div>
+
+          <div class="space-y-4">
+            <UFormField label="Title" :name="`copy.${activeLocale}.title`">
+              <UInput :model-value="currentCopy.title" class="w-full" @update:model-value="updateCopy('title', String($event))" />
             </UFormField>
-            <UFormField label="Reject-all button" name="copy.rejectAllLabel">
-              <UInput v-model="state.copy.rejectAllLabel" class="w-full" />
+            <UFormField label="Body" :name="`copy.${activeLocale}.body`" help="Recommended: under 300 characters.">
+              <UTextarea :model-value="currentCopy.body" :rows="4" class="w-full" @update:model-value="updateCopy('body', String($event))" />
             </UFormField>
-            <UFormField label="Customise button" name="copy.customiseLabel">
-              <UInput v-model="state.copy.customiseLabel" class="w-full" />
-            </UFormField>
-            <UFormField label="Save preferences button" name="copy.savePreferencesLabel">
-              <UInput v-model="state.copy.savePreferencesLabel" class="w-full" />
-            </UFormField>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <UFormField label="Accept-all button" :name="`copy.${activeLocale}.acceptAllLabel`">
+                <UInput :model-value="currentCopy.acceptAllLabel" class="w-full" @update:model-value="updateCopy('acceptAllLabel', String($event))" />
+              </UFormField>
+              <UFormField label="Reject-all button" :name="`copy.${activeLocale}.rejectAllLabel`">
+                <UInput :model-value="currentCopy.rejectAllLabel" class="w-full" @update:model-value="updateCopy('rejectAllLabel', String($event))" />
+              </UFormField>
+              <UFormField label="Customise button" :name="`copy.${activeLocale}.customiseLabel`">
+                <UInput :model-value="currentCopy.customiseLabel" class="w-full" @update:model-value="updateCopy('customiseLabel', String($event))" />
+              </UFormField>
+              <UFormField label="Save preferences button" :name="`copy.${activeLocale}.savePreferencesLabel`">
+                <UInput :model-value="currentCopy.savePreferencesLabel" class="w-full" @update:model-value="updateCopy('savePreferencesLabel', String($event))" />
+              </UFormField>
+            </div>
+
+            <div class="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Category descriptions</h4>
+              <UFormField label="Necessary" :name="`copy.${activeLocale}.categoryDescriptions.necessary`">
+                <UTextarea :model-value="currentCopy.categoryDescriptions.necessary" :rows="2" class="w-full" @update:model-value="updateCategoryDescription('necessary', String($event))" />
+              </UFormField>
+              <UFormField label="Preferences" :name="`copy.${activeLocale}.categoryDescriptions.preferences`">
+                <UTextarea :model-value="currentCopy.categoryDescriptions.preferences" :rows="2" class="w-full" @update:model-value="updateCategoryDescription('preferences', String($event))" />
+              </UFormField>
+              <UFormField label="Statistics" :name="`copy.${activeLocale}.categoryDescriptions.statistics`">
+                <UTextarea :model-value="currentCopy.categoryDescriptions.statistics" :rows="2" class="w-full" @update:model-value="updateCategoryDescription('statistics', String($event))" />
+              </UFormField>
+              <UFormField label="Marketing" :name="`copy.${activeLocale}.categoryDescriptions.marketing`">
+                <UTextarea :model-value="currentCopy.categoryDescriptions.marketing" :rows="2" class="w-full" @update:model-value="updateCategoryDescription('marketing', String($event))" />
+              </UFormField>
+            </div>
+          </div>
+        </template>
+      </UCard>
+
+      <UCard>
+        <template #header>
+          <h3 class="font-semibold">Google Consent Mode v2 defaults</h3>
+        </template>
+        <p class="text-sm text-gray-500 mb-4">
+          What gtag.js can do before the visitor has consented. Defaults are GDPR-safe
+          (deny everything except functionality + security). Granting a signal before
+          consent leaks tracking — only change these if a legal review demands it.
+        </p>
+        <div class="space-y-3">
+          <div
+            v-for="signal in gcmSignals"
+            :key="signal.key"
+            class="flex items-start justify-between gap-4 py-2"
+          >
+            <div class="flex-1">
+              <p class="text-sm font-medium">{{ signal.label }}</p>
+              <p class="text-xs text-gray-500">{{ signal.hint }}</p>
+            </div>
+            <USwitch
+              :model-value="state.gcm_defaults[signal.key] === 'granted'"
+              @update:model-value="state.gcm_defaults[signal.key] = $event ? 'granted' : 'denied'"
+            />
           </div>
         </div>
       </UCard>
 
       <UCard>
         <template #header>
-          <h3 class="font-semibold">Category descriptions</h3>
+          <h3 class="font-semibold">Geo rules</h3>
+        </template>
+        <UFormField label="When to show the banner" name="geo_rules.mode">
+          <URadioGroup
+            v-model="state.geo_rules.mode"
+            :items="[
+              { value: 'always', label: 'Always show', description: 'Recommended unless you have a specific reason.' },
+              { value: 'eu_uk_only', label: 'EU + UK only', description: 'Skip the banner for visitors outside the EU/UK.' },
+              { value: 'whitelist', label: 'Show only in selected countries', description: 'Show for the country list below.' },
+              { value: 'blacklist', label: 'Hide in selected countries', description: 'Always show except for the country list below.' },
+            ]"
+          />
+        </UFormField>
+
+        <UFormField
+          v-if="state.geo_rules.mode === 'whitelist' || state.geo_rules.mode === 'blacklist'"
+          label="Countries"
+          name="geo_rules.countries"
+          class="mt-4"
+          help="ISO 3166-1 alpha-2 country codes."
+        >
+          <USelectMenu
+            v-model="state.geo_rules.countries"
+            multiple
+            searchable
+            value-key="value"
+            :items="geoCountries.map((country) => ({ label: `${country.code} — ${country.name}`, value: country.code }))"
+            class="w-full"
+          />
+        </UFormField>
+      </UCard>
+
+      <UCard>
+        <template #header>
+          <h3 class="font-semibold">Behaviour</h3>
         </template>
         <div class="space-y-4">
-          <UFormField label="Necessary" name="copy.categoryDescriptions.necessary">
-            <UTextarea v-model="state.copy.categoryDescriptions.necessary" :rows="2" class="w-full" />
+          <UFormField label="Re-prompt after" name="behaviour.rePromptAfterDays" help="Show the banner again N days after the visitor's last consent.">
+            <div class="flex items-center gap-2">
+              <UInput
+                v-model="state.behaviour.rePromptAfterDays"
+                type="number"
+                :min="1"
+                :max="1825"
+                class="w-32"
+              />
+              <span class="text-sm text-gray-500">days</span>
+            </div>
           </UFormField>
-          <UFormField label="Preferences" name="copy.categoryDescriptions.preferences">
-            <UTextarea v-model="state.copy.categoryDescriptions.preferences" :rows="2" class="w-full" />
-          </UFormField>
-          <UFormField label="Statistics" name="copy.categoryDescriptions.statistics">
-            <UTextarea v-model="state.copy.categoryDescriptions.statistics" :rows="2" class="w-full" />
-          </UFormField>
-          <UFormField label="Marketing" name="copy.categoryDescriptions.marketing">
-            <UTextarea v-model="state.copy.categoryDescriptions.marketing" :rows="2" class="w-full" />
-          </UFormField>
+
+          <div class="flex items-start justify-between gap-4 py-2">
+            <div class="flex-1">
+              <p class="text-sm font-medium">Honour Global Privacy Control</p>
+              <p class="text-xs text-gray-500">Auto-deny non-necessary cookies if the visitor's browser sends the GPC header.</p>
+            </div>
+            <USwitch v-model="state.behaviour.honourGpc" />
+          </div>
+
+          <div class="flex items-start justify-between gap-4 py-2">
+            <div class="flex-1">
+              <p class="text-sm font-medium">Auto-deny on dismiss</p>
+              <p class="text-xs text-gray-500">Treat closing the banner without a choice as Reject-all. Some jurisdictions require this.</p>
+            </div>
+            <USwitch v-model="state.behaviour.autoDenyOnDismiss" />
+          </div>
+
+          <div class="flex items-start justify-between gap-4 py-2">
+            <div class="flex-1">
+              <p class="text-sm font-medium">Share consent across subdomains</p>
+              <p class="text-xs text-gray-500">Write the consent cookie on the apex domain (e.g. .example.com) so all subdomains share it.</p>
+            </div>
+            <USwitch v-model="state.behaviour.crossSubdomainConsent" />
+          </div>
         </div>
       </UCard>
 

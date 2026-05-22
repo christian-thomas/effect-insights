@@ -13,7 +13,9 @@ use RuntimeException;
 
 #[Fillable([
     'domain_id', 'organisation_id', 'version', 'is_draft', 'is_published',
-    'colors', 'copy', 'layout', 'created_by_user_id', 'published_at',
+    'layout', 'locale_default', 'locales_enabled', 'colors', 'copy',
+    'gcm_defaults', 'geo_rules', 'behaviour',
+    'created_by_user_id', 'published_at',
 ])]
 class BannerConfig extends Model
 {
@@ -33,8 +35,12 @@ class BannerConfig extends Model
     protected function casts(): array
     {
         return [
+            'locales_enabled' => 'array',
             'colors' => 'array',
             'copy' => 'array',
+            'gcm_defaults' => 'array',
+            'geo_rules' => 'array',
+            'behaviour' => 'array',
             'is_draft' => 'boolean',
             'is_published' => 'boolean',
             'published_at' => 'datetime',

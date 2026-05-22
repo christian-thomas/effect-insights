@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\DB;
  */
 class BannerConfigService
 {
+    public const DEFAULT_LOCALE = 'en';
+
     public function __construct(
         private readonly CloudflareKvClientContract $kv,
     ) {}
@@ -44,9 +46,23 @@ class BannerConfigService
     }
 
     /**
+     * Default per-locale copy. Banner copy is keyed by ISO 639-1 language code
+     * so the editor can edit multiple locales in tabs and the runtime can
+     * pick the right one based on document.lang / config.localeDefault.
+     *
      * @return array<string, mixed>
      */
     public static function defaultCopy(): array
+    {
+        return [
+            self::DEFAULT_LOCALE => self::defaultLocaleCopy(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function defaultLocaleCopy(): array
     {
         return [
             'title' => 'We use cookies',
@@ -61,6 +77,49 @@ class BannerConfigService
                 'statistics' => 'Anonymous analytics about how the site is used.',
                 'marketing' => 'Personalised advertising and tracking.',
             ],
+        ];
+    }
+
+    /**
+     * GDPR-compliant defaults: deny everything except functionality + security
+     * (the Google Consent Mode signals that cover essential site behaviour).
+     *
+     * @return array<string, string>
+     */
+    public static function defaultGcmDefaults(): array
+    {
+        return [
+            'ad_storage' => 'denied',
+            'analytics_storage' => 'denied',
+            'ad_user_data' => 'denied',
+            'ad_personalization' => 'denied',
+            'functionality_storage' => 'granted',
+            'personalization_storage' => 'denied',
+            'security_storage' => 'granted',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function defaultGeoRules(): array
+    {
+        return [
+            'mode' => 'always',
+            'countries' => [],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function defaultBehaviour(): array
+    {
+        return [
+            'rePromptAfterDays' => 365,
+            'honourGpc' => true,
+            'autoDenyOnDismiss' => false,
+            'crossSubdomainConsent' => false,
         ];
     }
 
@@ -83,14 +142,36 @@ class BannerConfigService
                 ->orderByDesc('version')
                 ->first();
 
+            if ($publishedSource !== null) {
+                return BannerConfig::create([
+                    'domain_id' => $domain->getKey(),
+                    'version' => 0,
+                    'is_draft' => true,
+                    'is_published' => false,
+                    'layout' => $publishedSource->getAttribute('layout'),
+                    'locale_default' => $publishedSource->getAttribute('locale_default'),
+                    'locales_enabled' => $publishedSource->getAttribute('locales_enabled'),
+                    'colors' => $publishedSource->getAttribute('colors'),
+                    'copy' => $publishedSource->getAttribute('copy'),
+                    'gcm_defaults' => $publishedSource->getAttribute('gcm_defaults'),
+                    'geo_rules' => $publishedSource->getAttribute('geo_rules'),
+                    'behaviour' => $publishedSource->getAttribute('behaviour'),
+                ]);
+            }
+
             return BannerConfig::create([
                 'domain_id' => $domain->getKey(),
                 'version' => 0,
                 'is_draft' => true,
                 'is_published' => false,
-                'colors' => $publishedSource?->getAttribute('colors') ?? self::defaultColors(),
-                'copy' => $publishedSource?->getAttribute('copy') ?? self::defaultCopy(),
-                'layout' => $publishedSource?->getAttribute('layout') ?? BannerConfig::LAYOUT_MODAL,
+                'layout' => BannerConfig::LAYOUT_MODAL,
+                'locale_default' => self::DEFAULT_LOCALE,
+                'locales_enabled' => [self::DEFAULT_LOCALE],
+                'colors' => self::defaultColors(),
+                'copy' => self::defaultCopy(),
+                'gcm_defaults' => self::defaultGcmDefaults(),
+                'geo_rules' => self::defaultGeoRules(),
+                'behaviour' => self::defaultBehaviour(),
             ]);
         });
     }
@@ -142,15 +223,21 @@ class BannerConfigService
                 'created_by_user_id' => $user->getKey(),
             ]);
 
-            // Clone a fresh draft for further edits.
+            // Clone a fresh draft for further edits — carry every field
+            // forward so the editor opens to the just-published state.
             BannerConfig::create([
                 'domain_id' => $lockedDomain->getKey(),
                 'version' => 0,
                 'is_draft' => true,
                 'is_published' => false,
+                'layout' => $draft->getAttribute('layout'),
+                'locale_default' => $draft->getAttribute('locale_default'),
+                'locales_enabled' => $draft->getAttribute('locales_enabled'),
                 'colors' => $draft->getAttribute('colors'),
                 'copy' => $draft->getAttribute('copy'),
-                'layout' => $draft->getAttribute('layout'),
+                'gcm_defaults' => $draft->getAttribute('gcm_defaults'),
+                'geo_rules' => $draft->getAttribute('geo_rules'),
+                'behaviour' => $draft->getAttribute('behaviour'),
             ]);
 
             $this->pushToEdge($draft->refresh());

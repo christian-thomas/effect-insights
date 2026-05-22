@@ -8,8 +8,13 @@ export interface BannerConfig {
   isDraft: boolean;
   isPublished: boolean;
   layout: BannerDraftInput['layout'];
+  localeDefault: string;
+  localesEnabled: string[];
   colors: BannerDraftInput['colors'];
   copy: BannerDraftInput['copy'];
+  gcmDefaults: BannerDraftInput['gcm_defaults'];
+  geoRules: BannerDraftInput['geo_rules'];
+  behaviour: BannerDraftInput['behaviour'];
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;

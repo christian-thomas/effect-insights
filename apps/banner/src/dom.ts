@@ -43,12 +43,12 @@ export const renderBanner = (options: RenderOptions): RenderHandles => {
   style.textContent = options.styleText;
   root.appendChild(style);
 
-  const backdrop = document.createElement('div');
-  backdrop.className = cls('backdrop');
+  const shell = document.createElement('div');
+  shell.className = cls('shell');
 
   const card = document.createElement('div');
   card.className = cls('card');
-  backdrop.appendChild(card);
+  shell.appendChild(card);
 
   const title = document.createElement('h2');
   title.id = cls('title');
@@ -165,7 +165,7 @@ export const renderBanner = (options: RenderOptions): RenderHandles => {
   };
   document.addEventListener('keydown', onKey);
 
-  root.appendChild(backdrop);
+  root.appendChild(shell);
 
   const destroy = (): void => {
     document.removeEventListener('keydown', onKey);

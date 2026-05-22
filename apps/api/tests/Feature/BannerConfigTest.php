@@ -21,12 +21,20 @@ class BannerConfigTest extends TenantTestCase
         $this->domain = Domain::factory()->for($this->org)->create();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function validPayload(): array
     {
         return [
             'layout' => BannerConfig::LAYOUT_MODAL,
+            'locale_default' => 'en',
+            'locales_enabled' => ['en'],
             'colors' => BannerConfigService::defaultColors(),
             'copy' => BannerConfigService::defaultCopy(),
+            'gcm_defaults' => BannerConfigService::defaultGcmDefaults(),
+            'geo_rules' => BannerConfigService::defaultGeoRules(),
+            'behaviour' => BannerConfigService::defaultBehaviour(),
         ];
     }
 
@@ -74,7 +82,16 @@ class BannerConfigTest extends TenantTestCase
                 'copy' => [],
             ])
             ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
-            ->assertJsonValidationErrors(['layout', 'colors.background', 'copy.title']);
+            ->assertJsonValidationErrors([
+                'layout',
+                'colors.background',
+                'copy',
+                'locale_default',
+                'locales_enabled',
+                'gcm_defaults',
+                'geo_rules',
+                'behaviour',
+            ]);
     }
 
     #[Test]

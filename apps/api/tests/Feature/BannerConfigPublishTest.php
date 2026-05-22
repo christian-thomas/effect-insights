@@ -31,8 +31,13 @@ class BannerConfigPublishTest extends TenantTestCase
     {
         return [
             'layout' => BannerConfig::LAYOUT_MODAL,
+            'locale_default' => 'en',
+            'locales_enabled' => ['en'],
             'colors' => BannerConfigService::defaultColors(),
             'copy' => BannerConfigService::defaultCopy(),
+            'gcm_defaults' => BannerConfigService::defaultGcmDefaults(),
+            'geo_rules' => BannerConfigService::defaultGeoRules(),
+            'behaviour' => BannerConfigService::defaultBehaviour(),
         ];
     }
 

@@ -92,7 +92,7 @@ const boot = async (): Promise<void> => {
     const copy = config.copy[config.localeDefault] ?? Object.values(config.copy)[0];
     if (!copy) return;
 
-    const styleText = generateStyles(config.colors);
+    const styleText = generateStyles(config.colors, config.layout);
     let handles: { root: HTMLElement; destroy: () => void } | null = null;
 
     const finish = async (
