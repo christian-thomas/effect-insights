@@ -7,7 +7,7 @@ defineProps<{
 
 <template>
   <UDashboardNavbar :title="title" />
-  <UDashboardPanelContent>
+  <div class="p-4 sm:p-6 lg:p-8">
     <UPageHeader :title="title" :description="description" />
     <UAlert
       class="mt-6"
@@ -17,5 +17,5 @@ defineProps<{
       title="TODO: wire to API in iteration 3"
       description="This page is a scaffold placeholder — the IA is in place, Laravel endpoints + data binding land in the next iteration."
     />
-  </UDashboardPanelContent>
+  </div>
 </template>
