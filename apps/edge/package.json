@@ -1,0 +1,23 @@
+{
+  "name": "@effect-cmp/edge",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:config": "wrangler dev --config wrangler.config.toml",
+    "dev:consent": "wrangler dev --config wrangler.consent.toml",
+    "deploy:config": "wrangler deploy --config wrangler.config.toml",
+    "deploy:consent": "wrangler deploy --config wrangler.consent.toml",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "lint": "echo 'no lint yet' && exit 0"
+  },
+  "dependencies": {
+    "@effect-cmp/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "latest",
+    "typescript": "latest",
+    "wrangler": "latest"
+  }
+}

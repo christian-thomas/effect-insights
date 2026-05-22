@@ -1,0 +1,35 @@
+{
+  "name": "effect-cmp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Effect Digital Consent Management Platform — white-label CMP replacing CookieBot/CookieYes",
+  "packageManager": "bun@1.3.11",
+  "engines": {
+    "node": ">=22",
+    "bun": ">=1.3"
+  },
+  "workspaces": [
+    "apps/admin",
+    "apps/banner",
+    "apps/edge",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "check": "turbo run check",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "turbo": "latest",
+    "typescript": "latest"
+  },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "esbuild",
+    "sharp",
+    "unrs-resolver",
+    "workerd"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@effect-cmp/admin",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint .",
+    "check": "bun run lint && bun run typecheck"
+  },
+  "dependencies": {
+    "@effect-cmp/types": "workspace:*",
+    "nuxt": "latest",
+    "vue": "latest",
+    "vue-router": "latest"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "latest",
+    "@tailwindcss/vite": "latest",
+    "eslint": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "vue-tsc": "latest"
+  }
+}

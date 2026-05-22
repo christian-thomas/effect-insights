@@ -1,0 +1,29 @@
+name = "effect-cmp-config"
+main = "src/config-worker.ts"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+# Banner config delivery + cmp.js bundle proxy.
+# Populate these via `wrangler kv namespace create`, `wrangler r2 bucket create`,
+# then paste the resulting IDs.
+
+# [[kv_namespaces]]
+# binding = "BANNER_CONFIGS"
+# id = "<paste-from-wrangler-kv-namespace-create>"
+
+# [[r2_buckets]]
+# binding = "BUNDLES"
+# bucket_name = "effect-cmp-bundles"
+
+[vars]
+ENVIRONMENT = "production"
+
+# Map your zone to assets.effectcmp.com once DNS is set up:
+# routes = [
+#   { pattern = "assets.effectcmp.com/config/*", custom_domain = true },
+#   { pattern = "assets.effectcmp.com/loader.js", custom_domain = true },
+#   { pattern = "assets.effectcmp.com/cmp.*.js", custom_domain = true }
+# ]

@@ -1,0 +1,21 @@
+name = "effect-cmp-consent"
+main = "src/consent-worker.ts"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+# D1 binding for hot consent log (last ~90 days)
+# [[d1_databases]]
+# binding = "CONSENT_DB"
+# database_name = "effect-cmp-consent"
+# database_id = "<paste-from-wrangler-d1-create>"
+
+[vars]
+ENVIRONMENT = "production"
+LARAVEL_INGEST_URL = "https://api.effectcmp.com/api/internal/consent/mirror"
+
+# [routes]
+# pattern = "assets.effectcmp.com/consent"
+# custom_domain = true
