@@ -1,14 +1,14 @@
 import { defineStore } from 'pinia';
 
 export interface AuthUser {
-  readonly id: number;
+  readonly id: string;
   readonly name: string;
   readonly email: string;
   readonly isSuperuser: boolean;
 }
 
 export interface Organisation {
-  readonly id: number;
+  readonly id: string;
   readonly name: string;
   readonly slug: string;
 }

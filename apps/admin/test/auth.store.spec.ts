@@ -24,14 +24,14 @@ describe('auth store', () => {
   it('populates user + organisations on login', async () => {
     apiMock.mockResolvedValueOnce({
       user: {
-        id: 1,
+        id: '019e5097-7ffb-7092-9edc-b448a521abd7',
         name: 'Christian',
         email: 'me@christianthomas.co.uk',
         isSuperuser: true,
       },
       organisations: [
-        { id: 10, name: 'Effect Digital', slug: 'effect' },
-        { id: 11, name: 'Other Client', slug: 'other' },
+        { id: '019e5097-7f34-72a3-990e-f8bc4c749f1a', name: 'Effect Digital', slug: 'effect' },
+        { id: '019e5097-8000-72a3-990e-f8bc4c749f1b', name: 'Other Client', slug: 'other' },
       ],
     });
 
@@ -51,8 +51,15 @@ describe('auth store', () => {
   it('clears state on logout even if the API call fails', async () => {
     apiMock
       .mockResolvedValueOnce({
-        user: { id: 1, name: 'X', email: 'x@y', isSuperuser: false },
-        organisations: [{ id: 10, name: 'Org', slug: 'org' }],
+        user: {
+          id: '019e5097-7ffb-7092-9edc-b448a521abd7',
+          name: 'X',
+          email: 'x@y',
+          isSuperuser: false,
+        },
+        organisations: [
+          { id: '019e5097-7f34-72a3-990e-f8bc4c749f1a', name: 'Org', slug: 'org' },
+        ],
       })
       .mockRejectedValueOnce(new Error('boom'));
 

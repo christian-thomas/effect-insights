@@ -26,6 +26,8 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@iconify-json/lucide": "latest",
+    "@iconify-json/simple-icons": "latest",
     "@nuxt/eslint": "latest",
     "@nuxt/test-utils": "latest",
     "@vue/test-utils": "latest",
