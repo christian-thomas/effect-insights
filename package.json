@@ -10,6 +10,7 @@
   },
   "workspaces": [
     "apps/admin",
+    "apps/api",
     "apps/banner",
     "apps/edge",
     "packages/*"
@@ -19,6 +20,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "check": "turbo run check",
+    "test": "turbo run test",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {

@@ -1,16 +1,17 @@
 {
-    "$schema": "https://www.schemastore.org/package.json",
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "build": "vite build",
-        "dev": "vite"
-    },
-    "devDependencies": {
-        "@tailwindcss/vite": "^4.0.0",
-        "concurrently": "^9.0.1",
-        "laravel-vite-plugin": "^3.1",
-        "tailwindcss": "^4.0.0",
-        "vite": "^8.0.0"
-    }
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@effect-cmp/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Laravel 13 backend — exposed via Turborepo so `bun run dev` / `bun run test` orchestrate it alongside the JS apps.",
+  "scripts": {
+    "dev": "php artisan serve --host=127.0.0.1 --port=8000",
+    "test": "php artisan test",
+    "lint": "vendor/bin/pint --test",
+    "lint:fix": "vendor/bin/pint",
+    "migrate": "php artisan migrate",
+    "migrate:fresh": "php artisan migrate:fresh --seed",
+    "tinker": "php artisan tinker"
+  }
 }
