@@ -20,6 +20,10 @@ try {
 
 const embedSnippet = computed(() => {
   if (!domain.value) return '';
+  // The escape on the closing tag is required: Vue SFC parsers close the
+  // <script setup> block on a literal closing-script-tag sequence even when
+  // it appears inside a TypeScript template literal.
+  // eslint-disable-next-line no-useless-escape
   return `<script src="https://assets.effectcmp.com/loader.js" data-domain-id="${domain.value.publicKey}" async><\/script>`;
 });
 

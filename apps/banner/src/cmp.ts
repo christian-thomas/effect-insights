@@ -1,24 +1,65 @@
-import type { BannerConfig } from '@effect-cmp/types/banner';
+import { fetchConfig } from './config';
+import {
+  allDenied,
+  allGranted,
+  buildConsentEvent,
+  generateAnonymousId,
+  isStoredConsentStillValid,
+  postConsentEvent,
+  readStoredConsent,
+  writeStoredConsent,
+  type ConsentPostBody,
+} from './consent';
+import { renderBanner } from './dom';
+import { installDefaults, sendUpdate } from './gcm';
+import { generateStyles } from './styles';
+import type { BannerConfig, ConsentCategories } from './types';
 
 const SCRIPT_TAG_ATTR = 'data-domain-id';
-const CMP_BASE_URL = 'https://assets.effectcmp.com';
+const BASE_ATTR = 'data-cmp-base';
+const DEFAULT_BASE = 'https://assets.effectcmp.com';
 
 const findScriptTag = (): HTMLScriptElement | null => {
   const scripts = document.querySelectorAll<HTMLScriptElement>(
     `script[${SCRIPT_TAG_ATTR}]`,
   );
+  // Last match wins — pages with multiple embeds (re-embedded subdomain
+  // pattern) should use the most recently-loaded script's config.
   return scripts.item(scripts.length - 1) ?? null;
 };
 
-const render = (config: BannerConfig, country: string | null): void => {
-  // TODO: render banner UI, wire GCM defaults, hook script-blocking.
-  if (typeof console !== 'undefined' && typeof console.info === 'function') {
-    console.info(
-      '[EffectCMP] booted for',
-      config.domainPublicKey,
-      'country',
-      country,
+const recordConsent = async (params: {
+  config: BannerConfig;
+  country: string | null;
+  categories: ConsentCategories;
+  baseUrl: string;
+  eventType: ConsentPostBody['eventType'];
+}): Promise<void> => {
+  const { config, country, categories, baseUrl, eventType } = params;
+
+  const stored = readStoredConsent();
+  const anonymousId = stored?.anonymousId ?? generateAnonymousId();
+
+  writeStoredConsent(
+    {
+      anonymousId,
+      bannerConfigVersion: config.version,
+      categories,
+      consentedAt: new Date().toISOString(),
+    },
+    config,
+  );
+
+  sendUpdate(categories);
+
+  try {
+    await postConsentEvent(
+      baseUrl,
+      buildConsentEvent({ anonymousId, config, categories, country, eventType }),
     );
+  } catch {
+    // Edge already has the canonical write; mirror is best-effort.
+    // Iteration 5 will queue retries via a localStorage outbox.
   }
 };
 
@@ -30,22 +71,57 @@ const boot = async (): Promise<void> => {
     const domainId = tag.getAttribute(SCRIPT_TAG_ATTR);
     if (!domainId) return;
 
-    const configUrl = `${CMP_BASE_URL}/config/${encodeURIComponent(domainId)}`;
-    const response = await fetch(configUrl, {
-      credentials: 'omit',
-      cache: 'no-store',
-    });
+    const baseUrl = (tag.getAttribute(BASE_ATTR) ?? DEFAULT_BASE).replace(/\/$/, '');
 
-    if (!response.ok) return;
+    const response = await fetchConfig(baseUrl, domainId);
+    if (response === null) return;
 
-    const payload = (await response.json()) as {
-      config: BannerConfig;
-      country: string | null;
+    const { config, country } = response;
+
+    // GCM defaults FIRST — must reach the dataLayer before any GA/Ads script
+    // on the host page. Synchronous push, no awaits between fetchConfig and here.
+    installDefaults(config.gcmDefaults);
+
+    // Prior consent still valid? Replay it as an `update` and skip the modal.
+    const stored = readStoredConsent();
+    if (isStoredConsentStillValid(stored, config) && stored !== null) {
+      sendUpdate(stored.categories);
+      return;
+    }
+
+    const copy = config.copy[config.localeDefault] ?? Object.values(config.copy)[0];
+    if (!copy) return;
+
+    const styleText = generateStyles(config.colors);
+    let handles: { root: HTMLElement; destroy: () => void } | null = null;
+
+    const finish = async (
+      categories: ConsentCategories,
+      eventType: ConsentPostBody['eventType'],
+    ): Promise<void> => {
+      handles?.destroy();
+      await recordConsent({ config, country, categories, baseUrl, eventType });
     };
 
-    render(payload.config, payload.country);
+    handles = renderBanner({
+      copy,
+      initial: allDenied(),
+      styleText,
+      onAcceptAll: () => {
+        void finish(allGranted(), 'granted');
+      },
+      onRejectAll: () => {
+        void finish(allDenied(), 'denied');
+      },
+      onSavePreferences: (categories) => {
+        void finish(categories, 'changed');
+      },
+    });
+
+    document.body.appendChild(handles.root);
   } catch {
-    // Banner must never throw uncaught — bail silently
+    // The banner must never throw uncaught. A failed banner is worse than
+    // no banner — bail silently and let the host page proceed.
   }
 };
 

@@ -1,11 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-
-const here = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  testDir: './test',
+  testDir: './test/e2e',
   testMatch: '**/*.spec.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -13,8 +9,13 @@ export default defineConfig({
   reporter: 'list',
   use: {
     trace: 'on-first-retry',
-    // Tests load fixtures from disk via file:// URLs; no static server needed.
-    baseURL: `file://${resolve(here, 'test/fixtures/')}/`,
+    baseURL: 'http://127.0.0.1:4173',
+  },
+  webServer: {
+    command: 'bun run scripts/serve-fixtures.ts',
+    port: 4173,
+    reuseExistingServer: !process.env.CI,
+    timeout: 10_000,
   },
   projects: [
     {

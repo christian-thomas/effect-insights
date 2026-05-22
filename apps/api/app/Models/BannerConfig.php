@@ -18,8 +18,11 @@ use RuntimeException;
 class BannerConfig extends Model
 {
     public const LAYOUT_MODAL = 'modal';
+
     public const LAYOUT_BAR_TOP = 'bar-top';
+
     public const LAYOUT_BAR_BOTTOM = 'bar-bottom';
+
     public const LAYOUT_CORNER = 'corner';
 
     use BelongsToOrganisation, HasUuids;

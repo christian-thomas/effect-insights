@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'cloudflare' => [
+        'account_id' => env('CF_ACCOUNT_ID'),
+        'api_token' => env('CF_API_TOKEN'),
+        'kv_namespace_id' => env('CF_KV_NAMESPACE_ID'),
+        // Optional override for tests / local — defaults to Cloudflare's real API.
+        'api_base' => env('CF_API_BASE', 'https://api.cloudflare.com/client/v4'),
+    ],
+
 ];

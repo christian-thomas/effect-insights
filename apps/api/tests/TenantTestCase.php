@@ -6,6 +6,8 @@ namespace Tests;
 
 use App\Models\Organisation;
 use App\Models\User;
+use App\Services\Cloudflare\ArrayCloudflareKvClient;
+use App\Services\Cloudflare\CloudflareKvClientContract;
 use App\Support\CurrentOrganisation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -39,6 +41,8 @@ abstract class TenantTestCase extends TestCase
 
     protected Organisation $otherOrg;
 
+    protected ArrayCloudflareKvClient $kv;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -49,6 +53,11 @@ abstract class TenantTestCase extends TestCase
             'Origin' => 'http://localhost:3001',
             'Referer' => 'http://localhost:3001/',
         ]);
+
+        // Bind the in-memory CF KV fake so PHPUnit never makes real CF calls.
+        // Tests can introspect $this->kv->getStore() to assert publish writes.
+        $this->kv = new ArrayCloudflareKvClient;
+        $this->app->instance(CloudflareKvClientContract::class, $this->kv);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         Role::firstOrCreate(['name' => User::ROLE_SUPERUSER, 'guard_name' => 'web']);

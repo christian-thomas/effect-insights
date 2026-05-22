@@ -48,8 +48,10 @@
       "devDependencies": {
         "@playwright/test": "latest",
         "@types/node": "latest",
+        "happy-dom": "latest",
         "typescript": "latest",
         "vite": "latest",
+        "vitest": "latest",
       },
     },
     "apps/edge": {

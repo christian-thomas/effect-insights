@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Models\BannerConfig;
 use App\Models\Domain;
 use App\Models\User;
+use App\Services\Cloudflare\CloudflareKvClientContract;
+use App\Support\BannerConfigPayloadBuilder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -22,6 +24,10 @@ use Illuminate\Support\Facades\DB;
  */
 class BannerConfigService
 {
+    public function __construct(
+        private readonly CloudflareKvClientContract $kv,
+    ) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -154,11 +160,23 @@ class BannerConfigService
     }
 
     /**
-     * Stub for the upcoming CF KV publish. Wired here so the seam exists, not
-     * called yet — iteration 4 ships the actual edge push.
+     * Publishes the canonical banner payload to Cloudflare KV under the
+     * domain's public_key. The edge worker (apps/edge config-worker) reads
+     * from the same namespace and serves it to cmp.js.
+     *
+     * Throws on failure — `publish()` runs inside a DB transaction so if KV
+     * is unreachable the row flips are rolled back too. Acceptable for v0:
+     * better to fail loud than have admin/edge drift silently.
      */
     public function pushToEdge(BannerConfig $bannerConfig): void
     {
-        // TODO(iteration 4): publish JSON to CF KV via the Cloudflare API.
+        $domain = Domain::query()
+            ->withoutGlobalScope('organisation')
+            ->whereKey($bannerConfig->getAttribute('domain_id'))
+            ->firstOrFail();
+
+        $payload = BannerConfigPayloadBuilder::build($bannerConfig, $domain);
+
+        $this->kv->putValue($domain->getAttribute('public_key'), $payload);
     }
 }

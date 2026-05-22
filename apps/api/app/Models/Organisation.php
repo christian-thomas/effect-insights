@@ -18,7 +18,9 @@ class Organisation extends Model
     use HasFactory, HasUuids;
 
     public const ROLE_OWNER = 'owner';
+
     public const ROLE_ADMIN = 'admin';
+
     public const ROLE_VIEWER = 'viewer';
 
     /**
