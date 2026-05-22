@@ -13,11 +13,25 @@ export interface Organisation {
   readonly slug: string;
 }
 
+interface SessionPayload {
+  user: AuthUser;
+  organisations: ReadonlyArray<Organisation>;
+  currentOrganisationId: string | null;
+}
+
 interface AuthState {
   user: AuthUser | null;
   currentOrganisation: Organisation | null;
   organisations: ReadonlyArray<Organisation>;
 }
+
+const findOrganisation = (
+  organisations: ReadonlyArray<Organisation>,
+  id: string | null,
+): Organisation | null => {
+  if (!id) return organisations[0] ?? null;
+  return organisations.find((organisation) => organisation.id === id) ?? null;
+};
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
@@ -28,37 +42,47 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isAuthenticated: (state): boolean => state.user !== null,
+    // Used as :key on the layout slot wrapper — changing this re-mounts the
+    // entire page subtree on org switch, so every page's onMounted refetches.
+    organisationCacheKey: (state): string =>
+      state.currentOrganisation?.id ?? 'none',
   },
 
   actions: {
+    hydrate(payload: SessionPayload): void {
+      this.user = payload.user;
+      this.organisations = payload.organisations;
+      this.currentOrganisation = findOrganisation(
+        payload.organisations,
+        payload.currentOrganisationId,
+      );
+    },
+
     async login(email: string, password: string): Promise<void> {
-      const response = await $api<{
-        user: AuthUser;
-        organisations: ReadonlyArray<Organisation>;
-      }>('/api/login', {
+      const response = await $api<SessionPayload>('/api/login', {
         method: 'POST',
         body: { email, password },
       });
-      this.user = response.user;
-      this.organisations = response.organisations;
-      this.currentOrganisation = response.organisations[0] ?? null;
+      this.hydrate(response);
     },
 
     async fetchSession(): Promise<void> {
       try {
-        const response = await $api<{
-          user: AuthUser;
-          organisations: ReadonlyArray<Organisation>;
-        }>('/api/me');
-        this.user = response.user;
-        this.organisations = response.organisations;
-        this.currentOrganisation =
-          this.currentOrganisation ?? response.organisations[0] ?? null;
+        const response = await $api<SessionPayload>('/api/me');
+        this.hydrate(response);
       } catch {
         this.user = null;
         this.organisations = [];
         this.currentOrganisation = null;
       }
+    },
+
+    async switchOrganisation(organisationId: string): Promise<void> {
+      const response = await $api<SessionPayload>('/api/organisations/switch', {
+        method: 'POST',
+        body: { organisation_id: organisationId },
+      });
+      this.hydrate(response);
     },
 
     async logout(): Promise<void> {
@@ -71,10 +95,6 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       this.organisations = [];
       this.currentOrganisation = null;
-    },
-
-    setCurrentOrganisation(org: Organisation): void {
-      this.currentOrganisation = org;
     },
   },
 });

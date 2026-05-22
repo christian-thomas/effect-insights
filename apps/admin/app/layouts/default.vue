@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const auth = useAuthStore();
+const toast = useToast();
 
 const nav = computed(() => {
   const items: Array<Array<{ label: string; icon: string; to: string }>> = [
@@ -26,10 +27,24 @@ const nav = computed(() => {
   return items;
 });
 
+const switchTo = async (organisationId: string): Promise<void> => {
+  try {
+    await auth.switchOrganisation(organisationId);
+  } catch (caught) {
+    toast.add({
+      color: 'error',
+      icon: 'i-lucide-triangle-alert',
+      title: 'Could not switch organisation',
+      description:
+        caught instanceof Error ? caught.message : 'Please try again',
+    });
+  }
+};
+
 const orgItems = computed(() =>
-  auth.organisations.map((org) => ({
-    label: org.name,
-    onSelect: () => auth.setCurrentOrganisation(org),
+  auth.organisations.map((organisation) => ({
+    label: organisation.name,
+    onSelect: () => switchTo(organisation.id),
   })),
 );
 
@@ -83,7 +98,10 @@ const userItems = computed(() => [
     </UDashboardSidebar>
 
     <UDashboardPanel>
-      <slot />
+      <!-- Key-based remount: every page's onMounted re-fires on org switch. -->
+      <div :key="auth.organisationCacheKey" class="flex h-full flex-col">
+        <slot />
+      </div>
     </UDashboardPanel>
   </UDashboardGroup>
 </template>

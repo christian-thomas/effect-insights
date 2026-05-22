@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -74,7 +75,7 @@ class AuthTest extends TestCase
             'password' => 'wrong',
         ]);
 
-        $response->assertStatus(422);
+        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     #[Test]
@@ -82,7 +83,7 @@ class AuthTest extends TestCase
     {
         $response = $this->postJson('/api/login', []);
 
-        $response->assertStatus(422)
+        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
             ->assertJsonValidationErrors(['email', 'password']);
     }
 
@@ -101,7 +102,7 @@ class AuthTest extends TestCase
     {
         $response = $this->getJson('/api/me');
 
-        $response->assertStatus(401);
+        $response->assertStatus(Response::HTTP_UNAUTHORIZED);
     }
 
     #[Test]

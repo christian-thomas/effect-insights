@@ -9,7 +9,9 @@
     ".": "./src/index.ts",
     "./banner": "./src/banner.ts",
     "./consent": "./src/consent.ts",
+    "./domain": "./src/domain.ts",
     "./gcm": "./src/gcm.ts",
+    "./schemas/banner": "./src/schemas/banner.ts",
     "./schemas/consent": "./src/schemas/consent.ts"
   },
   "scripts": {

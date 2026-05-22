@@ -1,10 +1,111 @@
 <script setup lang="ts">
+import type { Domain } from '@effect-cmp/types/domain';
+
 const route = useRoute();
+const toast = useToast();
+const domainsStore = useDomainsStore();
+const domainId = route.params.id as string;
+
+const domain = ref<Domain | null>(null);
+const loading = ref(true);
+const error = ref<Error | null>(null);
+
+try {
+  domain.value = await domainsStore.fetchOne(domainId);
+} catch (caught) {
+  error.value = caught instanceof Error ? caught : new Error(String(caught));
+} finally {
+  loading.value = false;
+}
+
+const embedSnippet = computed(() => {
+  if (!domain.value) return '';
+  return `<script src="https://assets.effectcmp.com/loader.js" data-domain-id="${domain.value.publicKey}" async><\/script>`;
+});
+
+const copyEmbed = async (): Promise<void> => {
+  if (!domain.value) return;
+  await navigator.clipboard.writeText(embedSnippet.value);
+  toast.add({ title: 'Embed snippet copied', color: 'success', icon: 'i-lucide-check' });
+};
 </script>
 
 <template>
-  <StubPage
-    :title="`Domain · ${route.params.id}`"
-    description="Domain overview: status, last scan summary, embed snippet, recent consent stats."
-  />
+  <UDashboardNavbar :title="domain?.fqdn ?? 'Domain'">
+    <template #leading>
+      <UButton
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-arrow-left"
+        to="/domains"
+      />
+    </template>
+    <template #right>
+      <UButton
+        v-if="domain"
+        :to="`/domains/${domain.id}/banner`"
+        icon="i-lucide-palette"
+        label="Banner config"
+      />
+    </template>
+  </UDashboardNavbar>
+
+  <div class="p-4 sm:p-6 lg:p-8 space-y-6">
+    <UAlert
+      v-if="error"
+      color="error"
+      variant="subtle"
+      icon="i-lucide-triangle-alert"
+      :title="error.message"
+    />
+
+    <template v-if="domain">
+      <UCard>
+        <template #header>
+          <h3 class="font-semibold">Overview</h3>
+        </template>
+        <dl class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+          <div>
+            <dt class="text-gray-500">FQDN</dt>
+            <dd class="font-mono">{{ domain.fqdn }}</dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Apex</dt>
+            <dd class="font-mono">{{ domain.apexDomain }}</dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Status</dt>
+            <dd>
+              <UBadge
+                :color="domain.status === 'active' ? 'success' : domain.status === 'paused' ? 'warning' : 'neutral'"
+                variant="subtle"
+              >
+                {{ domain.status }}
+              </UBadge>
+            </dd>
+          </div>
+          <div class="sm:col-span-3">
+            <dt class="text-gray-500">Public key</dt>
+            <dd class="font-mono break-all">{{ domain.publicKey }}</dd>
+          </div>
+        </dl>
+      </UCard>
+
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold">Embed snippet</h3>
+            <UButton size="xs" icon="i-lucide-copy" label="Copy" @click="copyEmbed" />
+          </div>
+        </template>
+        <p class="mb-2 text-sm text-gray-500">
+          Paste this once near the top of <code>&lt;head&gt;</code> on every page of {{ domain.fqdn }}.
+          The loader fetches the current banner config and renders the banner pre-consent.
+        </p>
+        <pre class="rounded bg-gray-50 dark:bg-gray-900 p-4 text-xs overflow-x-auto"><code>{{ embedSnippet }}</code></pre>
+      </UCard>
+    </template>
+
+    <USkeleton v-else-if="loading" class="h-48 w-full" />
+  </div>
 </template>

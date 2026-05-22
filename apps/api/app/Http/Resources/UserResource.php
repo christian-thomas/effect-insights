@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Support\CurrentOrganisation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,6 +21,11 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $current = app(CurrentOrganisation::class);
+        $currentOrganisationId = $current->isSet()
+            ? $current->id()
+            : $request->session()->get('current_organisation_id');
+
         return [
             'user' => [
                 'id' => $this->getAttribute('id'),
@@ -28,6 +34,7 @@ class UserResource extends JsonResource
                 'isSuperuser' => $this->isSuperuser,
             ],
             'organisations' => OrganisationResource::collection($this->organisations),
+            'currentOrganisationId' => $currentOrganisationId,
         ];
     }
 }

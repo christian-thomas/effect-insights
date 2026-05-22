@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
@@ -12,9 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
-class AuthController extends Controller
+class Login extends Controller
 {
-    public function login(Request $request): JsonResponse
+    public function __invoke(Request $request): JsonResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -32,26 +32,14 @@ class AuthController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        return UserResource::make($user->load('organisations'))
-            ->response();
-    }
+        // Default the active organisation to the user's first membership so
+        // the very next request already has a tenant context bound.
+        $defaultOrganisationId = $user->organisations()->value('organisations.id');
 
-    public function me(Request $request): JsonResponse
-    {
-        /** @var User $user */
-        $user = $request->user();
+        if ($defaultOrganisationId !== null) {
+            $request->session()->put('current_organisation_id', $defaultOrganisationId);
+        }
 
-        return UserResource::make($user->load('organisations'))
-            ->response();
-    }
-
-    public function logout(Request $request): JsonResponse
-    {
-        Auth::guard('web')->logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return response()->json(['ok' => true]);
+        return UserResource::make($user->load('organisations'))->response();
     }
 }

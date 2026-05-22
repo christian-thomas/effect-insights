@@ -16,16 +16,24 @@ Laravel 13 backend for the Effect CMP. Provides:
 ```bash
 cd apps/api
 composer install
-# .env created by composer create-project; APP_KEY already generated
-php artisan migrate --graceful
-php artisan serve
+# .env created by composer create-project; APP_KEY already generated.
+
+# Create the dev database (Herd MySQL on 127.0.0.1:3306, no password by default).
+mysql -h 127.0.0.1 -uroot -e \
+  "CREATE DATABASE IF NOT EXISTS effect_cmp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+
+php artisan migrate:fresh --seed
+php artisan serve   # http://localhost:8000
 ```
+
+Default credentials (from `DatabaseSeeder`):
+- `me@christianthomas.co.uk` / `password` — superuser, owner of "Effect Digital".
 
 ## Stack
 
 - **PHP 8.3+** (developed on PHP 8.4 via Herd)
 - **Laravel 13.x** (currently 13.11+)
-- **MySQL** in production, SQLite for local dev (Laravel's default)
+- **MySQL 9** (Herd Services) for local dev; **SQLite in-memory** for `php artisan test` (override in `phpunit.xml`)
 - **Redis** for queues + cache
 - **Laravel Horizon** for queue dashboards
 - **Sanctum** for SPA auth
