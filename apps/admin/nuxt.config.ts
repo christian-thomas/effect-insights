@@ -1,6 +1,12 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-05-01',
   devtools: { enabled: true },
+  // Authenticated admin dashboard — no SEO value from SSR, and SSR would need
+  // to proxy the Sanctum session cookie from incoming Nuxt requests to Laravel
+  // upstream, which adds complexity for no benefit. Going client-only also
+  // avoids devalue payload-serialisation issues from Error instances landing
+  // in Pinia state during failed server-side fetches.
+  ssr: false,
   modules: ['@nuxt/ui', '@nuxt/eslint', '@pinia/nuxt'],
   css: ['~/assets/css/main.css'],
   icon: {
