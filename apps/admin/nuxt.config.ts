@@ -4,17 +4,15 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxt/eslint', '@pinia/nuxt'],
   css: ['~/assets/css/main.css'],
   icon: {
-    serverBundle: { collections: ['lucide', 'simple-icons'] },
+    // Skip the @nuxt/icon server API. It's wrapped in defineCachedEventHandler
+    // internally, which under h3 v2 RC + Nitro 2.13 cache layer dies on the
+    // synthetic node-mock-http event (Invalid URL inside getQuery). Routing
+    // through iconify-icon instead bypasses that path entirely.
+    provider: 'iconify',
     clientBundle: {
       scan: true,
-      sizeLimitKb: 512,
-    },
-  },
-  nitro: {
-    routeRules: {
-      // h3 v2 RC + Nitro cache layer mishandles the synthetic node-mock-http
-      // event the icon API endpoint is wrapped with — bypass caching here.
-      '/api/_nuxt_icon/**': { cache: false, swr: false },
+      includeCustomCollections: true,
+      sizeLimitKb: 1024,
     },
   },
   typescript: {
