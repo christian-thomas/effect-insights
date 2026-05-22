@@ -9,12 +9,16 @@
     ".": "./src/index.ts",
     "./banner": "./src/banner.ts",
     "./consent": "./src/consent.ts",
-    "./gcm": "./src/gcm.ts"
+    "./gcm": "./src/gcm.ts",
+    "./schemas/consent": "./src/schemas/consent.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint yet' && exit 0",
     "build": "echo 'types package is source-only' && exit 0"
+  },
+  "dependencies": {
+    "zod": "latest"
   },
   "devDependencies": {
     "typescript": "latest"

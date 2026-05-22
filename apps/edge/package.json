@@ -10,14 +10,21 @@
     "deploy:consent": "wrangler deploy --config wrangler.consent.toml",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "echo 'no lint yet' && exit 0"
   },
   "dependencies": {
-    "@effect-cmp/types": "workspace:*"
+    "@effect-cmp/types": "workspace:*",
+    "@hono/zod-validator": "latest",
+    "hono": "latest",
+    "zod": "latest"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "latest",
     "@cloudflare/workers-types": "latest",
     "typescript": "latest",
+    "vitest": "latest",
     "wrangler": "latest"
   }
 }

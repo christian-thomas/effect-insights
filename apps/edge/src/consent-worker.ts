@@ -1,31 +1,29 @@
-import type { ConsentEvent } from '@effect-cmp/types/consent';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { zValidator } from '@hono/zod-validator';
+import { consentEventSchema } from '@effect-cmp/types/schemas/consent';
+import type { ConsentEventInput } from '@effect-cmp/types/schemas/consent';
 
-interface Env {
+type Bindings = {
   readonly CONSENT_DB: D1Database;
   readonly LARAVEL_INGEST_URL: string;
   readonly ENVIRONMENT: string;
-}
+};
 
-const corsHeaders = (origin: string | null): Record<string, string> => ({
-  'Access-Control-Allow-Origin': origin ?? '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Max-Age': '86400',
-  Vary: 'Origin',
-});
+const app = new Hono<{ Bindings: Bindings }>();
 
-const json = (data: unknown, status: number, origin: string | null): Response =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...corsHeaders(origin),
-    },
-  });
+app.use(
+  '*',
+  cors({
+    origin: '*',
+    allowMethods: ['POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type'],
+  }),
+);
 
 const persistToD1 = async (
   db: D1Database,
-  event: ConsentEvent,
+  event: ConsentEventInput,
 ): Promise<void> => {
   await db
     .prepare(
@@ -54,9 +52,8 @@ const persistToD1 = async (
 
 const mirrorToLaravel = async (
   url: string,
-  event: ConsentEvent,
+  event: ConsentEventInput,
 ): Promise<void> => {
-  // Fire-and-forget — Laravel is the backup channel, edge must not block on it.
   try {
     await fetch(url, {
       method: 'POST',
@@ -68,37 +65,20 @@ const mirrorToLaravel = async (
   }
 };
 
-export default {
-  async fetch(
-    request: Request,
-    env: Env,
-    ctx: ExecutionContext,
-  ): Promise<Response> {
-    const origin = request.headers.get('Origin');
+app.post('/consent', zValidator('json', consentEventSchema), async (c) => {
+  const event = c.req.valid('json');
 
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders(origin) });
-    }
+  try {
+    await persistToD1(c.env.CONSENT_DB, event);
+  } catch {
+    return c.json({ error: 'persist_failed' }, 500);
+  }
 
-    if (request.method !== 'POST') {
-      return json({ error: 'method_not_allowed' }, 405, origin);
-    }
+  c.executionCtx.waitUntil(mirrorToLaravel(c.env.LARAVEL_INGEST_URL, event));
 
-    let event: ConsentEvent;
-    try {
-      event = (await request.json()) as ConsentEvent;
-    } catch {
-      return json({ error: 'invalid_json' }, 400, origin);
-    }
+  return c.json({ ok: true }, 202);
+});
 
-    try {
-      await persistToD1(env.CONSENT_DB, event);
-    } catch {
-      return json({ error: 'persist_failed' }, 500, origin);
-    }
+app.notFound((c) => c.json({ error: 'not_found' }, 404));
 
-    ctx.waitUntil(mirrorToLaravel(env.LARAVEL_INGEST_URL, event));
-
-    return json({ ok: true }, 202, origin);
-  },
-} satisfies ExportedHandler<Env>;
+export default app;

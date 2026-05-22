@@ -6,13 +6,17 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
+    "preview": "vite preview --port 4173",
     "typecheck": "tsc --noEmit",
-    "lint": "echo 'no lint yet' && exit 0"
+    "lint": "echo 'no lint yet' && exit 0",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "@effect-cmp/types": "workspace:*"
   },
   "devDependencies": {
+    "@playwright/test": "latest",
     "@types/node": "latest",
     "typescript": "latest",
     "vite": "latest"

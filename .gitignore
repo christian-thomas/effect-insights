@@ -2,6 +2,11 @@ node_modules/
 .turbo/
 .bun/
 
+# Playwright
+test-results/
+playwright-report/
+.playwright/
+
 # Build outputs
 dist/
 .output/
