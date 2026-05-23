@@ -1,17 +1,6 @@
 import { defineStore } from 'pinia';
-
-export interface AuthUser {
-  readonly id: string;
-  readonly name: string;
-  readonly email: string;
-  readonly isSuperuser: boolean;
-}
-
-export interface Organisation {
-  readonly id: string;
-  readonly name: string;
-  readonly slug: string;
-}
+import type { AuthUser } from '~/types/auth';
+import type { Organisation } from '~/types/organisation';
 
 interface SessionPayload {
   user: AuthUser;
@@ -44,8 +33,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state): boolean => state.user !== null,
     // Used as :key on the layout slot wrapper — changing this re-mounts the
     // entire page subtree on org switch, so every page's onMounted refetches.
-    organisationCacheKey: (state): string =>
-      state.currentOrganisation?.id ?? 'none',
+    organisationCacheKey: (state): string => state.currentOrganisation?.id ?? 'none',
   },
 
   actions: {

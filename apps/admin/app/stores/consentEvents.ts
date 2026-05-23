@@ -1,39 +1,5 @@
 import { defineStore } from 'pinia';
-
-export type ConsentEventType = 'granted' | 'denied' | 'changed' | 'withdrawn';
-
-export interface ConsentEventCategories {
-  necessary: boolean;
-  preferences: boolean;
-  statistics: boolean;
-  marketing: boolean;
-}
-
-export interface ConsentEvent {
-  id: string;
-  domainId: string;
-  bannerConfigVersion: number;
-  anonymousId: string;
-  categories: ConsentEventCategories;
-  gcmSignals: Record<string, 'granted' | 'denied'>;
-  countryCode: string | null;
-  userAgentHash: string;
-  ipHash: string;
-  eventType: ConsentEventType;
-  occurredAt: string;
-  bannerTextHash: string;
-  createdAt: string;
-}
-
-export interface ConsentEventFilters {
-  domainId?: string;
-  anonymousId?: string;
-  eventType?: ConsentEventType;
-  from?: string;
-  to?: string;
-  perPage?: number;
-  page?: number;
-}
+import type { ConsentEvent, ConsentEventFilters } from '~/types/consent';
 
 interface Pagination {
   total: number;
@@ -95,9 +61,7 @@ export const useConsentEventsStore = defineStore('consentEvents', {
       this.error = null;
       this.filters = filters;
       try {
-        const response = await $api<ListResponse>(
-          `/api/consent-events${toQueryString(filters)}`,
-        );
+        const response = await $api<ListResponse>(`/api/consent-events${toQueryString(filters)}`);
         this.items = response.data;
         this.pagination = {
           total: response.meta.total,

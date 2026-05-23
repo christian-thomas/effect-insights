@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui';
-import type {
-  ConsentEvent,
-  ConsentEventType,
-} from '~/stores/consentEvents';
+import type { ConsentEvent, ConsentEventType } from '~/types/consent';
 
 const consentStore = useConsentEventsStore();
 const domainsStore = useDomainsStore();
@@ -92,7 +89,12 @@ const columns: TableColumn<ConsentEvent>[] = [
 ];
 
 const categoryDots = (categories: ConsentEvent['categories']): string => {
-  const order: Array<keyof typeof categories> = ['necessary', 'preferences', 'statistics', 'marketing'];
+  const order: Array<keyof typeof categories> = [
+    'necessary',
+    'preferences',
+    'statistics',
+    'marketing',
+  ];
   return order.map((category) => (categories[category] ? '●' : '○')).join(' ');
 };
 </script>
@@ -122,11 +124,7 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
             { label: 'Withdrawn', value: 'withdrawn' },
           ]"
         />
-        <UInput
-          v-model="filters.anonymousId"
-          placeholder="Anonymous ID"
-          icon="i-lucide-search"
-        />
+        <UInput v-model="filters.anonymousId" placeholder="Anonymous ID" icon="i-lucide-search" />
         <UInput v-model="filters.from" type="date" placeholder="From" />
         <UInput v-model="filters.to" type="date" placeholder="To" />
       </div>
@@ -149,19 +147,13 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
         <UIcon name="i-lucide-file-check" class="text-4xl text-gray-400" />
         <h2 class="text-lg font-semibold">No consent events yet</h2>
         <p class="text-sm text-gray-500 max-w-md">
-          Events arrive as visitors interact with the banner on a published domain.
-          Embed the snippet on a client site and accept consent to see entries land here.
+          Events arrive as visitors interact with the banner on a published domain. Embed the
+          snippet on a client site and accept consent to see entries land here.
         </p>
       </div>
     </UCard>
 
-    <UTable
-      v-else
-      :data="events"
-      :columns="columns"
-      :loading="loading"
-      class="w-full"
-    >
+    <UTable v-else :data="events" :columns="columns" :loading="loading" class="w-full">
       <template #occurredAt-cell="{ row }">
         <button class="text-sm hover:underline" @click="openDetail(row.original)">
           {{ formatTime(row.original.occurredAt) }}
@@ -193,8 +185,8 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
 
     <div v-if="pagination.lastPage > 1" class="flex justify-between items-center">
       <p class="text-xs text-gray-500">
-        {{ pagination.total.toLocaleString() }} event{{ pagination.total === 1 ? '' : 's' }}
-        · page {{ pagination.currentPage }} of {{ pagination.lastPage }}
+        {{ pagination.total.toLocaleString() }} event{{ pagination.total === 1 ? '' : 's' }} · page
+        {{ pagination.currentPage }} of {{ pagination.lastPage }}
       </p>
       <UPagination
         v-model:page="currentPage"
@@ -203,7 +195,10 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
       />
     </div>
 
-    <USlideover v-model:open="detailOpen" :title="selected ? `Consent event ${selected.id.substring(0, 8)}…` : ''">
+    <USlideover
+      v-model:open="detailOpen"
+      :title="selected ? `Consent event ${selected.id.substring(0, 8)}…` : ''"
+    >
       <template #body>
         <div v-if="selected" class="space-y-4 text-sm">
           <section>
@@ -241,12 +236,13 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
           <section>
             <h3 class="font-semibold mb-2">Categories</h3>
             <ul class="space-y-1">
-              <li v-for="key in ['necessary', 'preferences', 'statistics', 'marketing'] as const" :key="key" class="flex justify-between">
+              <li
+                v-for="key in ['necessary', 'preferences', 'statistics', 'marketing'] as const"
+                :key="key"
+                class="flex justify-between"
+              >
                 <span class="capitalize">{{ key }}</span>
-                <UBadge
-                  :color="selected.categories[key] ? 'success' : 'neutral'"
-                  variant="subtle"
-                >
+                <UBadge :color="selected.categories[key] ? 'success' : 'neutral'" variant="subtle">
                   {{ selected.categories[key] ? 'granted' : 'denied' }}
                 </UBadge>
               </li>

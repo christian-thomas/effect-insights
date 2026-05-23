@@ -1,24 +1,6 @@
 import { defineStore } from 'pinia';
 import type { BannerDraftInput } from '@effect-cmp/types/schemas/banner';
-
-export interface BannerConfig {
-  id: string;
-  domainId: string;
-  version: number;
-  isDraft: boolean;
-  isPublished: boolean;
-  layout: BannerDraftInput['layout'];
-  localeDefault: string;
-  localesEnabled: string[];
-  colors: BannerDraftInput['colors'];
-  copy: BannerDraftInput['copy'];
-  gcmDefaults: BannerDraftInput['gcm_defaults'];
-  geoRules: BannerDraftInput['geo_rules'];
-  behaviour: BannerDraftInput['behaviour'];
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { BannerConfig } from '~/types/banner';
 
 interface FetchResponse {
   draft: { data: BannerConfig };
@@ -53,8 +35,10 @@ export const useBannerConfigsStore = defineStore('bannerConfigs', {
   }),
 
   getters: {
-    forDomain: (state) => (domainId: string): BannerSlot =>
-      state.byDomainId[domainId] ?? emptySlot(),
+    forDomain:
+      (state) =>
+      (domainId: string): BannerSlot =>
+        state.byDomainId[domainId] ?? emptySlot(),
   },
 
   actions: {
@@ -70,37 +54,30 @@ export const useBannerConfigsStore = defineStore('bannerConfigs', {
       slot.loading = true;
       slot.error = null;
       try {
-        const response = await $api<FetchResponse>(
-          `/api/domains/${domainId}/banner-config`,
-        );
+        const response = await $api<FetchResponse>(`/api/domains/${domainId}/banner-config`);
         slot.draft = response.draft.data;
         slot.published = response.published?.data ?? null;
       } catch (caught) {
-        slot.error =
-          caught instanceof Error ? caught : new Error(String(caught));
+        slot.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
         slot.loading = false;
       }
     },
 
-    async saveDraft(
-      domainId: string,
-      input: BannerDraftInput,
-    ): Promise<BannerConfig> {
+    async saveDraft(domainId: string, input: BannerDraftInput): Promise<BannerConfig> {
       const slot = this.ensureSlot(domainId);
-      const response = await $api<ItemResponse>(
-        `/api/domains/${domainId}/banner-config/draft`,
-        { method: 'PUT', body: input },
-      );
+      const response = await $api<ItemResponse>(`/api/domains/${domainId}/banner-config/draft`, {
+        method: 'PUT',
+        body: input,
+      });
       slot.draft = response.data;
       return response.data;
     },
 
     async publish(domainId: string): Promise<BannerConfig> {
-      const response = await $api<ItemResponse>(
-        `/api/domains/${domainId}/banner-config/publish`,
-        { method: 'POST' },
-      );
+      const response = await $api<ItemResponse>(`/api/domains/${domainId}/banner-config/publish`, {
+        method: 'POST',
+      });
       // Refresh both draft + published from the server canonical state.
       await this.fetch(domainId);
       return response.data;

@@ -1,10 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Organisation } from '~/stores/auth';
-
-export interface OrganisationInput {
-  name: string;
-  slug: string;
-}
+import type { Organisation, OrganisationInput } from '~/types/organisation';
 
 interface ListResponse {
   data: Organisation[];
@@ -35,8 +30,7 @@ export const useOrganisationsStore = defineStore('organisations', {
         const response = await $api<ListResponse>('/api/organisations');
         this.items = response.data;
       } catch (caught) {
-        this.error =
-          caught instanceof Error ? caught : new Error(String(caught));
+        this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
         this.loading = false;
       }
@@ -51,10 +45,7 @@ export const useOrganisationsStore = defineStore('organisations', {
       return response.data;
     },
 
-    async update(
-      id: string,
-      input: Partial<OrganisationInput>,
-    ): Promise<Organisation> {
+    async update(id: string, input: Partial<OrganisationInput>): Promise<Organisation> {
       const response = await $api<ItemResponse>(`/api/organisations/${id}`, {
         method: 'PATCH',
         body: input,

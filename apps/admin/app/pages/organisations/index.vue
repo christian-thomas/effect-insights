@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod';
 import type { FormSubmitEvent, TableColumn } from '@nuxt/ui';
-import type { Organisation } from '~/stores/auth';
-import type { OrganisationInput } from '~/stores/organisations';
+import type { Organisation, OrganisationInput } from '~/types/organisation';
 
 const auth = useAuthStore();
 const toast = useToast();
@@ -67,7 +66,9 @@ const onSubmit = async (event: FormSubmitEvent<OrganisationInput>): Promise<void
 };
 
 const confirmDelete = async (organisation: Organisation): Promise<void> => {
-  if (!window.confirm(`Delete "${organisation.name}"? Its domains and consent log will be removed.`)) {
+  if (
+    !window.confirm(`Delete "${organisation.name}"? Its domains and consent log will be removed.`)
+  ) {
     return;
   }
   try {
@@ -112,20 +113,19 @@ const columns: TableColumn<Organisation>[] = [
         <UIcon name="i-lucide-building" class="text-4xl text-gray-400" />
         <h2 class="text-lg font-semibold">No organisations yet</h2>
         <p class="text-sm text-gray-500 max-w-md">
-          Provision white-label tenants for clients or resellers here. You'll be able to
-          switch into each tenant from the sidebar to manage their domains.
+          Provision white-label tenants for clients or resellers here. You'll be able to switch into
+          each tenant from the sidebar to manage their domains.
         </p>
-        <UButton class="mt-2" icon="i-lucide-plus" label="Create the first organisation" @click="openCreate" />
+        <UButton
+          class="mt-2"
+          icon="i-lucide-plus"
+          label="Create the first organisation"
+          @click="openCreate"
+        />
       </div>
     </UCard>
 
-    <UTable
-      v-else
-      :data="organisations"
-      :columns="columns"
-      :loading="loading"
-      class="w-full"
-    >
+    <UTable v-else :data="organisations" :columns="columns" :loading="loading" class="w-full">
       <template #slug-cell="{ row }">
         <code class="text-sm">{{ row.original.slug }}</code>
       </template>
@@ -150,7 +150,10 @@ const columns: TableColumn<Organisation>[] = [
     </UTable>
   </div>
 
-  <USlideover v-model:open="slideoverOpen" :title="editing ? `Edit ${editing.name}` : 'New organisation'">
+  <USlideover
+    v-model:open="slideoverOpen"
+    :title="editing ? `Edit ${editing.name}` : 'New organisation'"
+  >
     <template #body>
       <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
         <UFormField label="Name" name="name">
@@ -161,7 +164,11 @@ const columns: TableColumn<Organisation>[] = [
         </UFormField>
         <div class="flex justify-end gap-2 pt-2">
           <UButton color="neutral" variant="ghost" label="Cancel" @click="slideoverOpen = false" />
-          <UButton type="submit" :loading="submitting" :label="editing ? 'Save changes' : 'Create'" />
+          <UButton
+            type="submit"
+            :loading="submitting"
+            :label="editing ? 'Save changes' : 'Create'"
+          />
         </div>
       </UForm>
     </template>
