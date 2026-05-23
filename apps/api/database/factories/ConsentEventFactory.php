@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\ConsentEventType;
 use App\Models\ConsentEvent;
 use App\Models\Domain;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -48,9 +49,9 @@ class ConsentEventFactory extends Factory
             'user_agent_hash' => 'ua_'.Str::random(20),
             'ip_hash' => 'ip_'.Str::random(20),
             'event_type' => fake()->randomElement([
-                ConsentEvent::EVENT_GRANTED,
-                ConsentEvent::EVENT_DENIED,
-                ConsentEvent::EVENT_CHANGED,
+                ConsentEventType::Granted,
+                ConsentEventType::Denied,
+                ConsentEventType::Changed,
             ]),
             'occurred_at' => fake()->dateTimeBetween('-30 days', 'now'),
             'banner_text_hash' => 'btxt_v1',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\BannerLayout;
 use App\Models\BannerConfig;
 use App\Models\Domain;
 use App\Models\User;
@@ -165,7 +166,7 @@ class BannerConfigService
                 'version' => 0,
                 'is_draft' => true,
                 'is_published' => false,
-                'layout' => BannerConfig::LAYOUT_MODAL,
+                'layout' => BannerLayout::Modal,
                 'locale_default' => self::DEFAULT_LOCALE,
                 'locales_enabled' => [self::DEFAULT_LOCALE],
                 'colors' => self::defaultColors(),

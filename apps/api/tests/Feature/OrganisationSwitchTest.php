@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\OrganisationRole;
 use App\Models\Organisation;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,7 +28,7 @@ class OrganisationSwitchTest extends TenantTestCase
     public function a_member_can_switch_to_an_organisation_they_belong_to(): void
     {
         $secondOrg = Organisation::factory()->create();
-        $this->user->organisations()->attach($secondOrg, ['role' => Organisation::ROLE_VIEWER]);
+        $this->user->organisations()->attach($secondOrg, ['role' => OrganisationRole::Viewer]);
 
         $this->actingAs($this->user);
 
@@ -69,7 +70,7 @@ class OrganisationSwitchTest extends TenantTestCase
     public function switching_organisation_persists_for_subsequent_requests(): void
     {
         $secondOrg = Organisation::factory()->create();
-        $this->user->organisations()->attach($secondOrg, ['role' => Organisation::ROLE_OWNER]);
+        $this->user->organisations()->attach($secondOrg, ['role' => OrganisationRole::Owner]);
 
         $this->actingAs($this->user);
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Enums\BannerLayout;
+use App\Enums\DomainStatus;
 use App\Models\BannerConfig;
 use App\Models\Domain;
 use App\Services\BannerConfigService;
@@ -20,7 +22,7 @@ class BannerConfigPayloadBuilderTest extends TestCase
         $domain = new Domain([
             'fqdn' => 'effectdigital.com',
             'apex_domain' => 'effectdigital.com',
-            'status' => Domain::STATUS_ACTIVE,
+            'status' => DomainStatus::Active,
             'public_key' => 'pk_test_abc123',
         ]);
         $domain->setAttribute('id', '019e0000-0000-0000-0000-000000000001');
@@ -37,7 +39,7 @@ class BannerConfigPayloadBuilderTest extends TestCase
             'version' => 3,
             'is_draft' => false,
             'is_published' => true,
-            'layout' => BannerConfig::LAYOUT_MODAL,
+            'layout' => BannerLayout::Modal,
             'locale_default' => 'en',
             'locales_enabled' => ['en'],
             'colors' => BannerConfigService::defaultColors(),

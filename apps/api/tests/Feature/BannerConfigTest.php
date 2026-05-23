@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\BannerLayout;
 use App\Models\BannerConfig;
 use App\Models\Domain;
 use App\Services\BannerConfigService;
@@ -27,7 +28,7 @@ class BannerConfigTest extends TenantTestCase
     private function validPayload(): array
     {
         return [
-            'layout' => BannerConfig::LAYOUT_MODAL,
+            'layout' => BannerLayout::Modal,
             'locale_default' => 'en',
             'locales_enabled' => ['en'],
             'colors' => BannerConfigService::defaultColors(),
@@ -62,10 +63,10 @@ class BannerConfigTest extends TenantTestCase
 
         $this->actingAsMember($this->user, $this->org)
             ->putJson($url, array_merge($this->validPayload(), [
-                'layout' => BannerConfig::LAYOUT_BAR_BOTTOM,
+                'layout' => BannerLayout::BarBottom,
             ]))
             ->assertOk()
-            ->assertJsonPath('data.layout', BannerConfig::LAYOUT_BAR_BOTTOM);
+            ->assertJsonPath('data.layout', BannerLayout::BarBottom);
 
         $this->assertDatabaseCount('banner_configs', 1);
     }
@@ -165,7 +166,7 @@ class BannerConfigTest extends TenantTestCase
 
         // Cosmetic change only: layout flip + colour tweak + copy edit.
         $cosmeticPayload = array_merge($this->validPayload(), [
-            'layout' => BannerConfig::LAYOUT_BAR_BOTTOM,
+            'layout' => BannerLayout::BarBottom,
             'colors' => array_merge(BannerConfigService::defaultColors(), ['primary' => '#ff0000']),
         ]);
         $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $cosmeticPayload)->assertOk();

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Models\BannerConfig;
+use App\Enums\BannerLayout;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -22,10 +22,10 @@ class UpdateBannerDraftRequest extends FormRequest
 
         return [
             'layout' => ['required', Rule::in([
-                BannerConfig::LAYOUT_MODAL,
-                BannerConfig::LAYOUT_BAR_TOP,
-                BannerConfig::LAYOUT_BAR_BOTTOM,
-                BannerConfig::LAYOUT_CORNER,
+                BannerLayout::Modal,
+                BannerLayout::BarTop,
+                BannerLayout::BarBottom,
+                BannerLayout::Corner,
             ])],
 
             'locale_default' => ['required', 'string', ...$localeCode],

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Models\BannerConfig;
+use App\Enums\BannerLayout;
 use App\Models\Domain;
 use App\Services\BannerConfigService;
 use App\Services\Cloudflare\CloudflareKvClientContract;
@@ -31,7 +31,7 @@ class BannerConfigPublishTest extends TenantTestCase
     private function validDraftPayload(): array
     {
         return [
-            'layout' => BannerConfig::LAYOUT_MODAL,
+            'layout' => BannerLayout::Modal,
             'locale_default' => 'en',
             'locales_enabled' => ['en'],
             'colors' => BannerConfigService::defaultColors(),

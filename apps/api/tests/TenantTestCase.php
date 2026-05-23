@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Enums\OrganisationRole;
 use App\Models\Organisation;
 use App\Models\User;
 use App\Services\Cloudflare\ArrayCloudflareKvClient;
@@ -77,14 +78,14 @@ abstract class TenantTestCase extends TestCase
             'email' => 'member@example.test',
             'password' => Hash::make('password'),
         ]);
-        $this->org->users()->attach($this->user, ['role' => Organisation::ROLE_OWNER]);
+        $this->org->users()->attach($this->user, ['role' => OrganisationRole::Owner]);
 
         $this->otherUser = User::create([
             'name' => 'Other User',
             'email' => 'other@example.test',
             'password' => Hash::make('password'),
         ]);
-        $this->otherOrg->users()->attach($this->otherUser, ['role' => Organisation::ROLE_OWNER]);
+        $this->otherOrg->users()->attach($this->otherUser, ['role' => OrganisationRole::Owner]);
     }
 
     protected function actingAsMember(User $user, Organisation $organisation): static

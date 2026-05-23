@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\DomainStatus;
 use App\Models\Domain;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
@@ -44,7 +45,7 @@ class DomainsTest extends TenantTestCase
         $response->assertStatus(Response::HTTP_CREATED)
             ->assertJsonPath('data.fqdn', 'example.test')
             ->assertJsonPath('data.apexDomain', 'example.test')
-            ->assertJsonPath('data.status', Domain::STATUS_PENDING);
+            ->assertJsonPath('data.status', DomainStatus::Pending);
 
         $this->assertDatabaseHas('domains', [
             'fqdn' => 'example.test',
@@ -93,15 +94,15 @@ class DomainsTest extends TenantTestCase
     public function updating_a_domain_in_the_current_organisation_works(): void
     {
         $domain = Domain::factory()->for($this->org)->create([
-            'status' => Domain::STATUS_PENDING,
+            'status' => DomainStatus::Pending,
         ]);
 
         $this->actingAsMember($this->user, $this->org)
             ->patchJson(sprintf('/api/domains/%s', $domain->getKey()), [
-                'status' => Domain::STATUS_ACTIVE,
+                'status' => DomainStatus::Active,
             ])
             ->assertOk()
-            ->assertJsonPath('data.status', Domain::STATUS_ACTIVE);
+            ->assertJsonPath('data.status', DomainStatus::Active);
     }
 
     #[Test]

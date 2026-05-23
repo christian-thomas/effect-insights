@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\ConsentEventType;
 use App\Models\ConsentEvent;
 use App\Models\Domain;
 use Illuminate\Foundation\Http\FormRequest;
@@ -37,10 +38,10 @@ class StoreConsentEventRequest extends FormRequest
             'userAgentHash' => ['required', 'string', 'max:128'],
             'ipHash' => ['required', 'string', 'max:128'],
             'eventType' => ['required', Rule::in([
-                ConsentEvent::EVENT_GRANTED,
-                ConsentEvent::EVENT_DENIED,
-                ConsentEvent::EVENT_CHANGED,
-                ConsentEvent::EVENT_WITHDRAWN,
+                ConsentEventType::Granted,
+                ConsentEventType::Denied,
+                ConsentEventType::Changed,
+                ConsentEventType::Withdrawn,
             ])],
             'occurredAt' => ['required', 'date'],
             'bannerTextHash' => ['required', 'string', 'max:128'],

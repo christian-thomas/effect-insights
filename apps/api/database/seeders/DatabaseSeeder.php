@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\OrganisationRole;
 use App\Models\Organisation;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -39,7 +40,7 @@ class DatabaseSeeder extends Seeder
         $christian->assignRole(User::ROLE_SUPERUSER);
 
         $effect->users()->syncWithoutDetaching([
-            $christian->getKey() => ['role' => Organisation::ROLE_OWNER],
+            $christian->getKey() => ['role' => OrganisationRole::Owner],
         ]);
     }
 }

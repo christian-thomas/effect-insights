@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\BannerLayout;
 use App\Models\Concerns\BelongsToOrganisation;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -20,14 +21,6 @@ use RuntimeException;
 ])]
 class BannerConfig extends Model
 {
-    public const LAYOUT_MODAL = 'modal';
-
-    public const LAYOUT_BAR_TOP = 'bar-top';
-
-    public const LAYOUT_BAR_BOTTOM = 'bar-bottom';
-
-    public const LAYOUT_CORNER = 'corner';
-
     use BelongsToOrganisation, HasUuids;
 
     /**
@@ -37,6 +30,7 @@ class BannerConfig extends Model
     protected function casts(): array
     {
         return [
+            'layout' => BannerLayout::class,
             'locales_enabled' => 'array',
             'colors' => 'array',
             'copy' => 'array',

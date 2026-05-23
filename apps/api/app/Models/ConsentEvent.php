@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ConsentEventType;
 use App\Models\Concerns\BelongsToOrganisation;
 use Database\Factories\ConsentEventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -23,14 +24,6 @@ class ConsentEvent extends Model
 {
     /** @use HasFactory<ConsentEventFactory> */
     use BelongsToOrganisation, HasFactory, HasUuids;
-
-    public const EVENT_GRANTED = 'granted';
-
-    public const EVENT_DENIED = 'denied';
-
-    public const EVENT_CHANGED = 'changed';
-
-    public const EVENT_WITHDRAWN = 'withdrawn';
 
     /**
      * Edge worker generates the UUID at the moment of the user's click so we
@@ -52,6 +45,7 @@ class ConsentEvent extends Model
     protected function casts(): array
     {
         return [
+            'event_type' => ConsentEventType::class,
             'categories' => 'array',
             'gcm_signals' => 'array',
             'occurred_at' => 'datetime',

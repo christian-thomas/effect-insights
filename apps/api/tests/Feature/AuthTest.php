@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\OrganisationRole;
 use App\Models\Organisation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -46,7 +47,7 @@ class AuthTest extends TestCase
             'password' => Hash::make('password'),
         ]);
         $this->user->assignRole(User::ROLE_SUPERUSER);
-        $this->organisation->users()->attach($this->user, ['role' => Organisation::ROLE_OWNER]);
+        $this->organisation->users()->attach($this->user, ['role' => OrganisationRole::Owner]);
     }
 
     #[Test]

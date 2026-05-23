@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\DomainStatus;
 use App\Models\Concerns\BelongsToOrganisation;
 use Database\Factories\DomainFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,12 +16,6 @@ use Illuminate\Support\Str;
 #[Fillable(['fqdn', 'apex_domain', 'status', 'public_key', 'settings'])]
 class Domain extends Model
 {
-    public const STATUS_PENDING = 'pending';
-
-    public const STATUS_ACTIVE = 'active';
-
-    public const STATUS_PAUSED = 'paused';
-
     /** @use HasFactory<DomainFactory> */
     use BelongsToOrganisation, HasFactory, HasUuids;
 
@@ -31,6 +26,7 @@ class Domain extends Model
     protected function casts(): array
     {
         return [
+            'status' => DomainStatus::class,
             'settings' => 'array',
         ];
     }

@@ -37,7 +37,7 @@ final class BannerConfigPayloadBuilder
             'materialVersion' => (int) $bannerConfig->getAttribute('material_version'),
             'localeDefault' => (string) $bannerConfig->getAttribute('locale_default'),
             'localesEnabled' => (array) $bannerConfig->getAttribute('locales_enabled'),
-            'layout' => (string) $bannerConfig->getAttribute('layout'),
+            'layout' => $bannerConfig->getAttribute('layout')->value,
             'granularity' => 'categorised',
             'colors' => (array) $bannerConfig->getAttribute('colors'),
             'copy' => (array) $bannerConfig->getAttribute('copy'),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\ConsentEventType;
 use App\Models\ConsentEvent;
 use App\Models\Domain;
 use Carbon\CarbonImmutable;
@@ -84,8 +85,8 @@ class ConsentEventsListTest extends TenantTestCase
     #[Test]
     public function consent_events_can_be_filtered_by_event_type(): void
     {
-        ConsentEvent::factory()->for($this->domain)->count(2)->create(['event_type' => ConsentEvent::EVENT_GRANTED]);
-        ConsentEvent::factory()->for($this->domain)->count(3)->create(['event_type' => ConsentEvent::EVENT_DENIED]);
+        ConsentEvent::factory()->for($this->domain)->count(2)->create(['event_type' => ConsentEventType::Granted]);
+        ConsentEvent::factory()->for($this->domain)->count(3)->create(['event_type' => ConsentEventType::Denied]);
 
         $this->actingAsMember($this->user, $this->org)
             ->getJson('/api/consent-events?event_type=denied')

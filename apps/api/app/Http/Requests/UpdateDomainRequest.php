@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\DomainStatus;
 use App\Models\Domain;
 use App\Support\CurrentOrganisation;
 use Illuminate\Foundation\Http\FormRequest;
@@ -31,9 +32,9 @@ class UpdateDomainRequest extends FormRequest
                     ->ignore($domainId),
             ],
             'status' => ['sometimes', Rule::in([
-                Domain::STATUS_PENDING,
-                Domain::STATUS_ACTIVE,
-                Domain::STATUS_PAUSED,
+                DomainStatus::Pending,
+                DomainStatus::Active,
+                DomainStatus::Paused,
             ])],
             'settings' => ['sometimes', 'nullable', 'array'],
         ];

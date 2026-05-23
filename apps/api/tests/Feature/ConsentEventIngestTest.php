@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Models\ConsentEvent;
+use App\Enums\ConsentEventType;
 use App\Models\Domain;
 use App\Models\Organisation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -65,7 +65,7 @@ class ConsentEventIngestTest extends TestCase
             'countryCode' => 'GB',
             'userAgentHash' => 'ua_hash',
             'ipHash' => 'ip_hash',
-            'eventType' => ConsentEvent::EVENT_GRANTED,
+            'eventType' => ConsentEventType::Granted,
             'occurredAt' => '2026-05-22T12:00:00Z',
             'bannerTextHash' => 'btxt_v1',
         ];
@@ -101,7 +101,7 @@ class ConsentEventIngestTest extends TestCase
             'domain_id' => $this->domain->getKey(),
             'organisation_id' => $this->domain->getAttribute('organisation_id'),
             'anonymous_id' => 'anon_abc',
-            'event_type' => ConsentEvent::EVENT_GRANTED,
+            'event_type' => ConsentEventType::Granted,
             'country_code' => 'GB',
         ]);
     }
