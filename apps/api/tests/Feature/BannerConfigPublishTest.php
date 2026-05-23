@@ -67,7 +67,7 @@ class BannerConfigPublishTest extends TenantTestCase
         $this->assertSame('pk_test_published_abc', $payload['domainPublicKey']);
         $this->assertSame(1, $payload['version']);
         $this->assertSame('modal', $payload['layout']);
-        $this->assertSame('unsigned', $payload['signature']);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $payload['signature']);
     }
 
     #[Test]

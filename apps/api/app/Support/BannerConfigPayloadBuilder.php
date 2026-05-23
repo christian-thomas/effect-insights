@@ -6,6 +6,7 @@ namespace App\Support;
 
 use App\Models\BannerConfig;
 use App\Models\Domain;
+use App\Services\BannerConfig\BannerConfigSigner;
 use InvalidArgumentException;
 
 /**
@@ -18,20 +19,26 @@ use InvalidArgumentException;
  *
  * Every field reads from the row directly; defaults previously baked into
  * the builder now live on the BannerConfigService and are applied at draft
- * creation time, not publish time.
+ * creation time, not publish time. The trailing `signature` field is an
+ * HMAC-SHA-256 the edge config worker re-computes on read to detect KV
+ * tampering — see {@see BannerConfigSigner}.
  */
-final class BannerConfigPayloadBuilder
+final readonly class BannerConfigPayloadBuilder
 {
+    public function __construct(
+        private BannerConfigSigner $signer,
+    ) {}
+
     /**
      * @return array<string, mixed>
      */
-    public static function build(BannerConfig $bannerConfig, Domain $domain): array
+    public function build(BannerConfig $bannerConfig, Domain $domain): array
     {
         if (! $bannerConfig->getAttribute('is_published')) {
             throw new InvalidArgumentException('Cannot build payload for an unpublished banner config');
         }
 
-        return [
+        $payload = [
             'domainPublicKey' => $domain->getAttribute('public_key'),
             'version' => (int) $bannerConfig->getAttribute('version'),
             'materialVersion' => (int) $bannerConfig->getAttribute('material_version'),
@@ -45,8 +52,10 @@ final class BannerConfigPayloadBuilder
             'gcmDefaults' => (array) $bannerConfig->getAttribute('gcm_defaults'),
             'behaviour' => (array) $bannerConfig->getAttribute('behaviour'),
             'publishedAt' => $bannerConfig->getAttribute('published_at')?->toIso8601String() ?? now()->toIso8601String(),
-            // HMAC signing lands in iteration 6; until then the marker is explicit.
-            'signature' => 'unsigned',
         ];
+
+        $payload['signature'] = $this->signer->sign($payload);
+
+        return $payload;
     }
 }

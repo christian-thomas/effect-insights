@@ -15,6 +15,7 @@ export default defineConfig({
           LARAVEL_INGEST_URL: 'https://api.test/api/internal/consent-events',
           LARAVEL_INGEST_SECRET: 'test_ingest_secret',
           SCANNER_SECRET: 'test_scanner_secret',
+          BANNER_CONFIG_SIGNING_KEY: 'test_signing_key',
         },
       },
     }),

@@ -30,6 +30,7 @@ class BannerConfigService
 
     public function __construct(
         private readonly CloudflareKvClientContract $kv,
+        private readonly BannerConfigPayloadBuilder $payloadBuilder,
     ) {}
 
     /**
@@ -282,7 +283,7 @@ class BannerConfigService
             ->whereKey($bannerConfig->getAttribute('domain_id'))
             ->firstOrFail();
 
-        $payload = BannerConfigPayloadBuilder::build($bannerConfig, $domain);
+        $payload = $this->payloadBuilder->build($bannerConfig, $domain);
 
         $this->kv->putValue($domain->getAttribute('public_key'), $payload);
     }

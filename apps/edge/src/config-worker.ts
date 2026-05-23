@@ -2,10 +2,12 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Context } from 'hono';
 import type { BannerConfig } from '@effect-cmp/types/banner';
+import { verifyBannerConfigSignature } from './banner-config-signing';
 
 type Bindings = {
   readonly BANNER_CONFIGS: KVNamespace;
   readonly BUNDLES: R2Bucket;
+  readonly BANNER_CONFIG_SIGNING_KEY: string;
   readonly ENVIRONMENT: string;
 };
 
@@ -19,10 +21,20 @@ app.get('/config/:publicKey{[A-Za-z0-9_-]+}', async (c) => {
   if (!raw) {
     return c.json({ error: 'not_found' }, 404);
   }
-  const config = JSON.parse(raw) as BannerConfig;
+
+  const payload = JSON.parse(raw) as Record<string, unknown>;
+
+  // Reject anything whose signature doesn't recompute. Stops a compromised
+  // CF API token from writing a tampered config that would silently
+  // re-categorise tracking cookies as `necessary`.
+  const valid = await verifyBannerConfigSignature(payload, c.env.BANNER_CONFIG_SIGNING_KEY);
+  if (!valid) {
+    return c.json({ error: 'invalid_signature' }, 503);
+  }
+
   c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   return c.json({
-    config,
+    config: payload as unknown as BannerConfig,
     country: c.req.header('CF-IPCountry') ?? null,
   });
 });

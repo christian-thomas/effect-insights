@@ -8,6 +8,7 @@ use App\Enums\BannerLayout;
 use App\Enums\DomainStatus;
 use App\Models\BannerConfig;
 use App\Models\Domain;
+use App\Services\BannerConfig\BannerConfigSigner;
 use App\Services\BannerConfigService;
 use App\Support\BannerConfigPayloadBuilder;
 use Carbon\CarbonImmutable;
@@ -17,6 +18,13 @@ use Tests\TestCase;
 
 class BannerConfigPayloadBuilderTest extends TestCase
 {
+    private function builder(): BannerConfigPayloadBuilder
+    {
+        return new BannerConfigPayloadBuilder(
+            new BannerConfigSigner(key: 'unit-test-signing-key'),
+        );
+    }
+
     private function makeDomain(): Domain
     {
         $domain = new Domain([
@@ -63,16 +71,13 @@ class BannerConfigPayloadBuilderTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
 
-        BannerConfigPayloadBuilder::build($config, $domain);
+        $this->builder()->build($config, $domain);
     }
 
     #[Test]
     public function it_includes_the_domain_public_key_and_version(): void
     {
-        $payload = BannerConfigPayloadBuilder::build(
-            $this->makePublishedConfig(),
-            $this->makeDomain(),
-        );
+        $payload = $this->builder()->build($this->makePublishedConfig(), $this->makeDomain());
 
         $this->assertSame('pk_test_abc123', $payload['domainPublicKey']);
         $this->assertSame(3, $payload['version']);
@@ -81,10 +86,7 @@ class BannerConfigPayloadBuilderTest extends TestCase
     #[Test]
     public function gcm_defaults_are_deny_everything_except_functionality_and_security(): void
     {
-        $payload = BannerConfigPayloadBuilder::build(
-            $this->makePublishedConfig(),
-            $this->makeDomain(),
-        );
+        $payload = $this->builder()->build($this->makePublishedConfig(), $this->makeDomain());
 
         $this->assertSame([
             'ad_storage' => 'denied',
@@ -100,10 +102,7 @@ class BannerConfigPayloadBuilderTest extends TestCase
     #[Test]
     public function behaviour_defaults_re_prompt_yearly_and_honour_gpc(): void
     {
-        $payload = BannerConfigPayloadBuilder::build(
-            $this->makePublishedConfig(),
-            $this->makeDomain(),
-        );
+        $payload = $this->builder()->build($this->makePublishedConfig(), $this->makeDomain());
 
         $this->assertSame(365, $payload['behaviour']['rePromptAfterDays']);
         $this->assertTrue($payload['behaviour']['honourGpc']);
@@ -114,10 +113,7 @@ class BannerConfigPayloadBuilderTest extends TestCase
     #[Test]
     public function copy_is_keyed_by_locale(): void
     {
-        $payload = BannerConfigPayloadBuilder::build(
-            $this->makePublishedConfig(),
-            $this->makeDomain(),
-        );
+        $payload = $this->builder()->build($this->makePublishedConfig(), $this->makeDomain());
 
         $this->assertArrayHasKey('en', $payload['copy']);
         $this->assertSame('We use cookies', $payload['copy']['en']['title']);
@@ -126,32 +122,34 @@ class BannerConfigPayloadBuilderTest extends TestCase
     #[Test]
     public function geo_rules_default_to_always_show(): void
     {
-        $payload = BannerConfigPayloadBuilder::build(
-            $this->makePublishedConfig(),
-            $this->makeDomain(),
-        );
+        $payload = $this->builder()->build($this->makePublishedConfig(), $this->makeDomain());
 
         $this->assertSame(['mode' => 'always', 'countries' => []], $payload['geoRules']);
     }
 
     #[Test]
-    public function signature_is_marked_unsigned_until_hmac_lands(): void
+    public function signature_is_a_64_char_hmac_hex_string(): void
     {
-        $payload = BannerConfigPayloadBuilder::build(
-            $this->makePublishedConfig(),
-            $this->makeDomain(),
-        );
+        $payload = $this->builder()->build($this->makePublishedConfig(), $this->makeDomain());
 
-        $this->assertSame('unsigned', $payload['signature']);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $payload['signature']);
+    }
+
+    #[Test]
+    public function signature_verifies_against_the_same_key(): void
+    {
+        $signer = new BannerConfigSigner(key: 'unit-test-signing-key');
+        $builder = new BannerConfigPayloadBuilder($signer);
+
+        $payload = $builder->build($this->makePublishedConfig(), $this->makeDomain());
+
+        $this->assertTrue($signer->verify($payload, (string) $payload['signature']));
     }
 
     #[Test]
     public function published_at_is_iso_8601(): void
     {
-        $payload = BannerConfigPayloadBuilder::build(
-            $this->makePublishedConfig(),
-            $this->makeDomain(),
-        );
+        $payload = $this->builder()->build($this->makePublishedConfig(), $this->makeDomain());
 
         $this->assertMatchesRegularExpression(
             '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/',

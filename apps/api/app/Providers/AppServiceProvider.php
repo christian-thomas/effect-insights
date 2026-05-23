@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\BannerConfig\BannerConfigSigner;
 use App\Services\Cloudflare\CloudflareKvClientContract;
 use App\Services\Cloudflare\HttpCloudflareKvClient;
 use App\Services\Scanner\HttpCfBrowserRenderingScanner;
@@ -30,6 +31,15 @@ class AppServiceProvider extends ServiceProvider
                 apiToken: (string) ($config['api_token'] ?? ''),
                 namespaceId: (string) ($config['kv_namespace_id'] ?? ''),
                 apiBase: (string) ($config['api_base'] ?? 'https://api.cloudflare.com/client/v4'),
+            );
+        });
+
+        $this->app->singleton(BannerConfigSigner::class, function (): BannerConfigSigner {
+            /** @var array<string, mixed> $config */
+            $config = config('services.banner_config', []);
+
+            return new BannerConfigSigner(
+                key: (string) ($config['signing_key'] ?? ''),
             );
         });
 

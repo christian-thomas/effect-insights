@@ -60,4 +60,13 @@ return [
         'timeout_seconds' => (int) env('SCANNER_TIMEOUT_SECONDS', 60),
     ],
 
+    'banner_config' => [
+        // HMAC-SHA-256 key used to sign banner config payloads when they're
+        // published to Cloudflare KV. Same value lives on the edge config
+        // worker (`wrangler secret put BANNER_CONFIG_SIGNING_KEY`); the worker
+        // re-computes the signature on read and rejects mismatches.
+        // Generate with `openssl rand -hex 32`.
+        'signing_key' => env('BANNER_CONFIG_SIGNING_KEY'),
+    ],
+
 ];

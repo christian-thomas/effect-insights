@@ -21,6 +21,11 @@ enabled = true
 [vars]
 ENVIRONMENT = "production"
 
+# BANNER_CONFIG_SIGNING_KEY is set via
+# `wrangler secret put BANNER_CONFIG_SIGNING_KEY --config wrangler.config.toml`
+# and must match the BANNER_CONFIG_SIGNING_KEY env var Laravel signs with.
+# Generate via `openssl rand -hex 32`.
+
 # Map your zone to assets.effectcmp.com once DNS is set up:
 # routes = [
 #   { pattern = "assets.effectcmp.com/config/*", custom_domain = true },
