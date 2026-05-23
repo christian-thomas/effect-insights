@@ -9,6 +9,7 @@ use App\Models\Domain;
 use App\Services\BannerConfigService;
 use App\Services\Cloudflare\CloudflareKvClientContract;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\TenantTestCase;
 
@@ -111,12 +112,12 @@ class BannerConfigPublishTest extends TenantTestCase
         {
             public function putValue(string $key, array $payload): void
             {
-                throw new \RuntimeException('CF API unavailable');
+                throw new RuntimeException('CF API unavailable');
             }
 
             public function deleteValue(string $key): void
             {
-                throw new \RuntimeException('CF API unavailable');
+                throw new RuntimeException('CF API unavailable');
             }
         };
         $this->app->instance(

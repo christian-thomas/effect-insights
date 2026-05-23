@@ -25,7 +25,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  *        - Regular user → must be a member of the org
  *      On validation failure, clear the session key and 403 — frontend can
  *      recover by re-fetching /api/me.
- *   4. app(CurrentOrganisation::class)->set($org).
+ *   4. Set the injected CurrentOrganisation service.
  */
 class ResolveCurrentOrganisation
 {
