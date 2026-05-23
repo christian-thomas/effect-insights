@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
-import type { Cookie, CookieImport } from '~/types/cookies';
+import type { Cookie, CookieImport, CookieOverride, CookieOverrideInput } from '~/types/cookies';
 
 interface PaginatedResponse<T> {
   data: T[];
-  meta: {
+  meta?: {
     total: number;
     per_page: number;
     current_page: number;
@@ -11,9 +11,14 @@ interface PaginatedResponse<T> {
   };
 }
 
+interface ItemResponse<T> {
+  data: T;
+}
+
 interface CookiesState {
   cookies: Cookie[];
   imports: CookieImport[];
+  overrides: CookieOverride[];
   loading: boolean;
   error: Error | null;
 }
@@ -22,6 +27,7 @@ export const useCookiesStore = defineStore('cookies', {
   state: (): CookiesState => ({
     cookies: [],
     imports: [],
+    overrides: [],
     loading: false,
     error: null,
   }),
@@ -62,6 +68,42 @@ export const useCookiesStore = defineStore('cookies', {
     async reject(importId: string): Promise<void> {
       await $api(`/api/cookie-imports/${importId}/reject`, { method: 'POST' });
       await this.listImports();
+    },
+
+    async listOverrides(): Promise<void> {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await $api<PaginatedResponse<CookieOverride>>('/api/cookie-overrides');
+        this.overrides = response.data;
+      } catch (caught) {
+        this.error = caught instanceof Error ? caught : new Error(String(caught));
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async createOverride(input: CookieOverrideInput): Promise<CookieOverride> {
+      const response = await $api<ItemResponse<CookieOverride>>('/api/cookie-overrides', {
+        method: 'POST',
+        body: input,
+      });
+      await this.listOverrides();
+      return response.data;
+    },
+
+    async updateOverride(id: string, input: Partial<CookieOverrideInput>): Promise<CookieOverride> {
+      const response = await $api<ItemResponse<CookieOverride>>(`/api/cookie-overrides/${id}`, {
+        method: 'PATCH',
+        body: input,
+      });
+      await this.listOverrides();
+      return response.data;
+    },
+
+    async deleteOverride(id: string): Promise<void> {
+      await $api(`/api/cookie-overrides/${id}`, { method: 'DELETE' });
+      await this.listOverrides();
     },
   },
 });

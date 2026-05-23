@@ -32,3 +32,25 @@ export interface CookieImport {
   readonly promotedCookieId: string | null;
   readonly createdAt: string;
 }
+
+export interface CookieOverride {
+  readonly id: string;
+  readonly organisationId: string;
+  // null = org-wide override; set = scoped to one domain.
+  readonly domainId: string | null;
+  readonly namePattern: string;
+  readonly category: CookieCategory;
+  readonly purpose: string | null;
+  readonly justification: string | null;
+  readonly createdByUserId: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface CookieOverrideInput {
+  name_pattern: string;
+  category: CookieCategory;
+  domain_id?: string | null;
+  purpose?: string | null;
+  justification?: string | null;
+}
