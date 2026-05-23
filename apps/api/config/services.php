@@ -69,4 +69,12 @@ return [
         'signing_key' => env('BANNER_CONFIG_SIGNING_KEY'),
     ],
 
+    'banner' => [
+        // Base URL the admin preview iframe loads cmp.js from. Defaults to
+        // the production CDN; in dev, point at the local Vite/Bun banner
+        // server (e.g. http://localhost:4173/dist) so previews use unbuilt
+        // bundles immediately.
+        'cdn_url' => env('BANNER_CDN_URL', 'https://assets.effectcmp.com'),
+    ],
+
 ];

@@ -38,7 +38,34 @@ final readonly class BannerConfigPayloadBuilder
             throw new InvalidArgumentException('Cannot build payload for an unpublished banner config');
         }
 
-        $payload = [
+        $payload = $this->shape($bannerConfig, $domain);
+        $payload['signature'] = $this->signer->sign($payload);
+
+        return $payload;
+    }
+
+    /**
+     * Same shape as {@see self::build()} but skips the is_published guard and
+     * stamps `signature: "preview"` instead of computing an HMAC — used by
+     * the admin preview iframe to render unpublished drafts. The cmp.js
+     * preview mode (data-cmp-preview) bypasses signature checking anyway.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildPreview(BannerConfig $bannerConfig, Domain $domain): array
+    {
+        $payload = $this->shape($bannerConfig, $domain);
+        $payload['signature'] = 'preview';
+
+        return $payload;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function shape(BannerConfig $bannerConfig, Domain $domain): array
+    {
+        return [
             'domainPublicKey' => $domain->getAttribute('public_key'),
             'version' => (int) $bannerConfig->getAttribute('version'),
             'materialVersion' => (int) $bannerConfig->getAttribute('material_version'),
@@ -53,9 +80,5 @@ final readonly class BannerConfigPayloadBuilder
             'behaviour' => (array) $bannerConfig->getAttribute('behaviour'),
             'publishedAt' => $bannerConfig->getAttribute('published_at')?->toIso8601String() ?? now()->toIso8601String(),
         ];
-
-        $payload['signature'] = $this->signer->sign($payload);
-
-        return $payload;
     }
 }

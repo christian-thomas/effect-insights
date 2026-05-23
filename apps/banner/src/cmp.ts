@@ -18,6 +18,8 @@ import type { BannerConfig, ConsentCategories } from './types';
 
 const SCRIPT_TAG_ATTR = 'data-domain-id';
 const BASE_ATTR = 'data-cmp-base';
+const INLINE_CONFIG_ATTR = 'data-cmp-config';
+const PREVIEW_MODE_ATTR = 'data-cmp-preview';
 const DEFAULT_BASE = 'https://assets.effectcmp.com';
 
 const findScriptTag = (): HTMLScriptElement | null => {
@@ -25,6 +27,17 @@ const findScriptTag = (): HTMLScriptElement | null => {
   // Last match wins — pages with multiple embeds (re-embedded subdomain
   // pattern) should use the most recently-loaded script's config.
   return scripts.item(scripts.length - 1) ?? null;
+};
+
+const readInlineConfig = (tag: HTMLScriptElement): BannerConfig | null => {
+  const raw = tag.getAttribute(INLINE_CONFIG_ATTR);
+  if (raw === null || raw === '') return null;
+  try {
+    return JSON.parse(raw) as BannerConfig;
+  } catch {
+    // Malformed JSON — fall through to the normal fetch path.
+    return null;
+  }
 };
 
 const recordConsent = async (params: {
@@ -72,30 +85,48 @@ const boot = async (): Promise<void> => {
     if (!domainId) return;
 
     const baseUrl = (tag.getAttribute(BASE_ATTR) ?? DEFAULT_BASE).replace(/\/$/, '');
+    const previewMode = tag.hasAttribute(PREVIEW_MODE_ATTR);
 
-    const response = await fetchConfig(baseUrl, domainId);
-    if (response === null) return;
+    // Inline config — used by the admin preview iframe. Bypasses the edge
+    // fetch entirely; the host page passes the draft config as a JSON
+    // string in data-cmp-config so reviewers can see unpublished changes.
+    const inlineConfig = readInlineConfig(tag);
+    let config: BannerConfig;
+    let country: string | null;
 
-    const { config, country } = response;
+    if (inlineConfig !== null) {
+      config = inlineConfig;
+      country = null;
+    } else {
+      const response = await fetchConfig(baseUrl, domainId);
+      if (response === null) return;
+      config = response.config;
+      country = response.country;
+    }
 
     // GCM defaults FIRST — must reach the dataLayer before any GA/Ads script
     // on the host page. Synchronous push, no awaits between fetchConfig and here.
     installDefaults(config.gcmDefaults);
 
-    // Watch for late-arriving blocked scripts (lazy-loaded third parties on
-    // SPAs etc) and unblock them as soon as they appear in the DOM.
-    const stored = readStoredConsent();
-    watchForBlockedScripts(() => {
-      const current = readStoredConsent();
-      return current === null ? null : current.categories;
-    });
+    // In preview mode the admin needs to see the banner every refresh, so
+    // we skip the cookie-based short-circuit and don't watch / unblock
+    // scripts (the iframe doesn't host any real scripts).
+    if (!previewMode) {
+      // Watch for late-arriving blocked scripts (lazy-loaded third parties on
+      // SPAs etc) and unblock them as soon as they appear in the DOM.
+      const stored = readStoredConsent();
+      watchForBlockedScripts(() => {
+        const current = readStoredConsent();
+        return current === null ? null : current.categories;
+      });
 
-    // Prior consent still valid? Replay it as an `update`, unblock the
-    // already-rendered blocked scripts, and skip the modal entirely.
-    if (isStoredConsentStillValid(stored, config) && stored !== null) {
-      sendUpdate(stored.categories);
-      unblockScripts(stored.categories);
-      return;
+      // Prior consent still valid? Replay it as an `update`, unblock the
+      // already-rendered blocked scripts, and skip the modal entirely.
+      if (isStoredConsentStillValid(stored, config) && stored !== null) {
+        sendUpdate(stored.categories);
+        unblockScripts(stored.categories);
+        return;
+      }
     }
 
     const copy = config.copy[config.localeDefault] ?? Object.values(config.copy)[0];
@@ -109,6 +140,10 @@ const boot = async (): Promise<void> => {
       eventType: ConsentPostBody['eventType'],
     ): Promise<void> => {
       handles?.destroy();
+      if (previewMode) {
+        // No POST + no cookie writes — preview is a no-side-effect render.
+        return;
+      }
       await recordConsent({ config, country, categories, baseUrl, eventType });
     };
 

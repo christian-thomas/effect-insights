@@ -389,3 +389,36 @@ test('does nothing dangerous if /config returns 404', async ({ page }) => {
   expect(errors).toHaveLength(0);
   await expect(page.locator('.effectcmp-card')).toHaveCount(0);
 });
+
+test('preview mode renders from inline config without fetching /config or posting /consent', async ({
+  page,
+}) => {
+  // Treat any unexpected network call as a hard failure.
+  const violations: string[] = [];
+  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+    violations.push('fetched /config in preview mode');
+    await route.fulfill({ status: 500, body: '' });
+  });
+  await page.route('**/assets.effectcmp.com/consent', async (route) => {
+    violations.push('posted /consent in preview mode');
+    await route.fulfill({ status: 500, body: '' });
+  });
+
+  await page.goto('/test/e2e/fixtures/host-preview.html');
+
+  // Banner renders straight from data-cmp-config.
+  await expect(page.locator('.effectcmp-card')).toBeVisible();
+  await expect(page.locator('.effectcmp-title')).toHaveText('Preview banner');
+
+  // Clicking Accept doesn't POST anything — preview is a no-side-effect render.
+  await page.getByRole('button', { name: 'Accept all' }).click();
+  await page.waitForTimeout(150);
+  expect(violations).toEqual([]);
+
+  // No consent cookie was written either.
+  const cookie = await page.evaluate(() => {
+    const match = document.cookie.match(/(?:^|;\s*)_effectcmp=([^;]+)/);
+    return match ? decodeURIComponent(match[1] ?? '') : null;
+  });
+  expect(cookie).toBeNull();
+});

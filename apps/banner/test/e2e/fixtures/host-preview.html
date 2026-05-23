@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Banner preview host</title>
+  </head>
+  <body>
+    <h1>Banner preview iframe host</h1>
+    <p>
+      Simulates the admin preview pane — banner config is inlined as JSON so cmp.js never hits the
+      edge.
+    </p>
+
+    <script
+      src="/dist/cmp.js"
+      data-domain-id="pk_test_preview"
+      data-cmp-base="https://assets.effectcmp.com"
+      data-cmp-preview
+      data-cmp-config='{"domainPublicKey":"pk_test_preview","version":1,"materialVersion":1,"localeDefault":"en","localesEnabled":["en"],"layout":"modal","granularity":"categorised","colors":{"background":"#ffffff","text":"#111827","primary":"#2563eb","primaryText":"#ffffff","secondary":"#f3f4f6","secondaryText":"#111827"},"copy":{"en":{"title":"Preview banner","body":"This is a live preview of an unsaved banner config.","acceptAllLabel":"Accept all","rejectAllLabel":"Reject all","customiseLabel":"Customise","savePreferencesLabel":"Save preferences","categoryDescriptions":{"necessary":"n","preferences":"p","statistics":"s","marketing":"m"}}},"geoRules":{"mode":"always","countries":[]},"gcmDefaults":{"ad_storage":"denied","analytics_storage":"denied","ad_user_data":"denied","ad_personalization":"denied","functionality_storage":"granted","personalization_storage":"denied","security_storage":"granted"},"behaviour":{"rePromptAfterDays":365,"honourGpc":true,"autoDenyOnDismiss":false,"crossSubdomainConsent":false},"publishedAt":"2026-05-23T00:00:00Z","signature":"preview"}'
+      async
+    ></script>
+  </body>
+</html>
