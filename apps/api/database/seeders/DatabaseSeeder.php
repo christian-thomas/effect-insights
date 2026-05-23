@@ -42,5 +42,7 @@ class DatabaseSeeder extends Seeder
         $effect->users()->syncWithoutDetaching([
             $christian->getKey() => ['role' => OrganisationRole::Owner],
         ]);
+
+        $this->call(CookieSeeder::class);
     }
 }
