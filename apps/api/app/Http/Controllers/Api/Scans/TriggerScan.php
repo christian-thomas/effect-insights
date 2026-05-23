@@ -26,12 +26,13 @@ class TriggerScan extends Controller
 
         $urls = [sprintf('https://%s/', $domain->getAttribute('fqdn'))];
 
-        // MVP runs synchronously inside the request. Queue dispatch lands
-        // once we have real CF Browser Rendering traffic to throttle.
-        $scan = $runner->run($domain, $urls, ScanTrigger::Manual, $user);
+        // Returns immediately with the queued Scan; the actual crawl runs
+        // in the background via RunScanJob. The admin polls /api/scans/{id}
+        // for status updates.
+        $scan = $runner->dispatch($domain, $urls, ScanTrigger::Manual, $user);
 
         return ScanResource::make($scan)
             ->response()
-            ->setStatusCode(Response::HTTP_CREATED);
+            ->setStatusCode(Response::HTTP_ACCEPTED);
     }
 }

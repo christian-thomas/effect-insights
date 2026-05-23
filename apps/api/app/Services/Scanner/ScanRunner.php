@@ -8,6 +8,7 @@ use App\Enums\FindingParty;
 use App\Enums\FindingType;
 use App\Enums\ScanStatus;
 use App\Enums\ScanTrigger;
+use App\Jobs\RunScanJob;
 use App\Models\Domain;
 use App\Models\Scan;
 use App\Models\ScanFinding;
@@ -18,21 +19,21 @@ use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
- * Orchestrates a single domain scan:
+ * Orchestrates a single domain scan. Three entry points:
  *
- *   1. Create a `Scan` row in status `queued`.
- *   2. Flip to `running` + record started_at.
- *   3. Ask the {@see ScannerClientContract} to scan the URLs.
- *   4. Persist each observed cookie / script / iframe / request as a
- *      {@see ScanFinding}, resolving the category via
- *      {@see CookieCategoryResolver} so the manual review queue picks
- *      up anything unknown.
- *   5. Flip to `completed` (or `failed` on exception) + record finished_at
- *      and counters.
+ *   - {@see self::dispatch()}  Create a queued Scan and hand it off to
+ *                              {@see RunScanJob}. Returns immediately so
+ *                              the HTTP request doesn't block.
+ *   - {@see self::execute()}   Run the work in-place on an existing
+ *                              Scan — flip running, call the scanner,
+ *                              persist findings, flip completed/failed.
+ *                              Called by RunScanJob and by sync paths.
+ *   - {@see self::run()}       Convenience: create + execute. Used by
+ *                              the `scans:run` artisan command.
  *
- * MVP runs synchronously — the artisan command + admin trigger both
- * block until the scan finishes. Queue dispatch lands as a follow-up
- * once we have real CF Browser Rendering traffic to throttle.
+ * Findings carry a category resolved through {@see CookieCategoryResolver}.
+ * Unknown cookies land with category = NULL — surfaces in the manual
+ * review queue.
  */
 final readonly class ScanRunner
 {
@@ -44,25 +45,47 @@ final readonly class ScanRunner
     /**
      * @param  array<int, string>  $urls
      */
+    public function dispatch(
+        Domain $domain,
+        array $urls,
+        ScanTrigger $trigger = ScanTrigger::Manual,
+        ?User $triggeredBy = null,
+    ): Scan {
+        $scan = $this->createScan($domain, $trigger, $triggeredBy);
+
+        dispatch(new RunScanJob($scan->getKey(), array_values($urls)));
+
+        return $scan;
+    }
+
+    /**
+     * @param  array<int, string>  $urls
+     */
     public function run(
         Domain $domain,
         array $urls,
         ScanTrigger $trigger = ScanTrigger::Manual,
         ?User $triggeredBy = null,
     ): Scan {
-        $scan = Scan::create([
-            'domain_id' => $domain->getKey(),
-            'status' => ScanStatus::Queued,
-            'trigger' => $trigger,
-            'created_by_user_id' => $triggeredBy?->getKey(),
-        ]);
+        $scan = $this->createScan($domain, $trigger, $triggeredBy);
 
+        return $this->execute($scan, $urls);
+    }
+
+    /**
+     * @param  array<int, string>  $urls
+     */
+    public function execute(Scan $scan, array $urls): Scan
+    {
         $scan->update([
             'status' => ScanStatus::Running,
             'started_at' => now(),
         ]);
 
         try {
+            /** @var Domain $domain */
+            $domain = $scan->domain()->withoutGlobalScope('organisation')->firstOrFail();
+
             $result = $this->scanner->scan($domain, $urls);
 
             DB::transaction(function () use ($scan, $domain, $result): void {
@@ -87,6 +110,16 @@ final readonly class ScanRunner
         }
 
         return $scan->refresh();
+    }
+
+    private function createScan(Domain $domain, ScanTrigger $trigger, ?User $triggeredBy): Scan
+    {
+        return Scan::create([
+            'domain_id' => $domain->getKey(),
+            'status' => ScanStatus::Queued,
+            'trigger' => $trigger,
+            'created_by_user_id' => $triggeredBy?->getKey(),
+        ]);
     }
 
     private function persistFindings(Scan $scan, Domain $domain, ScannerResult $result): void
