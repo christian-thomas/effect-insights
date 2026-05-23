@@ -60,6 +60,9 @@ export interface BannerBehaviour {
 export interface BannerConfig {
   domainPublicKey: string;
   version: number;
+  // See packages/types/src/banner.ts — the re-prompt key. Only bumps on
+  // material change; cosmetic re-publishes leave it alone.
+  materialVersion: number;
   localeDefault: string;
   localesEnabled: string[];
   layout: BannerLayout;
@@ -82,7 +85,12 @@ export type ConsentCategories = Record<CookieCategory, boolean>;
 
 export interface StoredConsent {
   anonymousId: string;
-  bannerConfigVersion: number;
+  // The materialVersion of the banner config at consent time. Used on the
+  // next page load to decide whether to re-prompt (current > stored = bump
+  // happened since the visitor consented).
+  materialVersion: number;
   categories: ConsentCategories;
+  // ISO 8601 instant. Used both for the audit log and for the
+  // rePromptAfterDays freshness check.
   consentedAt: string;
 }

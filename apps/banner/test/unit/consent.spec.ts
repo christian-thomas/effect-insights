@@ -13,6 +13,7 @@ import type { BannerConfig, StoredConsent } from '../../src/types';
 const config: BannerConfig = {
   domainPublicKey: 'pk_test_abc',
   version: 3,
+  materialVersion: 2,
   localeDefault: 'en',
   localesEnabled: ['en'],
   layout: 'modal',
@@ -82,7 +83,7 @@ describe('consent', () => {
   it('round-trips a stored consent through document.cookie', () => {
     const stored: StoredConsent = {
       anonymousId: 'anon-1',
-      bannerConfigVersion: 3,
+      materialVersion: 2,
       categories: allGranted(),
       consentedAt: '2026-05-22T12:00:00Z',
     };
@@ -102,34 +103,90 @@ describe('consent', () => {
   });
 
   describe('isStoredConsentStillValid', () => {
+    // Pin "now" close enough to consentedAt that the age check passes.
+    const consentedAt = '2026-05-22T12:00:00Z';
+    const now = new Date('2026-05-23T00:00:00Z');
+
     it('returns false when nothing is stored', () => {
-      expect(isStoredConsentStillValid(null, config)).toBe(false);
+      expect(isStoredConsentStillValid(null, config, now)).toBe(false);
     });
 
-    it('returns true when stored version matches', () => {
+    it('returns true when stored materialVersion matches and consent is fresh', () => {
       expect(
         isStoredConsentStillValid(
           {
             anonymousId: 'a',
-            bannerConfigVersion: 3,
+            materialVersion: 2,
             categories: allGranted(),
-            consentedAt: '2026-05-22T12:00:00Z',
+            consentedAt,
           },
           config,
+          now,
         ),
       ).toBe(true);
     });
 
-    it('returns false when banner version has advanced', () => {
+    it('returns false when material version has advanced past the stored one', () => {
       expect(
         isStoredConsentStillValid(
           {
             anonymousId: 'a',
-            bannerConfigVersion: 2,
+            materialVersion: 1,
             categories: allGranted(),
-            consentedAt: '2026-05-22T12:00:00Z',
+            consentedAt,
           },
           config,
+          now,
+        ),
+      ).toBe(false);
+    });
+
+    it('returns true when the per-publish version bumps but material is unchanged', () => {
+      // Simulates a cosmetic-only republish: config.version moved on but
+      // materialVersion did not. Stored cookie matches materialVersion, so
+      // the visitor stays opted in.
+      const cosmeticBump: BannerConfig = { ...config, version: 99, materialVersion: 2 };
+      expect(
+        isStoredConsentStillValid(
+          {
+            anonymousId: 'a',
+            materialVersion: 2,
+            categories: allGranted(),
+            consentedAt,
+          },
+          cosmeticBump,
+          now,
+        ),
+      ).toBe(true);
+    });
+
+    it('returns false once consent is older than rePromptAfterDays', () => {
+      const farFuture = new Date('2027-06-01T00:00:00Z'); // > 365 days after consentedAt
+      expect(
+        isStoredConsentStillValid(
+          {
+            anonymousId: 'a',
+            materialVersion: 2,
+            categories: allGranted(),
+            consentedAt,
+          },
+          config,
+          farFuture,
+        ),
+      ).toBe(false);
+    });
+
+    it('returns false when consentedAt is unparseable', () => {
+      expect(
+        isStoredConsentStillValid(
+          {
+            anonymousId: 'a',
+            materialVersion: 2,
+            categories: allGranted(),
+            consentedAt: 'not-a-date',
+          },
+          config,
+          now,
         ),
       ).toBe(false);
     });

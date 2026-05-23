@@ -42,7 +42,7 @@ const recordConsent = async (params: {
   writeStoredConsent(
     {
       anonymousId,
-      bannerConfigVersion: config.version,
+      materialVersion: config.materialVersion,
       categories,
       consentedAt: new Date().toISOString(),
     },

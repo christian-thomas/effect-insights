@@ -3,6 +3,7 @@ import { test, expect, type Page, type Request } from '@playwright/test';
 const sampleConfig = {
   domainPublicKey: 'pk_test_abc123',
   version: 1,
+  materialVersion: 1,
   localeDefault: 'en',
   localesEnabled: ['en'],
   layout: 'modal',
@@ -109,7 +110,7 @@ test('accept all writes cookie, fires update, posts consent event', async ({ pag
   });
   expect(cookieValue).not.toBeNull();
   const stored = JSON.parse(cookieValue ?? '');
-  expect(stored.bannerConfigVersion).toBe(1);
+  expect(stored.materialVersion).toBe(1);
   expect(stored.categories.statistics).toBe(true);
   expect(stored.categories.marketing).toBe(true);
 
@@ -181,6 +182,94 @@ test('banner does not re-show on second visit with valid stored consent', async 
   await page.goto('/');
   await page.waitForTimeout(300);
   await expect(page.locator('.effectcmp-card')).toBeHidden();
+});
+
+test('banner re-shows after a material version bump', async ({ page }) => {
+  const captor: ConsentPostCaptor = { body: null };
+  await setupRoutes(page, captor);
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Accept all' }).click();
+  await expect(page.locator('.effectcmp-card')).toBeHidden();
+
+  // Re-route /config to return a bumped materialVersion. Cosmetic-only
+  // republishes wouldn't bump it; this simulates a real material change.
+  await page.unroute('**/assets.effectcmp.com/config/*');
+  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        config: { ...sampleConfig, version: 2, materialVersion: 2 },
+        country: 'GB',
+      }),
+    });
+  });
+
+  await page.goto('/');
+  await expect(page.locator('.effectcmp-card')).toBeVisible();
+});
+
+test('banner stays hidden when only the per-publish version bumps (cosmetic)', async ({ page }) => {
+  const captor: ConsentPostCaptor = { body: null };
+  await setupRoutes(page, captor);
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Accept all' }).click();
+  await expect(page.locator('.effectcmp-card')).toBeHidden();
+
+  // Cosmetic republish: version moves, materialVersion stays.
+  await page.unroute('**/assets.effectcmp.com/config/*');
+  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        config: { ...sampleConfig, version: 2, materialVersion: 1 },
+        country: 'GB',
+      }),
+    });
+  });
+
+  await page.goto('/');
+  await page.waitForTimeout(300);
+  await expect(page.locator('.effectcmp-card')).toBeHidden();
+});
+
+test('banner re-shows once the consent cookie is older than rePromptAfterDays', async ({
+  page,
+}) => {
+  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ config: sampleConfig, country: 'GB' }),
+    });
+  });
+  await page.route('**/assets.effectcmp.com/consent', async (route) => {
+    await route.fulfill({
+      status: 202,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+
+  // Plant a cookie dated 400 days ago — past the default 365-day window.
+  const staleConsentedAt = new Date(Date.now() - 400 * 86_400_000).toISOString();
+  await page.context().addInitScript((consentedAt: string) => {
+    const value = encodeURIComponent(
+      JSON.stringify({
+        anonymousId: 'stale-anon',
+        materialVersion: 1,
+        categories: { necessary: true, preferences: true, statistics: true, marketing: true },
+        consentedAt,
+      }),
+    );
+    document.cookie = `_effectcmp=${value}; Path=/`;
+  }, staleConsentedAt);
+
+  await page.goto('/');
+  await expect(page.locator('.effectcmp-card')).toBeVisible();
 });
 
 test('renders the bar-bottom layout pinned to the viewport bottom', async ({ page }) => {

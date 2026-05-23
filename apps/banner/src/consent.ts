@@ -46,19 +46,42 @@ export const allGranted = (): ConsentCategories => ({
   marketing: true,
 });
 
+const MS_PER_DAY = 86_400_000;
+
 export const isStoredConsentStillValid = (
   stored: StoredConsent | null,
   config: BannerConfig,
+  now: Date = new Date(),
 ): boolean => {
   if (stored === null) return false;
-  // Stale once the banner version bumps past what the visitor saw last time.
-  // iteration 5 will refine this with material-vs-cosmetic change detection.
-  return stored.bannerConfigVersion >= config.version;
+
+  // Material bump since last consent → re-prompt. Cosmetic-only republishes
+  // (colours, copy, layout, locale-default) leave materialVersion alone, so
+  // the visitor isn't asked again for a re-skin.
+  if (stored.materialVersion < config.materialVersion) {
+    return false;
+  }
+
+  // ICO guidance: re-prompt at least once every 12 months. behaviour.
+  // rePromptAfterDays is configurable per-domain but defaults to 365.
+  const consentedAt = Date.parse(stored.consentedAt);
+  if (Number.isNaN(consentedAt)) {
+    return false;
+  }
+  const ageDays = (now.getTime() - consentedAt) / MS_PER_DAY;
+  if (ageDays >= config.behaviour.rePromptAfterDays) {
+    return false;
+  }
+
+  return true;
 };
 
 export interface ConsentPostBody {
   id: string;
   domainPublicKey: string;
+  // The per-publish version (NOT materialVersion) — this is the audit
+  // identifier sent to Laravel so we can later look up the exact banner
+  // text + categorisation the visitor saw at consent time.
   bannerConfigVersion: number;
   anonymousId: string;
   categories: ConsentCategories;
