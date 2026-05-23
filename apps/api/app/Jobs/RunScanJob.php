@@ -28,7 +28,11 @@ class RunScanJob implements ShouldQueue
     public function __construct(
         public readonly string $scanId,
         public readonly array $urls,
-    ) {}
+    ) {
+        // Pin to the `scans` queue so a long-running crawl doesn't starve the
+        // default workers. See config/horizon.php → supervisor-scans.
+        $this->onQueue('scans');
+    }
 
     public function handle(ScanRunner $runner): void
     {

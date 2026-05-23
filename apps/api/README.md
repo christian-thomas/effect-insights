@@ -26,6 +26,34 @@ php artisan migrate:fresh --seed
 php artisan serve   # http://localhost:8000
 ```
 
+## Queues + Horizon
+
+Background jobs (scans, eventual scheduled archive runs) drain through
+Redis-backed queues, supervised by Laravel Horizon.
+
+**Local dev:**
+
+```bash
+# Redis ships with Herd; if you need to start it manually:
+herd start redis
+
+# Run the worker. The dashboard is at http://localhost:8000/horizon
+# (superuser-only in non-local environments — see HorizonServiceProvider).
+php artisan horizon
+```
+
+`QUEUE_CONNECTION` defaults to `redis` in `.env.example`. Tests override
+to `sync` via `phpunit.xml` so jobs run inline without needing a worker.
+
+Two supervisors are pre-configured (see `config/horizon.php`):
+- **supervisor-default** — `default` queue, 60s timeout, 3 tries
+- **supervisor-scans** — `scans` queue, 600s timeout, 2 tries (room for
+  multi-URL crawls). `RunScanJob` pins to this queue.
+
+**Production:** run `php artisan horizon` under supervisord or systemd
+so it restarts on crash. After deploys, `php artisan horizon:terminate`
+asks the running master to drain + exit so the new code is picked up.
+
 Default credentials (from `DatabaseSeeder`):
 - `me@christianthomas.co.uk` / `password` — superuser, owner of "Effect Digital".
 
