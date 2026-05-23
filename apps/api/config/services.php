@@ -50,4 +50,14 @@ return [
         'secret' => env('CONSENT_INGEST_SECRET'),
     ],
 
+    'scanner' => [
+        // URL of the deployed Cloudflare scanner worker (apps/edge/wrangler.scanner.toml).
+        // POST /scan with { urls, domainFqdn } and the X-Effect-Scanner-Secret header.
+        'worker_url' => env('SCANNER_WORKER_URL'),
+        // Shared secret — must match the SCANNER_SECRET set on the worker
+        // via `wrangler secret put SCANNER_SECRET`.
+        'secret' => env('SCANNER_WORKER_SECRET'),
+        'timeout_seconds' => (int) env('SCANNER_TIMEOUT_SECONDS', 60),
+    ],
+
 ];

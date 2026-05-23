@@ -37,12 +37,13 @@ class AppServiceProvider extends ServiceProvider
         // ArrayScannerClient in TenantTestCase::setUp.
         $this->app->singleton(ScannerClientContract::class, function (Application $app): HttpCfBrowserRenderingScanner {
             /** @var array<string, mixed> $config */
-            $config = config('services.cloudflare', []);
+            $config = config('services.scanner', []);
 
             return new HttpCfBrowserRenderingScanner(
                 http: $app->make(HttpFactory::class),
-                accountId: (string) ($config['account_id'] ?? ''),
-                apiToken: (string) ($config['api_token'] ?? ''),
+                workerUrl: (string) ($config['worker_url'] ?? ''),
+                secret: (string) ($config['secret'] ?? ''),
+                timeoutSeconds: (int) ($config['timeout_seconds'] ?? 60),
             );
         });
     }
