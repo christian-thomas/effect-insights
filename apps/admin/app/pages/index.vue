@@ -70,12 +70,7 @@ const tiles = computed(() => {
     </div>
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <NuxtLink
-        v-for="tile in tiles"
-        :key="tile.label"
-        :to="tile.to"
-        class="group"
-      >
+      <NuxtLink v-for="tile in tiles" :key="tile.label" :to="tile.to" class="group">
         <UCard class="transition-shadow group-hover:shadow-md h-full">
           <div class="flex items-start justify-between">
             <div>
@@ -97,16 +92,17 @@ const tiles = computed(() => {
       </template>
       <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-600 dark:text-gray-400">
         <li>
-          Add a domain on the <NuxtLink to="/domains" class="text-primary-500 hover:underline">Domains</NuxtLink> page.
+          Add a domain on the
+          <NuxtLink to="/domains" class="text-primary-500 hover:underline">Domains</NuxtLink> page.
         </li>
+        <li>Open the domain's banner config, set colours / copy / layout, hit Publish.</li>
         <li>
-          Open the domain's banner config, set colours / copy / layout, hit Publish.
-        </li>
-        <li>
-          Drop the embed snippet (shown on the domain detail page) into the client site's <code>&lt;head&gt;</code>.
+          Drop the embed snippet (shown on the domain detail page) into the client site's
+          <code>&lt;head&gt;</code>.
         </li>
         <li class="text-gray-400">
-          Scans + consent log light up once the CF Browser Rendering + D1 integration lands (iteration 4).
+          Scans + consent log light up once the CF Browser Rendering + D1 integration lands
+          (iteration 4).
         </li>
       </ol>
     </UCard>

@@ -3,10 +3,7 @@
   "compilerOptions": {
     "rootDir": "../..",
     "lib": ["ES2022"],
-    "types": [
-      "@cloudflare/workers-types",
-      "@cloudflare/vitest-pool-workers"
-    ],
+    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers"],
     "noEmit": true,
     "paths": {
       "@effect-cmp/types": ["../../packages/types/src/index.ts"],

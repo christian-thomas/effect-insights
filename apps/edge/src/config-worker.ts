@@ -20,10 +20,7 @@ app.get('/config/:publicKey{[A-Za-z0-9_-]+}', async (c) => {
     return c.json({ error: 'not_found' }, 404);
   }
   const config = JSON.parse(raw) as BannerConfig;
-  c.header(
-    'Cache-Control',
-    'public, max-age=60, stale-while-revalidate=300',
-  );
+  c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   return c.json({
     config,
     country: c.req.header('CF-IPCountry') ?? null,

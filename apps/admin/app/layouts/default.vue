@@ -11,9 +11,7 @@ const nav = computed(() => {
       { label: 'Consent log', icon: 'i-lucide-file-check', to: '/consent' },
       { label: 'Cookie database', icon: 'i-lucide-database', to: '/cookies' },
     ],
-    [
-      { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' },
-    ],
+    [{ label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }],
   ];
 
   if (auth.user?.isSuperuser) {
@@ -35,8 +33,7 @@ const switchTo = async (organisationId: string): Promise<void> => {
       color: 'error',
       icon: 'i-lucide-triangle-alert',
       title: 'Could not switch organisation',
-      description:
-        caught instanceof Error ? caught.message : 'Please try again',
+      description: caught instanceof Error ? caught.message : 'Please try again',
     });
   }
 };

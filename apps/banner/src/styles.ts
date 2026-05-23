@@ -16,9 +16,8 @@ const layoutPositioning = (layout: BannerLayout): string => {
   }
   if (layout === 'bar-top' || layout === 'bar-bottom') {
     const position = layout === 'bar-top' ? 'top: 0' : 'bottom: 0';
-    const shadow = layout === 'bar-top'
-      ? '0 4px 12px rgba(0, 0, 0, 0.08)'
-      : '0 -4px 12px rgba(0, 0, 0, 0.08)';
+    const shadow =
+      layout === 'bar-top' ? '0 4px 12px rgba(0, 0, 0, 0.08)' : '0 -4px 12px rgba(0, 0, 0, 0.08)';
     return `
 .${PREFIX}-shell {
   position: fixed; left: 0; right: 0; ${position};
@@ -54,10 +53,8 @@ const layoutPositioning = (layout: BannerLayout): string => {
  *
  * Class names are prefixed with `effectcmp-` to avoid collisions.
  */
-export const generateStyles = (
-  colors: BannerColors,
-  layout: BannerLayout = 'modal',
-): string => `
+export const generateStyles = (colors: BannerColors, layout: BannerLayout = 'modal'): string =>
+  `
 .${PREFIX}-shell {
   z-index: 2147483647;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

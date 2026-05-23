@@ -74,9 +74,7 @@ const setupRoutes = async (page: Page, captor: ConsentPostCaptor): Promise<void>
   });
 };
 
-test('renders modal with copy from the config and dataLayer gets defaults', async ({
-  page,
-}) => {
+test('renders modal with copy from the config and dataLayer gets defaults', async ({ page }) => {
   const captor: ConsentPostCaptor = { body: null };
   await setupRoutes(page, captor);
 
@@ -86,7 +84,9 @@ test('renders modal with copy from the config and dataLayer gets defaults', asyn
   await expect(page.locator('.effectcmp-title')).toHaveText('We use cookies');
   await expect(page.getByRole('button', { name: 'Accept all' })).toBeVisible();
 
-  const dataLayer = await page.evaluate(() => (window as unknown as { dataLayer?: unknown[] }).dataLayer);
+  const dataLayer = await page.evaluate(
+    () => (window as unknown as { dataLayer?: unknown[] }).dataLayer,
+  );
   expect(dataLayer).toBeDefined();
   const first = (dataLayer as unknown[])[0] as unknown[];
   expect(first[0]).toBe('consent');
@@ -130,7 +130,8 @@ test('accept all writes cookie, fires update, posts consent event', async ({ pag
   await expect.poll(() => captor.body).not.toBeNull();
   expect(captor.body?.eventType).toBe('granted');
   expect(captor.body?.domainPublicKey).toBe('pk_test_abc123');
-  expect((captor.body?.categories as Record<string, boolean>).statistics).toBe(true);
+  const categories = captor.body?.categories as Record<string, boolean>;
+  expect(categories.statistics).toBe(true);
 });
 
 test('reject all posts a denied event', async ({ page }) => {
@@ -148,9 +149,7 @@ test('reject all posts a denied event', async ({ page }) => {
   expect(cats.necessary).toBe(true);
 });
 
-test('customise lets the user toggle individual categories before saving', async ({
-  page,
-}) => {
+test('customise lets the user toggle individual categories before saving', async ({ page }) => {
   const captor: ConsentPostCaptor = { body: null };
   await setupRoutes(page, captor);
 
@@ -170,9 +169,7 @@ test('customise lets the user toggle individual categories before saving', async
   expect(cats.marketing).toBe(false);
 });
 
-test('banner does not re-show on second visit with valid stored consent', async ({
-  page,
-}) => {
+test('banner does not re-show on second visit with valid stored consent', async ({ page }) => {
   const captor: ConsentPostCaptor = { body: null };
   await setupRoutes(page, captor);
 
@@ -254,9 +251,12 @@ test('releases blocked scripts in granted categories on accept-all', async ({ pa
   await page.waitForTimeout(150);
 
   const flags = await page.evaluate(() => ({
-    statistics: (window as unknown as { __cmpFiredStatistics?: boolean }).__cmpFiredStatistics === true,
-    marketing: (window as unknown as { __cmpFiredMarketing?: boolean }).__cmpFiredMarketing === true,
-    preferences: (window as unknown as { __cmpFiredPreferences?: boolean }).__cmpFiredPreferences === true,
+    statistics:
+      (window as unknown as { __cmpFiredStatistics?: boolean }).__cmpFiredStatistics === true,
+    marketing:
+      (window as unknown as { __cmpFiredMarketing?: boolean }).__cmpFiredMarketing === true,
+    preferences:
+      (window as unknown as { __cmpFiredPreferences?: boolean }).__cmpFiredPreferences === true,
   }));
 
   expect(flags.statistics).toBe(true);
@@ -273,8 +273,10 @@ test('leaves denied-category scripts blocked when user rejects', async ({ page }
   await page.waitForTimeout(150);
 
   const flags = await page.evaluate(() => ({
-    statistics: (window as unknown as { __cmpFiredStatistics?: boolean }).__cmpFiredStatistics === true,
-    marketing: (window as unknown as { __cmpFiredMarketing?: boolean }).__cmpFiredMarketing === true,
+    statistics:
+      (window as unknown as { __cmpFiredStatistics?: boolean }).__cmpFiredStatistics === true,
+    marketing:
+      (window as unknown as { __cmpFiredMarketing?: boolean }).__cmpFiredMarketing === true,
   }));
   expect(flags.statistics).toBe(false);
   expect(flags.marketing).toBe(false);

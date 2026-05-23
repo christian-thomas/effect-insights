@@ -1,16 +1,9 @@
 import { z } from 'zod';
 
-export const layoutSchema = z.enum([
-  'modal',
-  'bar-top',
-  'bar-bottom',
-  'corner',
-]);
+export const layoutSchema = z.enum(['modal', 'bar-top', 'bar-bottom', 'corner']);
 export type BannerLayout = z.infer<typeof layoutSchema>;
 
-const hex = z
-  .string()
-  .regex(/^#[0-9a-fA-F]{6}$/, 'Use a 6-digit hex colour, e.g. #2563eb');
+const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a 6-digit hex colour, e.g. #2563eb');
 
 const localeCode = z
   .string()
@@ -88,11 +81,8 @@ export const bannerDraftSchema = z
     path: ['locale_default'],
     message: 'The default locale must be listed in locales_enabled.',
   })
-  .refine(
-    (draft) => draft.locales_enabled.every((locale) => locale in draft.copy),
-    {
-      path: ['copy'],
-      message: 'Every enabled locale must have copy defined.',
-    },
-  );
+  .refine((draft) => draft.locales_enabled.every((locale) => locale in draft.copy), {
+    path: ['copy'],
+    message: 'Every enabled locale must have copy defined.',
+  });
 export type BannerDraftInput = z.infer<typeof bannerDraftSchema>;

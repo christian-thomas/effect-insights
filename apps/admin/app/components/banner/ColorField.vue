@@ -14,7 +14,7 @@ defineProps<{
         v-model="modelValue"
         type="color"
         class="size-10 rounded border border-gray-300 dark:border-gray-700 bg-transparent cursor-pointer"
-      >
+      />
       <UInput
         v-model="modelValue"
         class="flex-1 font-mono"

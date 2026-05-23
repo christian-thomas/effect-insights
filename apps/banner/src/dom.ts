@@ -1,12 +1,7 @@
 import type { BannerCopy, ConsentCategories, CookieCategory } from './types';
 import { cls } from './styles';
 
-const CATEGORIES: CookieCategory[] = [
-  'necessary',
-  'preferences',
-  'statistics',
-  'marketing',
-];
+const CATEGORIES: CookieCategory[] = ['necessary', 'preferences', 'statistics', 'marketing'];
 
 interface RenderOptions {
   copy: BannerCopy;

@@ -19,11 +19,17 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "turbo run format",
+    "format:check": "turbo run format:check",
     "check": "turbo run check",
+    "fix": "turbo run fix",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
+    "oxfmt": "^0.51.0",
+    "oxlint": "^1.66.0",
     "turbo": "latest",
     "typescript": "latest"
   },

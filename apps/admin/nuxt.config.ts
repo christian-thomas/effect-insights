@@ -7,7 +7,7 @@ export default defineNuxtConfig({
   // avoids devalue payload-serialisation issues from Error instances landing
   // in Pinia state during failed server-side fetches.
   ssr: false,
-  modules: ['@nuxt/ui', '@nuxt/eslint', '@pinia/nuxt'],
+  modules: ['@nuxt/ui', '@pinia/nuxt'],
   css: ['~/assets/css/main.css'],
   icon: {
     // Skip the @nuxt/icon server API. It's wrapped in defineCachedEventHandler

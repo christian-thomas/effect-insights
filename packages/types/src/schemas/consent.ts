@@ -1,11 +1,6 @@
 import { z } from 'zod';
 
-export const cookieCategorySchema = z.enum([
-  'necessary',
-  'preferences',
-  'statistics',
-  'marketing',
-]);
+export const cookieCategorySchema = z.enum(['necessary', 'preferences', 'statistics', 'marketing']);
 
 export const gcmSignalSchema = z.enum(['granted', 'denied']);
 
@@ -26,12 +21,7 @@ export const consentCategoriesSchema = z.object({
   marketing: z.boolean(),
 });
 
-export const consentEventTypeSchema = z.enum([
-  'granted',
-  'denied',
-  'changed',
-  'withdrawn',
-]);
+export const consentEventTypeSchema = z.enum(['granted', 'denied', 'changed', 'withdrawn']);
 
 export const consentEventSchema = z.object({
   id: z.uuid(),

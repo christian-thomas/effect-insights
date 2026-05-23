@@ -1,10 +1,6 @@
 import type { GcmDefaults } from './gcm.js';
 
-export type CookieCategory =
-  | 'necessary'
-  | 'preferences'
-  | 'statistics'
-  | 'marketing';
+export type CookieCategory = 'necessary' | 'preferences' | 'statistics' | 'marketing';
 
 export type BannerLayout = 'modal' | 'bar-top' | 'bar-bottom' | 'corner';
 export type BannerGranularity = 'basic' | 'categorised';

@@ -1,8 +1,4 @@
-import type {
-  BannerConfig,
-  ConsentCategories,
-  StoredConsent,
-} from './types';
+import type { BannerConfig, ConsentCategories, StoredConsent } from './types';
 
 const COOKIE_NAME = '_effectcmp';
 const SECONDS_PER_DAY = 86_400;
@@ -20,10 +16,7 @@ export const readStoredConsent = (): StoredConsent | null => {
   }
 };
 
-export const writeStoredConsent = (
-  consent: StoredConsent,
-  config: BannerConfig,
-): void => {
+export const writeStoredConsent = (consent: StoredConsent, config: BannerConfig): void => {
   if (!isBrowser()) return;
   const maxAge = Math.max(1, config.behaviour.rePromptAfterDays) * SECONDS_PER_DAY;
   const value = encodeURIComponent(JSON.stringify(consent));
@@ -116,10 +109,7 @@ export const buildConsentEvent = (params: {
   };
 };
 
-export const postConsentEvent = async (
-  baseUrl: string,
-  body: ConsentPostBody,
-): Promise<void> => {
+export const postConsentEvent = async (baseUrl: string, body: ConsentPostBody): Promise<void> => {
   await fetch(`${baseUrl}/consent`, {
     method: 'POST',
     credentials: 'omit',

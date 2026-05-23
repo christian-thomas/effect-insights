@@ -23,10 +23,7 @@ import type { ConsentCategories, CookieCategory } from './types';
 
 const SELECTOR = 'script[type="text/plain"][data-category]';
 
-const isConsentedCategory = (
-  category: string,
-  categories: ConsentCategories,
-): boolean => {
+const isConsentedCategory = (category: string, categories: ConsentCategories): boolean => {
   if (!(category in categories)) return false;
   return categories[category as CookieCategory] === true;
 };

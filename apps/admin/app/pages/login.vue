@@ -25,8 +25,7 @@ const onSubmit = async (event: FormSubmitEvent<LoginForm>) => {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
     await navigateTo(redirect);
   } catch (caught) {
-    error.value =
-      caught instanceof Error ? caught.message : 'Sign in failed — try again';
+    error.value = caught instanceof Error ? caught.message : 'Sign in failed — try again';
   } finally {
     loading.value = false;
   }
@@ -42,12 +41,7 @@ const onSubmit = async (event: FormSubmitEvent<LoginForm>) => {
       </div>
     </template>
 
-    <UForm
-      :schema="schema"
-      :state="state"
-      class="space-y-4"
-      @submit="onSubmit"
-    >
+    <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
       <UFormField label="Email" name="email">
         <UInput v-model="state.email" type="email" autocomplete="email" class="w-full" />
       </UFormField>

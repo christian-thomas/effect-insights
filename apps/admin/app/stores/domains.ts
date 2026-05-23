@@ -23,8 +23,10 @@ export const useDomainsStore = defineStore('domains', {
   }),
 
   getters: {
-    findById: (state) => (id: string): Domain | null =>
-      state.items.find((domain) => domain.id === id) ?? null,
+    findById:
+      (state) =>
+      (id: string): Domain | null =>
+        state.items.find((domain) => domain.id === id) ?? null,
   },
 
   actions: {
@@ -35,8 +37,7 @@ export const useDomainsStore = defineStore('domains', {
         const response = await $api<DomainListResponse>('/api/domains');
         this.items = response.data;
       } catch (caught) {
-        this.error =
-          caught instanceof Error ? caught : new Error(String(caught));
+        this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
         this.loading = false;
       }

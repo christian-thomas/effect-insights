@@ -8,7 +8,7 @@ import type { BannerCopy } from '@effect-cmp/types/schemas/banner';
  */
 export const defaultCopyForLocale = (): BannerCopy => ({
   title: 'We use cookies',
-  body: 'We use cookies to make the site work, understand how it\'s used, and to personalise content. Choose which cookies you accept.',
+  body: "We use cookies to make the site work, understand how it's used, and to personalise content. Choose which cookies you accept.",
   acceptAllLabel: 'Accept all',
   rejectAllLabel: 'Reject all',
   customiseLabel: 'Customise',

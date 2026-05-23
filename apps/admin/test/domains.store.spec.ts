@@ -64,9 +64,7 @@ describe('domains store', () => {
   });
 
   it('removes a domain and refetches', async () => {
-    apiMock
-      .mockResolvedValueOnce(undefined)
-      .mockResolvedValueOnce({ data: [] });
+    apiMock.mockResolvedValueOnce(undefined).mockResolvedValueOnce({ data: [] });
 
     const store = useDomainsStore();
     await store.remove(sampleDomain.id);

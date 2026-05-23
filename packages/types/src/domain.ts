@@ -3,8 +3,7 @@ import { z } from 'zod';
 export const domainStatusSchema = z.enum(['pending', 'active', 'paused']);
 export type DomainStatus = z.infer<typeof domainStatusSchema>;
 
-const fqdnRegex =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+const fqdnRegex = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
 
 export const domainInputSchema = z.object({
   fqdn: z

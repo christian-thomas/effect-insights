@@ -5,9 +5,7 @@ The embeddable consent banner script. Compiled to a tiny IIFE loader stub plus a
 ## How clients embed it
 
 ```html
-<script src="https://assets.effectcmp.com/loader.js"
-        data-domain-id="<public-key>"
-        async></script>
+<script src="https://assets.effectcmp.com/loader.js" data-domain-id="<public-key>" async></script>
 ```
 
 ## Build outputs

@@ -37,12 +37,7 @@ const copyEmbed = async (): Promise<void> => {
 <template>
   <UDashboardNavbar :title="domain?.fqdn ?? 'Domain'">
     <template #leading>
-      <UButton
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-arrow-left"
-        to="/domains"
-      />
+      <UButton color="neutral" variant="ghost" icon="i-lucide-arrow-left" to="/domains" />
     </template>
     <template #right>
       <UButton
@@ -81,7 +76,13 @@ const copyEmbed = async (): Promise<void> => {
             <dt class="text-gray-500">Status</dt>
             <dd>
               <UBadge
-                :color="domain.status === 'active' ? 'success' : domain.status === 'paused' ? 'warning' : 'neutral'"
+                :color="
+                  domain.status === 'active'
+                    ? 'success'
+                    : domain.status === 'paused'
+                      ? 'warning'
+                      : 'neutral'
+                "
                 variant="subtle"
               >
                 {{ domain.status }}
@@ -103,10 +104,13 @@ const copyEmbed = async (): Promise<void> => {
           </div>
         </template>
         <p class="mb-2 text-sm text-gray-500">
-          Paste this once near the top of <code>&lt;head&gt;</code> on every page of {{ domain.fqdn }}.
-          The loader fetches the current banner config and renders the banner pre-consent.
+          Paste this once near the top of <code>&lt;head&gt;</code> on every page of
+          {{ domain.fqdn }}. The loader fetches the current banner config and renders the banner
+          pre-consent.
         </p>
-        <pre class="rounded bg-gray-50 dark:bg-gray-900 p-4 text-xs overflow-x-auto"><code>{{ embedSnippet }}</code></pre>
+        <pre
+          class="rounded bg-gray-50 dark:bg-gray-900 p-4 text-xs overflow-x-auto"
+        ><code>{{ embedSnippet }}</code></pre>
       </UCard>
     </template>
 

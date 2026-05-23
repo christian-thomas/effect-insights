@@ -29,7 +29,7 @@ export const $api = async <T>(
   const headers = {
     Accept: 'application/json',
     ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
-    ...(options.headers ?? {}),
+    ...options.headers,
   };
 
   return $fetch<T>(request, {

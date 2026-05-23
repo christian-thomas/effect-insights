@@ -1,8 +1,4 @@
-import {
-  env,
-  createExecutionContext,
-  waitOnExecutionContext,
-} from 'cloudflare:test';
+import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { describe, it, expect, beforeEach } from 'vitest';
 import worker from '../src/config-worker';
 
@@ -50,10 +46,7 @@ const sampleConfig = {
   signature: 'stub',
 };
 
-const fetchWorker = async (
-  url: string,
-  init?: RequestInit,
-): Promise<Response> => {
+const fetchWorker = async (url: string, init?: RequestInit): Promise<Response> => {
   const ctx = createExecutionContext();
   const response = await worker.fetch(new Request(url, init), typedEnv, ctx);
   await waitOnExecutionContext(ctx);
@@ -71,14 +64,10 @@ describe('config worker', () => {
   });
 
   it('returns the stored config wrapped with the country header', async () => {
-    await typedEnv.BANNER_CONFIGS.put(
-      'pk_test_abc123',
-      JSON.stringify(sampleConfig),
-    );
-    const response = await fetchWorker(
-      'http://edge.test/config/pk_test_abc123',
-      { headers: { 'CF-IPCountry': 'GB' } },
-    );
+    await typedEnv.BANNER_CONFIGS.put('pk_test_abc123', JSON.stringify(sampleConfig));
+    const response = await fetchWorker('http://edge.test/config/pk_test_abc123', {
+      headers: { 'CF-IPCountry': 'GB' },
+    });
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
       config: typeof sampleConfig;

@@ -2,10 +2,10 @@
 
 Two Cloudflare Workers behind `assets.effectcmp.com`:
 
-| Worker | Path(s) | Backed by |
-|---|---|---|
-| `effect-cmp-config` | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | KV (configs), R2 (bundles) |
-| `effect-cmp-consent` | `/consent` (POST) | D1 (hot log) + Laravel mirror |
+| Worker               | Path(s)                                                    | Backed by                     |
+| -------------------- | ---------------------------------------------------------- | ----------------------------- |
+| `effect-cmp-config`  | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | KV (configs), R2 (bundles)    |
+| `effect-cmp-consent` | `/consent` (POST)                                          | D1 (hot log) + Laravel mirror |
 
 ## First-run
 

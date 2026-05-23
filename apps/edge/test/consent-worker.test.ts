@@ -1,8 +1,4 @@
-import {
-  env,
-  createExecutionContext,
-  waitOnExecutionContext,
-} from 'cloudflare:test';
+import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { describe, it, expect, beforeEach } from 'vitest';
 import worker from '../src/consent-worker';
 import type { ConsentEventInput } from '@effect-cmp/types/schemas/consent';
@@ -103,10 +99,7 @@ describe('consent worker', () => {
   });
 
   it('returns 404 for unknown routes', async () => {
-    const response = await fetchWorker(
-      { method: 'POST' },
-      'http://edge.test/nope',
-    );
+    const response = await fetchWorker({ method: 'POST' }, 'http://edge.test/nope');
     expect(response.status).toBe(404);
   });
 });

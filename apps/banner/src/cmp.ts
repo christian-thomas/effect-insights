@@ -21,9 +21,7 @@ const BASE_ATTR = 'data-cmp-base';
 const DEFAULT_BASE = 'https://assets.effectcmp.com';
 
 const findScriptTag = (): HTMLScriptElement | null => {
-  const scripts = document.querySelectorAll<HTMLScriptElement>(
-    `script[${SCRIPT_TAG_ATTR}]`,
-  );
+  const scripts = document.querySelectorAll<HTMLScriptElement>(`script[${SCRIPT_TAG_ATTR}]`);
   // Last match wins — pages with multiple embeds (re-embedded subdomain
   // pattern) should use the most recently-loaded script's config.
   return scripts.item(scripts.length - 1) ?? null;

@@ -103,20 +103,19 @@ const columns: TableColumn<Domain>[] = [
         <UIcon name="i-lucide-globe" class="text-4xl text-gray-400" />
         <h2 class="text-lg font-semibold">No domains yet</h2>
         <p class="text-sm text-gray-500 max-w-md">
-          Add the first client site to this organisation. You'll get an embed snippet
-          to drop into the site so the CMP can render and log consent.
+          Add the first client site to this organisation. You'll get an embed snippet to drop into
+          the site so the CMP can render and log consent.
         </p>
-        <UButton class="mt-2" icon="i-lucide-plus" label="Add the first domain" @click="openCreate" />
+        <UButton
+          class="mt-2"
+          icon="i-lucide-plus"
+          label="Add the first domain"
+          @click="openCreate"
+        />
       </div>
     </UCard>
 
-    <UTable
-      v-else
-      :data="domains"
-      :columns="columns"
-      :loading="loading"
-      class="w-full"
-    >
+    <UTable v-else :data="domains" :columns="columns" :loading="loading" class="w-full">
       <template #fqdn-cell="{ row }">
         <NuxtLink :to="`/domains/${row.original.id}`" class="font-medium hover:underline">
           {{ row.original.fqdn }}
@@ -151,8 +150,17 @@ const columns: TableColumn<Domain>[] = [
   <USlideover v-model:open="slideoverOpen" :title="editing ? `Edit ${editing.fqdn}` : 'Add domain'">
     <template #body>
       <UForm :schema="domainInputSchema" :state="state" class="space-y-4" @submit="onSubmit">
-        <UFormField label="FQDN" name="fqdn" help="The fully-qualified domain name (e.g. www.example.com).">
-          <UInput v-model="state.fqdn" placeholder="example.com" class="w-full" autocomplete="off" />
+        <UFormField
+          label="FQDN"
+          name="fqdn"
+          help="The fully-qualified domain name (e.g. www.example.com)."
+        >
+          <UInput
+            v-model="state.fqdn"
+            placeholder="example.com"
+            class="w-full"
+            autocomplete="off"
+          />
         </UFormField>
 
         <UFormField label="Status" name="status">
@@ -169,7 +177,11 @@ const columns: TableColumn<Domain>[] = [
 
         <div class="flex justify-end gap-2 pt-2">
           <UButton color="neutral" variant="ghost" label="Cancel" @click="slideoverOpen = false" />
-          <UButton type="submit" :loading="submitting" :label="editing ? 'Save changes' : 'Add domain'" />
+          <UButton
+            type="submit"
+            :loading="submitting"
+            :label="editing ? 'Save changes' : 'Add domain'"
+          />
         </div>
       </UForm>
     </template>

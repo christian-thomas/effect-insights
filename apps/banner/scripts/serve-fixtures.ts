@@ -19,9 +19,7 @@ const server = Bun.serve({
   hostname: '127.0.0.1',
   fetch(req) {
     const url = new URL(req.url);
-    const requestPath = url.pathname === '/'
-      ? '/test/e2e/fixtures/host.html'
-      : url.pathname;
+    const requestPath = url.pathname === '/' ? '/test/e2e/fixtures/host.html' : url.pathname;
     const filePath = resolve(ROOT, '.' + requestPath);
 
     if (!filePath.startsWith(ROOT)) {

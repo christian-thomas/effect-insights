@@ -89,9 +89,7 @@ describe('auth store', () => {
   });
 
   it('clears state on logout even if the API call fails', async () => {
-    apiMock
-      .mockResolvedValueOnce(sessionPayload())
-      .mockRejectedValueOnce(new Error('boom'));
+    apiMock.mockResolvedValueOnce(sessionPayload()).mockRejectedValueOnce(new Error('boom'));
 
     const auth = useAuthStore();
     await auth.login('x@y', 'p');

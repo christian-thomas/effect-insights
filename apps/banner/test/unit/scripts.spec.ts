@@ -52,8 +52,7 @@ describe('scripts', () => {
 
     const released = Array.from(document.querySelectorAll('script')).find(
       (script) =>
-        script.getAttribute('type') !== 'text/plain' &&
-        script.textContent?.includes('__test'),
+        script.getAttribute('type') !== 'text/plain' && script.textContent?.includes('__test'),
     );
     expect(released).toBeDefined();
     expect(released?.textContent).toContain('__test');

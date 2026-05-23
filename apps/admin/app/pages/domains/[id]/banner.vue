@@ -108,9 +108,7 @@ const removeLocale = (code: string): void => {
   }
 };
 
-const currentCopy = computed<BannerCopy | undefined>(
-  () => state.copy[activeLocale.value],
-);
+const currentCopy = computed<BannerCopy | undefined>(() => state.copy[activeLocale.value]);
 
 const updateCopy = (field: keyof BannerCopy, value: string): void => {
   const target = state.copy[activeLocale.value];
@@ -187,8 +185,16 @@ const gcmSignals = [
   { key: 'ad_storage', label: 'Ad storage', hint: 'Google Ads cookies' },
   { key: 'ad_user_data', label: 'Ad user data', hint: 'Sharing event data with Google for ads' },
   { key: 'ad_personalization', label: 'Ad personalisation', hint: 'Personalised ad targeting' },
-  { key: 'personalization_storage', label: 'Personalisation storage', hint: 'Site-wide personalisation (recommendations)' },
-  { key: 'functionality_storage', label: 'Functionality storage', hint: 'Essential session/preference storage' },
+  {
+    key: 'personalization_storage',
+    label: 'Personalisation storage',
+    hint: 'Site-wide personalisation (recommendations)',
+  },
+  {
+    key: 'functionality_storage',
+    label: 'Functionality storage',
+    hint: 'Essential session/preference storage',
+  },
   { key: 'security_storage', label: 'Security storage', hint: 'Auth + anti-fraud cookies' },
 ] as const;
 </script>
@@ -242,12 +248,32 @@ const gcmSignals = [
           <h3 class="font-semibold">Colours</h3>
         </template>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <BannerColorField v-model="state.colors.background" label="Background" name="colors.background" />
+          <BannerColorField
+            v-model="state.colors.background"
+            label="Background"
+            name="colors.background"
+          />
           <BannerColorField v-model="state.colors.text" label="Text" name="colors.text" />
-          <BannerColorField v-model="state.colors.primary" label="Primary button" name="colors.primary" />
-          <BannerColorField v-model="state.colors.primaryText" label="Primary button text" name="colors.primaryText" />
-          <BannerColorField v-model="state.colors.secondary" label="Secondary button" name="colors.secondary" />
-          <BannerColorField v-model="state.colors.secondaryText" label="Secondary button text" name="colors.secondaryText" />
+          <BannerColorField
+            v-model="state.colors.primary"
+            label="Primary button"
+            name="colors.primary"
+          />
+          <BannerColorField
+            v-model="state.colors.primaryText"
+            label="Primary button text"
+            name="colors.primaryText"
+          />
+          <BannerColorField
+            v-model="state.colors.secondary"
+            label="Secondary button"
+            name="colors.secondary"
+          />
+          <BannerColorField
+            v-model="state.colors.secondaryText"
+            label="Secondary button text"
+            name="colors.secondaryText"
+          />
         </div>
       </UCard>
 
@@ -259,7 +285,9 @@ const gcmSignals = [
               <span class="text-xs text-gray-500">Default locale</span>
               <USelect
                 v-model="state.locale_default"
-                :items="state.locales_enabled.map((code) => ({ label: localeLabel(code), value: code }))"
+                :items="
+                  state.locales_enabled.map((code) => ({ label: localeLabel(code), value: code }))
+                "
                 size="xs"
               />
               <UDropdownMenu
@@ -288,7 +316,9 @@ const gcmSignals = [
           <div class="flex items-center justify-between mb-3">
             <p class="text-xs text-gray-500">
               Editing <code class="font-mono">{{ activeLocale }}</code>
-              <span v-if="activeLocale === state.locale_default" class="ml-2 text-gray-400">(default)</span>
+              <span v-if="activeLocale === state.locale_default" class="ml-2 text-gray-400"
+                >(default)</span
+              >
             </p>
             <UButton
               v-if="activeLocale !== state.locale_default"
@@ -303,39 +333,105 @@ const gcmSignals = [
 
           <div class="space-y-4">
             <UFormField label="Title" :name="`copy.${activeLocale}.title`">
-              <UInput :model-value="currentCopy.title" class="w-full" @update:model-value="updateCopy('title', String($event))" />
+              <UInput
+                :model-value="currentCopy.title"
+                class="w-full"
+                @update:model-value="updateCopy('title', String($event))"
+              />
             </UFormField>
-            <UFormField label="Body" :name="`copy.${activeLocale}.body`" help="Recommended: under 300 characters.">
-              <UTextarea :model-value="currentCopy.body" :rows="4" class="w-full" @update:model-value="updateCopy('body', String($event))" />
+            <UFormField
+              label="Body"
+              :name="`copy.${activeLocale}.body`"
+              help="Recommended: under 300 characters."
+            >
+              <UTextarea
+                :model-value="currentCopy.body"
+                :rows="4"
+                class="w-full"
+                @update:model-value="updateCopy('body', String($event))"
+              />
             </UFormField>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <UFormField label="Accept-all button" :name="`copy.${activeLocale}.acceptAllLabel`">
-                <UInput :model-value="currentCopy.acceptAllLabel" class="w-full" @update:model-value="updateCopy('acceptAllLabel', String($event))" />
+                <UInput
+                  :model-value="currentCopy.acceptAllLabel"
+                  class="w-full"
+                  @update:model-value="updateCopy('acceptAllLabel', String($event))"
+                />
               </UFormField>
               <UFormField label="Reject-all button" :name="`copy.${activeLocale}.rejectAllLabel`">
-                <UInput :model-value="currentCopy.rejectAllLabel" class="w-full" @update:model-value="updateCopy('rejectAllLabel', String($event))" />
+                <UInput
+                  :model-value="currentCopy.rejectAllLabel"
+                  class="w-full"
+                  @update:model-value="updateCopy('rejectAllLabel', String($event))"
+                />
               </UFormField>
               <UFormField label="Customise button" :name="`copy.${activeLocale}.customiseLabel`">
-                <UInput :model-value="currentCopy.customiseLabel" class="w-full" @update:model-value="updateCopy('customiseLabel', String($event))" />
+                <UInput
+                  :model-value="currentCopy.customiseLabel"
+                  class="w-full"
+                  @update:model-value="updateCopy('customiseLabel', String($event))"
+                />
               </UFormField>
-              <UFormField label="Save preferences button" :name="`copy.${activeLocale}.savePreferencesLabel`">
-                <UInput :model-value="currentCopy.savePreferencesLabel" class="w-full" @update:model-value="updateCopy('savePreferencesLabel', String($event))" />
+              <UFormField
+                label="Save preferences button"
+                :name="`copy.${activeLocale}.savePreferencesLabel`"
+              >
+                <UInput
+                  :model-value="currentCopy.savePreferencesLabel"
+                  class="w-full"
+                  @update:model-value="updateCopy('savePreferencesLabel', String($event))"
+                />
               </UFormField>
             </div>
 
             <div class="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-800">
-              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Category descriptions</h4>
-              <UFormField label="Necessary" :name="`copy.${activeLocale}.categoryDescriptions.necessary`">
-                <UTextarea :model-value="currentCopy.categoryDescriptions.necessary" :rows="2" class="w-full" @update:model-value="updateCategoryDescription('necessary', String($event))" />
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Category descriptions
+              </h4>
+              <UFormField
+                label="Necessary"
+                :name="`copy.${activeLocale}.categoryDescriptions.necessary`"
+              >
+                <UTextarea
+                  :model-value="currentCopy.categoryDescriptions.necessary"
+                  :rows="2"
+                  class="w-full"
+                  @update:model-value="updateCategoryDescription('necessary', String($event))"
+                />
               </UFormField>
-              <UFormField label="Preferences" :name="`copy.${activeLocale}.categoryDescriptions.preferences`">
-                <UTextarea :model-value="currentCopy.categoryDescriptions.preferences" :rows="2" class="w-full" @update:model-value="updateCategoryDescription('preferences', String($event))" />
+              <UFormField
+                label="Preferences"
+                :name="`copy.${activeLocale}.categoryDescriptions.preferences`"
+              >
+                <UTextarea
+                  :model-value="currentCopy.categoryDescriptions.preferences"
+                  :rows="2"
+                  class="w-full"
+                  @update:model-value="updateCategoryDescription('preferences', String($event))"
+                />
               </UFormField>
-              <UFormField label="Statistics" :name="`copy.${activeLocale}.categoryDescriptions.statistics`">
-                <UTextarea :model-value="currentCopy.categoryDescriptions.statistics" :rows="2" class="w-full" @update:model-value="updateCategoryDescription('statistics', String($event))" />
+              <UFormField
+                label="Statistics"
+                :name="`copy.${activeLocale}.categoryDescriptions.statistics`"
+              >
+                <UTextarea
+                  :model-value="currentCopy.categoryDescriptions.statistics"
+                  :rows="2"
+                  class="w-full"
+                  @update:model-value="updateCategoryDescription('statistics', String($event))"
+                />
               </UFormField>
-              <UFormField label="Marketing" :name="`copy.${activeLocale}.categoryDescriptions.marketing`">
-                <UTextarea :model-value="currentCopy.categoryDescriptions.marketing" :rows="2" class="w-full" @update:model-value="updateCategoryDescription('marketing', String($event))" />
+              <UFormField
+                label="Marketing"
+                :name="`copy.${activeLocale}.categoryDescriptions.marketing`"
+              >
+                <UTextarea
+                  :model-value="currentCopy.categoryDescriptions.marketing"
+                  :rows="2"
+                  class="w-full"
+                  @update:model-value="updateCategoryDescription('marketing', String($event))"
+                />
               </UFormField>
             </div>
           </div>
@@ -347,9 +443,9 @@ const gcmSignals = [
           <h3 class="font-semibold">Google Consent Mode v2 defaults</h3>
         </template>
         <p class="text-sm text-gray-500 mb-4">
-          What gtag.js can do before the visitor has consented. Defaults are GDPR-safe
-          (deny everything except functionality + security). Granting a signal before
-          consent leaks tracking — only change these if a legal review demands it.
+          What gtag.js can do before the visitor has consented. Defaults are GDPR-safe (deny
+          everything except functionality + security). Granting a signal before consent leaks
+          tracking — only change these if a legal review demands it.
         </p>
         <div class="space-y-3">
           <div
@@ -377,10 +473,26 @@ const gcmSignals = [
           <URadioGroup
             v-model="state.geo_rules.mode"
             :items="[
-              { value: 'always', label: 'Always show', description: 'Recommended unless you have a specific reason.' },
-              { value: 'eu_uk_only', label: 'EU + UK only', description: 'Skip the banner for visitors outside the EU/UK.' },
-              { value: 'whitelist', label: 'Show only in selected countries', description: 'Show for the country list below.' },
-              { value: 'blacklist', label: 'Hide in selected countries', description: 'Always show except for the country list below.' },
+              {
+                value: 'always',
+                label: 'Always show',
+                description: 'Recommended unless you have a specific reason.',
+              },
+              {
+                value: 'eu_uk_only',
+                label: 'EU + UK only',
+                description: 'Skip the banner for visitors outside the EU/UK.',
+              },
+              {
+                value: 'whitelist',
+                label: 'Show only in selected countries',
+                description: 'Show for the country list below.',
+              },
+              {
+                value: 'blacklist',
+                label: 'Hide in selected countries',
+                description: 'Always show except for the country list below.',
+              },
             ]"
           />
         </UFormField>
@@ -397,7 +509,12 @@ const gcmSignals = [
             multiple
             searchable
             value-key="value"
-            :items="geoCountries.map((country) => ({ label: `${country.code} — ${country.name}`, value: country.code }))"
+            :items="
+              geoCountries.map((country) => ({
+                label: `${country.code} — ${country.name}`,
+                value: country.code,
+              }))
+            "
             class="w-full"
           />
         </UFormField>
@@ -408,7 +525,11 @@ const gcmSignals = [
           <h3 class="font-semibold">Behaviour</h3>
         </template>
         <div class="space-y-4">
-          <UFormField label="Re-prompt after" name="behaviour.rePromptAfterDays" help="Show the banner again N days after the visitor's last consent.">
+          <UFormField
+            label="Re-prompt after"
+            name="behaviour.rePromptAfterDays"
+            help="Show the banner again N days after the visitor's last consent."
+          >
             <div class="flex items-center gap-2">
               <UInput
                 v-model="state.behaviour.rePromptAfterDays"
@@ -424,7 +545,9 @@ const gcmSignals = [
           <div class="flex items-start justify-between gap-4 py-2">
             <div class="flex-1">
               <p class="text-sm font-medium">Honour Global Privacy Control</p>
-              <p class="text-xs text-gray-500">Auto-deny non-necessary cookies if the visitor's browser sends the GPC header.</p>
+              <p class="text-xs text-gray-500">
+                Auto-deny non-necessary cookies if the visitor's browser sends the GPC header.
+              </p>
             </div>
             <USwitch v-model="state.behaviour.honourGpc" />
           </div>
@@ -432,7 +555,10 @@ const gcmSignals = [
           <div class="flex items-start justify-between gap-4 py-2">
             <div class="flex-1">
               <p class="text-sm font-medium">Auto-deny on dismiss</p>
-              <p class="text-xs text-gray-500">Treat closing the banner without a choice as Reject-all. Some jurisdictions require this.</p>
+              <p class="text-xs text-gray-500">
+                Treat closing the banner without a choice as Reject-all. Some jurisdictions require
+                this.
+              </p>
             </div>
             <USwitch v-model="state.behaviour.autoDenyOnDismiss" />
           </div>
@@ -440,7 +566,10 @@ const gcmSignals = [
           <div class="flex items-start justify-between gap-4 py-2">
             <div class="flex-1">
               <p class="text-sm font-medium">Share consent across subdomains</p>
-              <p class="text-xs text-gray-500">Write the consent cookie on the apex domain (e.g. .example.com) so all subdomains share it.</p>
+              <p class="text-xs text-gray-500">
+                Write the consent cookie on the apex domain (e.g. .example.com) so all subdomains
+                share it.
+              </p>
             </div>
             <USwitch v-model="state.behaviour.crossSubdomainConsent" />
           </div>
@@ -448,7 +577,14 @@ const gcmSignals = [
       </UCard>
 
       <div class="flex justify-end gap-2">
-        <UButton type="submit" :loading="saving" color="neutral" variant="subtle" label="Save draft" icon="i-lucide-save" />
+        <UButton
+          type="submit"
+          :loading="saving"
+          color="neutral"
+          variant="subtle"
+          label="Save draft"
+          icon="i-lucide-save"
+        />
         <UButton :loading="publishing" icon="i-lucide-rocket" label="Publish" @click="onPublish" />
       </div>
     </UForm>
