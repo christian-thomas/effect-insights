@@ -8,7 +8,9 @@ use App\Enums\OrganisationRole;
 use App\Models\Organisation;
 use App\Models\User;
 use App\Services\Cloudflare\ArrayCloudflareKvClient;
+use App\Services\Cloudflare\ArrayConsentEventsD1Repository;
 use App\Services\Cloudflare\CloudflareKvClientContract;
+use App\Services\Cloudflare\ConsentEventsD1RepositoryContract;
 use App\Services\Scanner\ArrayScannerClient;
 use App\Services\Scanner\ScannerClientContract;
 use App\Support\CurrentOrganisation;
@@ -48,6 +50,8 @@ abstract class TenantTestCase extends TestCase
 
     protected ArrayScannerClient $scanner;
 
+    protected ArrayConsentEventsD1Repository $d1;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -68,6 +72,11 @@ abstract class TenantTestCase extends TestCase
         // $this->scanner->setNext(new ScannerResult(...)).
         $this->scanner = new ArrayScannerClient;
         $this->app->instance(ScannerClientContract::class, $this->scanner);
+
+        // D1 fake for the consent-events archive job. Tests seed rows via
+        // $this->d1->seedRow([...]) and assert via ->all().
+        $this->d1 = new ArrayConsentEventsD1Repository;
+        $this->app->instance(ConsentEventsD1RepositoryContract::class, $this->d1);
 
         resolve(PermissionRegistrar::class)->forgetCachedPermissions();
         Role::firstOrCreate(['name' => User::ROLE_SUPERUSER, 'guard_name' => 'web']);

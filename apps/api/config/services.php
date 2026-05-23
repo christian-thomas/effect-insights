@@ -39,6 +39,9 @@ return [
         'account_id' => env('CF_ACCOUNT_ID'),
         'api_token' => env('CF_API_TOKEN'),
         'kv_namespace_id' => env('CF_KV_NAMESPACE_ID'),
+        // ID of the D1 database the edge consent worker writes to (the
+        // `consent-events:archive` job reads from this). `wrangler d1 list`.
+        'd1_database_id' => env('CF_D1_DATABASE_ID'),
         // Optional override for tests / local — defaults to Cloudflare's real API.
         'api_base' => env('CF_API_BASE', 'https://api.cloudflare.com/client/v4'),
     ],

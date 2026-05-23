@@ -6,7 +6,9 @@ namespace App\Providers;
 
 use App\Services\BannerConfig\BannerConfigSigner;
 use App\Services\Cloudflare\CloudflareKvClientContract;
+use App\Services\Cloudflare\ConsentEventsD1RepositoryContract;
 use App\Services\Cloudflare\HttpCloudflareKvClient;
+use App\Services\Cloudflare\HttpConsentEventsD1Repository;
 use App\Services\Scanner\HttpCfBrowserRenderingScanner;
 use App\Services\Scanner\ScannerClientContract;
 use App\Support\CurrentOrganisation;
@@ -40,6 +42,21 @@ class AppServiceProvider extends ServiceProvider
 
             return new BannerConfigSigner(
                 key: (string) ($config['signing_key'] ?? ''),
+            );
+        });
+
+        // Real D1 client for the consent-events archive job. Tests rebind
+        // this to ArrayConsentEventsD1Repository in TenantTestCase.
+        $this->app->singleton(ConsentEventsD1RepositoryContract::class, function (Application $app): HttpConsentEventsD1Repository {
+            /** @var array<string, mixed> $config */
+            $config = config('services.cloudflare', []);
+
+            return new HttpConsentEventsD1Repository(
+                http: $app->make(HttpFactory::class),
+                accountId: (string) ($config['account_id'] ?? ''),
+                databaseId: (string) ($config['d1_database_id'] ?? ''),
+                apiToken: (string) ($config['api_token'] ?? ''),
+                apiBase: (string) ($config['api_base'] ?? 'https://api.cloudflare.com/client/v4'),
             );
         });
 
