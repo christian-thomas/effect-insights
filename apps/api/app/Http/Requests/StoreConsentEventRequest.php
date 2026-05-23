@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Models\ConsentEvent;
+use App\Models\Domain;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,11 +17,6 @@ use Illuminate\Validation\Rule;
  */
 class StoreConsentEventRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, array<int, mixed>>
      */
@@ -49,5 +45,41 @@ class StoreConsentEventRequest extends FormRequest
             'occurredAt' => ['required', 'date'],
             'bannerTextHash' => ['required', 'string', 'max:128'],
         ];
+    }
+
+    /**
+     * Idempotent on the event UUID — edge retries are safe.
+     */
+    public function persist(): ConsentEvent
+    {
+        $data = $this->validated();
+
+        /** @var Domain $domain */
+        $domain = Domain::query()
+            ->withoutGlobalScope('organisation')
+            ->where('public_key', $data['domainPublicKey'])
+            ->firstOrFail();
+
+        /** @var ConsentEvent $event */
+        $event = ConsentEvent::query()
+            ->withoutGlobalScope('organisation')
+            ->updateOrCreate(
+                ['id' => $data['id']],
+                [
+                    'domain_id' => $domain->getKey(),
+                    'banner_config_version' => $data['bannerConfigVersion'],
+                    'anonymous_id' => $data['anonymousId'],
+                    'categories' => $data['categories'],
+                    'gcm_signals' => $data['gcmSignals'],
+                    'country_code' => $data['countryCode'] ?? null,
+                    'user_agent_hash' => $data['userAgentHash'],
+                    'ip_hash' => $data['ipHash'],
+                    'event_type' => $data['eventType'],
+                    'occurred_at' => $data['occurredAt'],
+                    'banner_text_hash' => $data['bannerTextHash'],
+                ],
+            );
+
+        return $event;
     }
 }

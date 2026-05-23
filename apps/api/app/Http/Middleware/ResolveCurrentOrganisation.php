@@ -29,6 +29,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  */
 class ResolveCurrentOrganisation
 {
+    public function __construct(
+        private readonly CurrentOrganisation $currentOrganisation,
+    ) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         /** @var User|null $user */
@@ -69,7 +73,7 @@ class ResolveCurrentOrganisation
             }
         }
 
-        app(CurrentOrganisation::class)->set($organisation);
+        $this->currentOrganisation->set($organisation);
 
         return $next($request);
     }

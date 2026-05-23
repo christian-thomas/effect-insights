@@ -16,8 +16,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SwitchOrganisation extends Controller
 {
-    public function __invoke(SwitchOrganisationRequest $request): JsonResponse
-    {
+    public function __invoke(
+        SwitchOrganisationRequest $request,
+        CurrentOrganisation $currentOrganisation,
+    ): JsonResponse {
         $organisationId = $request->string('organisation_id')->toString();
 
         /** @var User $user */
@@ -37,7 +39,7 @@ class SwitchOrganisation extends Controller
         $organisation = Organisation::query()->whereKey($organisationId)->firstOrFail();
 
         $request->session()->put('current_organisation_id', $organisationId);
-        app(CurrentOrganisation::class)->set($organisation);
+        $currentOrganisation->set($organisation);
 
         return UserResource::make($user->load('organisations'))->response();
     }

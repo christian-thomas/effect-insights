@@ -5,17 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Models\BannerConfig;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 
 class UpdateBannerDraftRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, array<int, mixed>>
      */
@@ -82,16 +77,15 @@ class UpdateBannerDraftRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     public function validationData(): array
     {
-        $payload = parent::validationData();
-
         // locales_enabled is a list — Laravel's validator accepts the keys in
         // copy as the locales, but we also want to assert locale_default is in
         // locales_enabled. Done in withValidator() instead of rules() because
         // it's a cross-field check.
 
-        return $payload;
+        return parent::validationData();
     }
 
     public function withValidator(Validator $validator): void

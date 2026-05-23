@@ -13,8 +13,6 @@ class UpdateDomain extends Controller
 {
     public function __invoke(UpdateDomainRequest $request, Domain $domain): DomainResource
     {
-        $domain->update($request->validated());
-
-        return DomainResource::make($domain->refresh());
+        return DomainResource::make($request->persist());
     }
 }

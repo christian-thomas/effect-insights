@@ -11,17 +11,12 @@ use Illuminate\Validation\Rule;
 
 class UpdateDomainRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
-        $organisationId = app(CurrentOrganisation::class)->id();
+        $organisationId = resolve(CurrentOrganisation::class)->id();
         $domainId = $this->route('domain')?->getKey();
 
         return [
@@ -42,5 +37,14 @@ class UpdateDomainRequest extends FormRequest
             ])],
             'settings' => ['sometimes', 'nullable', 'array'],
         ];
+    }
+
+    public function persist(): Domain
+    {
+        /** @var Domain $domain */
+        $domain = $this->route('domain');
+        $domain->update($this->validated());
+
+        return $domain->refresh();
     }
 }

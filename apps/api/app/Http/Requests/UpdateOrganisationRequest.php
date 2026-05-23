@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Models\Organisation;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateOrganisationRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, array<int, mixed>>
      */
@@ -32,5 +28,14 @@ class UpdateOrganisationRequest extends FormRequest
                 Rule::unique('organisations', 'slug')->ignore($organisationId),
             ],
         ];
+    }
+
+    public function persist(): Organisation
+    {
+        /** @var Organisation $organisation */
+        $organisation = $this->route('organisation');
+        $organisation->update($this->validated());
+
+        return $organisation->refresh();
     }
 }

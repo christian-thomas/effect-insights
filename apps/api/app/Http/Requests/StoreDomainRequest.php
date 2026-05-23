@@ -11,17 +11,12 @@ use Illuminate\Validation\Rule;
 
 class StoreDomainRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
-        $organisationId = app(CurrentOrganisation::class)->id();
+        $organisationId = resolve(CurrentOrganisation::class)->id();
 
         return [
             'fqdn' => [
@@ -38,5 +33,16 @@ class StoreDomainRequest extends FormRequest
             ])],
             'settings' => ['sometimes', 'nullable', 'array'],
         ];
+    }
+
+    /**
+     * Olympus request-persistence pattern — validation + persistence in one
+     * place. Controller calls $request->persist() and gets the model back.
+     */
+    public function persist(): Domain
+    {
+        // refresh() pulls database defaults (status = 'pending' etc.) into
+        // the in-memory model so the API response reflects the persisted row.
+        return Domain::create($this->validated())->refresh();
     }
 }

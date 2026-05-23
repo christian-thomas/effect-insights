@@ -13,8 +13,6 @@ class UpdateOrganisation extends Controller
 {
     public function __invoke(UpdateOrganisationRequest $request, Organisation $organisation): OrganisationResource
     {
-        $organisation->update($request->validated());
-
-        return OrganisationResource::make($organisation->refresh());
+        return OrganisationResource::make($request->persist());
     }
 }
