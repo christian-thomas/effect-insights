@@ -7,6 +7,7 @@ import type { ConsentEventInput } from '@effect-cmp/types/schemas/consent';
 type Bindings = {
   readonly CONSENT_DB: D1Database;
   readonly LARAVEL_INGEST_URL: string;
+  readonly LARAVEL_INGEST_SECRET: string;
   readonly ENVIRONMENT: string;
 };
 
@@ -21,10 +22,7 @@ app.use(
   }),
 );
 
-const persistToD1 = async (
-  db: D1Database,
-  event: ConsentEventInput,
-): Promise<void> => {
+const persistToD1 = async (db: D1Database, event: ConsentEventInput): Promise<void> => {
   await db
     .prepare(
       `INSERT INTO consent_events (
@@ -52,12 +50,16 @@ const persistToD1 = async (
 
 const mirrorToLaravel = async (
   url: string,
+  secret: string,
   event: ConsentEventInput,
 ): Promise<void> => {
   try {
     await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Effect-Ingest-Secret': secret,
+      },
       body: JSON.stringify(event),
     });
   } catch {
@@ -74,7 +76,9 @@ app.post('/consent', zValidator('json', consentEventSchema), async (c) => {
     return c.json({ error: 'persist_failed' }, 500);
   }
 
-  c.executionCtx.waitUntil(mirrorToLaravel(c.env.LARAVEL_INGEST_URL, event));
+  c.executionCtx.waitUntil(
+    mirrorToLaravel(c.env.LARAVEL_INGEST_URL, c.env.LARAVEL_INGEST_SECRET, event),
+  );
 
   return c.json({ ok: true }, 202);
 });

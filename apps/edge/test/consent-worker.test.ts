@@ -10,6 +10,7 @@ import type { ConsentEventInput } from '@effect-cmp/types/schemas/consent';
 interface ConsentEnv {
   readonly CONSENT_DB: D1Database;
   readonly LARAVEL_INGEST_URL: string;
+  readonly LARAVEL_INGEST_SECRET: string;
   readonly ENVIRONMENT: string;
 }
 

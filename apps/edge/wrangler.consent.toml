@@ -14,7 +14,11 @@ enabled = true
 
 [vars]
 ENVIRONMENT = "production"
-LARAVEL_INGEST_URL = "https://api.effectcmp.com/api/internal/consent/mirror"
+LARAVEL_INGEST_URL = "https://api.effectcmp.com/api/internal/consent-events"
+
+# LARAVEL_INGEST_SECRET is set via `wrangler secret put LARAVEL_INGEST_SECRET`
+# rather than [vars] — it must match the CONSENT_INGEST_SECRET env var on the
+# Laravel side. Generate with `openssl rand -hex 32`.
 
 # [routes]
 # pattern = "assets.effectcmp.com/consent"

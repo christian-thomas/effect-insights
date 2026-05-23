@@ -12,7 +12,8 @@ export default defineConfig({
         d1Databases: ['CONSENT_DB'],
         bindings: {
           ENVIRONMENT: 'test',
-          LARAVEL_INGEST_URL: 'https://api.test/mirror',
+          LARAVEL_INGEST_URL: 'https://api.test/api/internal/consent-events',
+          LARAVEL_INGEST_SECRET: 'test_ingest_secret',
         },
       },
     }),
