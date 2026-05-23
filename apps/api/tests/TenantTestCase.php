@@ -59,7 +59,7 @@ abstract class TenantTestCase extends TestCase
         $this->kv = new ArrayCloudflareKvClient;
         $this->app->instance(CloudflareKvClientContract::class, $this->kv);
 
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        resolve(PermissionRegistrar::class)->forgetCachedPermissions();
         Role::firstOrCreate(['name' => User::ROLE_SUPERUSER, 'guard_name' => 'web']);
 
         $this->org = Organisation::create([
@@ -92,7 +92,7 @@ abstract class TenantTestCase extends TestCase
         $this->actingAs($user);
 
         session(['current_organisation_id' => $organisation->getKey()]);
-        app(CurrentOrganisation::class)->set($organisation);
+        resolve(CurrentOrganisation::class)->set($organisation);
 
         return $this;
     }

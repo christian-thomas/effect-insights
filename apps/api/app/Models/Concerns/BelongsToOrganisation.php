@@ -27,7 +27,7 @@ trait BelongsToOrganisation
     public static function bootBelongsToOrganisation(): void
     {
         static::addGlobalScope('organisation', function (Builder $query): void {
-            $current = app(CurrentOrganisation::class);
+            $current = resolve(CurrentOrganisation::class);
 
             if (! $current->isSet()) {
                 return;
@@ -42,7 +42,7 @@ trait BelongsToOrganisation
                 return;
             }
 
-            $current = app(CurrentOrganisation::class);
+            $current = resolve(CurrentOrganisation::class);
 
             if ($current->isSet()) {
                 $model->setAttribute('organisation_id', $current->id());

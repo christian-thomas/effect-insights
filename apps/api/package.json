@@ -8,8 +8,13 @@
   "scripts": {
     "dev": "php artisan serve --host=127.0.0.1 --port=8000",
     "test": "php artisan test",
-    "lint": "vendor/bin/pint --test",
-    "lint:fix": "vendor/bin/pint",
+    "lint": "composer check",
+    "lint:fix": "composer fix",
+    "pint": "vendor/bin/pint",
+    "pint:check": "vendor/bin/pint --test",
+    "rector": "vendor/bin/rector process",
+    "rector:check": "vendor/bin/rector process --dry-run",
+    "phpstan": "vendor/bin/phpstan analyse --memory-limit=1G",
     "migrate": "php artisan migrate",
     "migrate:fresh": "php artisan migrate:fresh --seed",
     "tinker": "php artisan tinker"

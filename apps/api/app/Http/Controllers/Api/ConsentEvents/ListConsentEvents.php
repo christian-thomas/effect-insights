@@ -17,13 +17,13 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class ListConsentEvents extends Controller
 {
-    private const MAX_PER_PAGE = 100;
+    private const int MAX_PER_PAGE = 100;
 
-    private const DEFAULT_PER_PAGE = 25;
+    private const int DEFAULT_PER_PAGE = 25;
 
     public function __invoke(Request $request): AnonymousResourceCollection
     {
-        $query = ConsentEvent::query()->orderByDesc('occurred_at');
+        $query = ConsentEvent::query()->latest('occurred_at');
 
         if ($request->filled('domain_id')) {
             $query->where('domain_id', $request->string('domain_id'));

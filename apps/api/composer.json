@@ -13,13 +13,16 @@
         "spatie/laravel-permission": "^7.4"
     },
     "require-dev": {
+        "driftingly/rector-laravel": "^2.4",
         "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.9",
         "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
-        "phpunit/phpunit": "^12.5.12"
+        "phpunit/phpunit": "^12.5.12",
+        "rector/rector": "^2.4"
     },
     "autoload": {
         "psr-4": {
@@ -50,6 +53,20 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
+        "check": [
+            "@pint:check",
+            "@rector:check",
+            "@phpstan"
+        ],
+        "fix": [
+            "@pint",
+            "@rector"
+        ],
+        "pint": "pint",
+        "pint:check": "pint --test",
+        "rector": "rector process",
+        "rector:check": "rector process --dry-run",
+        "phpstan": "phpstan analyse --memory-limit=1G",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

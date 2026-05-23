@@ -21,8 +21,8 @@ class ConsentEventFactory extends Factory
      */
     public function definition(): array
     {
-        $statistics = $this->faker->boolean();
-        $marketing = $this->faker->boolean();
+        $statistics = fake()->boolean();
+        $marketing = fake()->boolean();
 
         return [
             'id' => (string) Str::uuid(),
@@ -31,7 +31,7 @@ class ConsentEventFactory extends Factory
             'anonymous_id' => 'anon_'.Str::random(16),
             'categories' => [
                 'necessary' => true,
-                'preferences' => $this->faker->boolean(),
+                'preferences' => fake()->boolean(),
                 'statistics' => $statistics,
                 'marketing' => $marketing,
             ],
@@ -44,15 +44,15 @@ class ConsentEventFactory extends Factory
                 'personalization_storage' => 'denied',
                 'security_storage' => 'granted',
             ],
-            'country_code' => $this->faker->randomElement(['GB', 'FR', 'DE', 'US', null]),
+            'country_code' => fake()->randomElement(['GB', 'FR', 'DE', 'US', null]),
             'user_agent_hash' => 'ua_'.Str::random(20),
             'ip_hash' => 'ip_'.Str::random(20),
-            'event_type' => $this->faker->randomElement([
+            'event_type' => fake()->randomElement([
                 ConsentEvent::EVENT_GRANTED,
                 ConsentEvent::EVENT_DENIED,
                 ConsentEvent::EVENT_CHANGED,
             ]),
-            'occurred_at' => $this->faker->dateTimeBetween('-30 days', 'now'),
+            'occurred_at' => fake()->dateTimeBetween('-30 days', 'now'),
             'banner_text_hash' => 'btxt_v1',
         ];
     }

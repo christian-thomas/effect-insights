@@ -7,17 +7,20 @@ namespace App\Providers;
 use App\Services\Cloudflare\CloudflareKvClientContract;
 use App\Services\Cloudflare\HttpCloudflareKvClient;
 use App\Support\CurrentOrganisation;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+    #[\Override]
     public function register(): void
     {
         $this->app->singleton(CurrentOrganisation::class);
 
-        $this->app->singleton(CloudflareKvClientContract::class, function ($app): HttpCloudflareKvClient {
-            $config = $app['config']->get('services.cloudflare');
+        $this->app->singleton(CloudflareKvClientContract::class, function (Application $app): HttpCloudflareKvClient {
+            /** @var array<string, mixed> $config */
+            $config = config('services.cloudflare', []);
 
             return new HttpCloudflareKvClient(
                 http: $app->make(HttpFactory::class),

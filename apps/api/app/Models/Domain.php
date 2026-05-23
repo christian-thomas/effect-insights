@@ -27,6 +27,7 @@ class Domain extends Model
     /**
      * @return array<string, string>
      */
+    #[\Override]
     protected function casts(): array
     {
         return [
@@ -34,6 +35,7 @@ class Domain extends Model
         ];
     }
 
+    #[\Override]
     protected static function booted(): void
     {
         static::creating(function (Domain $domain): void {

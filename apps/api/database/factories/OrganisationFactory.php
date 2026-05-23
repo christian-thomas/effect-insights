@@ -20,7 +20,7 @@ class OrganisationFactory extends Factory
      */
     public function definition(): array
     {
-        $name = $this->faker->unique()->company();
+        $name = fake()->unique()->company();
 
         return [
             'name' => $name,

@@ -32,6 +32,7 @@ class BannerConfig extends Model
     /**
      * @return array<string, string>
      */
+    #[\Override]
     protected function casts(): array
     {
         return [
@@ -47,6 +48,7 @@ class BannerConfig extends Model
         ];
     }
 
+    #[\Override]
     protected static function booted(): void
     {
         static::creating(function (BannerConfig $bannerConfig): void {

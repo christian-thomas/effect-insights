@@ -1,0 +1,9 @@
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+
+    # 8 is the strictest. Olympus runs at 5; we match that for now.
+    level: 5

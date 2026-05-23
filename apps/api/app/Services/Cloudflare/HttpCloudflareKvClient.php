@@ -8,14 +8,14 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class HttpCloudflareKvClient implements CloudflareKvClientContract
+final readonly class HttpCloudflareKvClient implements CloudflareKvClientContract
 {
     public function __construct(
-        private readonly HttpFactory $http,
-        private readonly string $accountId,
-        private readonly string $apiToken,
-        private readonly string $namespaceId,
-        private readonly string $apiBase,
+        private HttpFactory $http,
+        private string $accountId,
+        private string $apiToken,
+        private string $namespaceId,
+        private string $apiBase,
     ) {}
 
     public function putValue(string $key, array $payload): void

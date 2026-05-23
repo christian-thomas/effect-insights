@@ -48,6 +48,7 @@ class ConsentEvent extends Model
     /**
      * @return array<string, string>
      */
+    #[\Override]
     protected function casts(): array
     {
         return [
@@ -58,6 +59,7 @@ class ConsentEvent extends Model
         ];
     }
 
+    #[\Override]
     protected static function booted(): void
     {
         static::creating(function (ConsentEvent $event): void {

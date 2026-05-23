@@ -36,7 +36,7 @@ final class CurrentOrganisation
 
     public function getOrFail(): Organisation
     {
-        if ($this->organisation === null) {
+        if (! $this->organisation instanceof Organisation) {
             throw new RuntimeException('No current organisation bound for this request');
         }
 
@@ -45,7 +45,7 @@ final class CurrentOrganisation
 
     public function isSet(): bool
     {
-        return $this->organisation !== null;
+        return $this->organisation instanceof Organisation;
     }
 
     public function id(): ?string

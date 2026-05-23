@@ -17,7 +17,7 @@ class ConsentEventIngestTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const INGEST_SECRET = 'test_ingest_secret_value';
+    private const string INGEST_SECRET = 'test_ingest_secret_value';
 
     private Domain $domain;
 

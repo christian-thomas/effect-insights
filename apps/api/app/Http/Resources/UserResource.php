@@ -14,14 +14,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class UserResource extends JsonResource
 {
-    public static $wrap = null;
+    public static $wrap;
 
     /**
      * @return array<string, mixed>
      */
+    #[\Override]
     public function toArray(Request $request): array
     {
-        $current = app(CurrentOrganisation::class);
+        $current = resolve(CurrentOrganisation::class);
         $currentOrganisationId = $current->isSet()
             ? $current->id()
             : $request->session()->get('current_organisation_id');

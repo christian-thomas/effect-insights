@@ -21,7 +21,7 @@ class DomainFactory extends Factory
      */
     public function definition(): array
     {
-        $fqdn = sprintf('%s.example.test', $this->faker->unique()->domainWord());
+        $fqdn = sprintf('%s.example.test', fake()->unique()->domainWord());
 
         return [
             'organisation_id' => Organisation::factory(),
