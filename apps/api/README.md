@@ -54,6 +54,31 @@ Two supervisors are pre-configured (see `config/horizon.php`):
 so it restarts on crash. After deploys, `php artisan horizon:terminate`
 asks the running master to drain + exit so the new code is picked up.
 
+## Deploys
+
+`apps/api/deploy.sh` is the canonical post-deploy hook. Wire it into
+Forge / GitHub Actions / whatever runs after `git pull` on the box:
+
+```bash
+cd /home/forge/effectcmp/apps/api && ./deploy.sh
+```
+
+The script:
+
+1. `composer install --no-dev --optimize-autoloader`
+2. `php artisan migrate --force`
+3. `php artisan banner-configs:re-sign` — re-publishes every banner
+   config to CF KV with the current `BANNER_CONFIG_SIGNING_KEY`.
+   Critical on the first deploy of HMAC signing (pre-existing KV
+   records have no signature → config worker refuses to serve them)
+   and after any rotation of the signing key.
+4. `php artisan config:cache && route:cache && event:cache`
+5. `php artisan horizon:terminate` — supervisor restarts Horizon
+   under the new code.
+
+Every step is idempotent; the script exits non-zero on any failure so
+the pipeline marks the release as failed.
+
 Default credentials (from `DatabaseSeeder`):
 - `me@christianthomas.co.uk` / `password` — superuser, owner of "Effect Digital".
 
