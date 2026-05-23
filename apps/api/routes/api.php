@@ -8,12 +8,14 @@ use App\Http\Controllers\Api\Auth\Me;
 use App\Http\Controllers\Api\BannerConfigs\PublishBannerConfig;
 use App\Http\Controllers\Api\BannerConfigs\ShowBannerConfig;
 use App\Http\Controllers\Api\BannerConfigs\UpdateBannerDraft;
+use App\Http\Controllers\Api\ConsentEvents\ListConsentEvents;
 use App\Http\Controllers\Api\Dashboard\ShowDashboard;
 use App\Http\Controllers\Api\Domains\CreateDomain;
 use App\Http\Controllers\Api\Domains\DeleteDomain;
 use App\Http\Controllers\Api\Domains\ListDomains;
 use App\Http\Controllers\Api\Domains\ShowDomain;
 use App\Http\Controllers\Api\Domains\UpdateDomain;
+use App\Http\Controllers\Api\Internal\IngestConsentEvent;
 use App\Http\Controllers\Api\Organisations\CreateOrganisation;
 use App\Http\Controllers\Api\Organisations\DeleteOrganisation;
 use App\Http\Controllers\Api\Organisations\ListOrganisations;
@@ -23,6 +25,13 @@ use App\Http\Controllers\Api\Organisations\UpdateOrganisation;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', Login::class);
+
+// Internal mirror endpoint the edge consent worker posts to. No Sanctum
+// session — the worker is server-to-server. Guarded by a shared-secret
+// header (CONSENT_INGEST_SECRET).
+Route::middleware('consent.ingest')->group(function (): void {
+    Route::post('/internal/consent-events', IngestConsentEvent::class);
+});
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/me', Me::class);
@@ -53,5 +62,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/domains/{domain}/banner-config', ShowBannerConfig::class);
         Route::put('/domains/{domain}/banner-config/draft', UpdateBannerDraft::class);
         Route::post('/domains/{domain}/banner-config/publish', PublishBannerConfig::class);
+
+        Route::get('/consent-events', ListConsentEvents::class);
     });
 });

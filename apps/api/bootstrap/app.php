@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\EnsureSuperuser;
 use App\Http\Middleware\ResolveCurrentOrganisation;
+use App\Http\Middleware\VerifyConsentIngestSecret;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'org.current' => ResolveCurrentOrganisation::class,
             'superuser' => EnsureSuperuser::class,
+            'consent.ingest' => VerifyConsentIngestSecret::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

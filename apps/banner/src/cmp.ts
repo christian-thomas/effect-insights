@@ -12,6 +12,7 @@ import {
 } from './consent';
 import { renderBanner } from './dom';
 import { installDefaults, sendUpdate } from './gcm';
+import { unblockScripts, watchForBlockedScripts } from './scripts';
 import { generateStyles } from './styles';
 import type { BannerConfig, ConsentCategories } from './types';
 
@@ -51,6 +52,7 @@ const recordConsent = async (params: {
   );
 
   sendUpdate(categories);
+  unblockScripts(categories);
 
   try {
     await postConsentEvent(
@@ -59,7 +61,7 @@ const recordConsent = async (params: {
     );
   } catch {
     // Edge already has the canonical write; mirror is best-effort.
-    // Iteration 5 will queue retries via a localStorage outbox.
+    // A follow-up iteration will queue retries via a localStorage outbox.
   }
 };
 
@@ -82,10 +84,19 @@ const boot = async (): Promise<void> => {
     // on the host page. Synchronous push, no awaits between fetchConfig and here.
     installDefaults(config.gcmDefaults);
 
-    // Prior consent still valid? Replay it as an `update` and skip the modal.
+    // Watch for late-arriving blocked scripts (lazy-loaded third parties on
+    // SPAs etc) and unblock them as soon as they appear in the DOM.
     const stored = readStoredConsent();
+    watchForBlockedScripts(() => {
+      const current = readStoredConsent();
+      return current === null ? null : current.categories;
+    });
+
+    // Prior consent still valid? Replay it as an `update`, unblock the
+    // already-rendered blocked scripts, and skip the modal entirely.
     if (isStoredConsentStillValid(stored, config) && stored !== null) {
       sendUpdate(stored.categories);
+      unblockScripts(stored.categories);
       return;
     }
 

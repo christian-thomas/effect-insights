@@ -43,4 +43,11 @@ return [
         'api_base' => env('CF_API_BASE', 'https://api.cloudflare.com/client/v4'),
     ],
 
+    'consent_ingest' => [
+        // Shared secret the edge consent worker sends in X-Effect-Ingest-Secret
+        // when mirroring events from D1 to Laravel. Must match the
+        // CONSENT_INGEST_SECRET env var on the worker.
+        'secret' => env('CONSENT_INGEST_SECRET'),
+    ],
+
 ];

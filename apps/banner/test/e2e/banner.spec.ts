@@ -245,6 +245,45 @@ test('renders the corner layout with the compact card in bottom-right', async ({
   expect(styles.right).toBe('16px');
 });
 
+test('releases blocked scripts in granted categories on accept-all', async ({ page }) => {
+  const captor: ConsentPostCaptor = { body: null };
+  await setupRoutes(page, captor);
+
+  await page.goto('/test/e2e/fixtures/host-with-blocked-scripts.html');
+  await page.getByRole('button', { name: 'Accept all' }).click();
+  await page.waitForTimeout(150);
+
+  const flags = await page.evaluate(() => ({
+    statistics: (window as unknown as { __cmpFiredStatistics?: boolean }).__cmpFiredStatistics === true,
+    marketing: (window as unknown as { __cmpFiredMarketing?: boolean }).__cmpFiredMarketing === true,
+    preferences: (window as unknown as { __cmpFiredPreferences?: boolean }).__cmpFiredPreferences === true,
+  }));
+
+  expect(flags.statistics).toBe(true);
+  expect(flags.marketing).toBe(true);
+  expect(flags.preferences).toBe(true);
+});
+
+test('leaves denied-category scripts blocked when user rejects', async ({ page }) => {
+  const captor: ConsentPostCaptor = { body: null };
+  await setupRoutes(page, captor);
+
+  await page.goto('/test/e2e/fixtures/host-with-blocked-scripts.html');
+  await page.getByRole('button', { name: 'Reject all' }).click();
+  await page.waitForTimeout(150);
+
+  const flags = await page.evaluate(() => ({
+    statistics: (window as unknown as { __cmpFiredStatistics?: boolean }).__cmpFiredStatistics === true,
+    marketing: (window as unknown as { __cmpFiredMarketing?: boolean }).__cmpFiredMarketing === true,
+  }));
+  expect(flags.statistics).toBe(false);
+  expect(flags.marketing).toBe(false);
+
+  // The blocked tags should still be in the DOM with their original type.
+  const stillBlocked = await page.locator('script[type="text/plain"][data-category]').count();
+  expect(stillBlocked).toBe(3);
+});
+
 test('does nothing dangerous if /config returns 404', async ({ page }) => {
   await page.route('**/assets.effectcmp.com/config/*', async (route) => {
     await route.fulfill({ status: 404, body: 'not found' });

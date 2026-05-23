@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Banner e2e — blocked scripts</title>
+  </head>
+  <body>
+    <h1>Host with blocked scripts</h1>
+
+    <!-- Inline blocked scripts for each category. Setting window.* flags
+         lets the e2e test assert which ones actually ran after consent. -->
+    <script type="text/plain" data-category="statistics">
+      window.__cmpFiredStatistics = true;
+    </script>
+    <script type="text/plain" data-category="marketing">
+      window.__cmpFiredMarketing = true;
+    </script>
+    <script type="text/plain" data-category="preferences">
+      window.__cmpFiredPreferences = true;
+    </script>
+
+    <script
+      src="/dist/cmp.js"
+      data-domain-id="pk_test_abc123"
+      data-cmp-base="https://assets.effectcmp.com"
+      async
+    ></script>
+  </body>
+</html>
