@@ -53,5 +53,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/domains/{domain}/banner-config/publish', Api\BannerConfigs\PublishBannerConfig::class);
 
         Route::get('/consent-events', Api\ConsentEvents\ListConsentEvents::class);
+
+        Route::get('/scans', Api\Scans\ListScans::class);
+        Route::get('/scans/{scan}', Api\Scans\ShowScan::class);
+        Route::post('/domains/{domain}/scans', Api\Scans\TriggerScan::class);
     });
 });

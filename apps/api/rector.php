@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
+use Rector\DeadCode\Rector\ClassMethod\RemoveEmptyClassMethodRector;
+use Rector\DeadCode\Rector\ClassMethod\RemoveUnusedConstructorParamRector;
+use Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPromotedPropertyRector;
+use Rector\DeadCode\Rector\Property\RemoveUnusedPrivatePropertyRector;
 use Rector\PostRector\Rector\NameImportingPostRector;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Set\ValueObject\SetList;
@@ -42,5 +46,21 @@ return RectorConfig::configure()
         // helpfully "fix" that into individual imports.
         NameImportingPostRector::class => [
             __DIR__.'/routes/api.php',
+        ],
+        // Deliberate stub — the constructor properties exist so the real
+        // CF Browser Rendering implementation can land without touching
+        // the service provider binding. Rector keeps stripping them as
+        // "dead code"; skip the dead-code passes on this file.
+        RemoveUnusedPromotedPropertyRector::class => [
+            __DIR__.'/app/Services/Scanner/HttpCfBrowserRenderingScanner.php',
+        ],
+        RemoveUnusedConstructorParamRector::class => [
+            __DIR__.'/app/Services/Scanner/HttpCfBrowserRenderingScanner.php',
+        ],
+        RemoveUnusedPrivatePropertyRector::class => [
+            __DIR__.'/app/Services/Scanner/HttpCfBrowserRenderingScanner.php',
+        ],
+        RemoveEmptyClassMethodRector::class => [
+            __DIR__.'/app/Services/Scanner/HttpCfBrowserRenderingScanner.php',
         ],
     ]);

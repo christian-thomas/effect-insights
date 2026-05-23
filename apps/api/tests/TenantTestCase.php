@@ -9,6 +9,8 @@ use App\Models\Organisation;
 use App\Models\User;
 use App\Services\Cloudflare\ArrayCloudflareKvClient;
 use App\Services\Cloudflare\CloudflareKvClientContract;
+use App\Services\Scanner\ArrayScannerClient;
+use App\Services\Scanner\ScannerClientContract;
 use App\Support\CurrentOrganisation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -44,6 +46,8 @@ abstract class TenantTestCase extends TestCase
 
     protected ArrayCloudflareKvClient $kv;
 
+    protected ArrayScannerClient $scanner;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -59,6 +63,11 @@ abstract class TenantTestCase extends TestCase
         // Tests can introspect $this->kv->getStore() to assert publish writes.
         $this->kv = new ArrayCloudflareKvClient;
         $this->app->instance(CloudflareKvClientContract::class, $this->kv);
+
+        // Same idea for the scanner — tests preload findings via
+        // $this->scanner->setNext(new ScannerResult(...)).
+        $this->scanner = new ArrayScannerClient;
+        $this->app->instance(ScannerClientContract::class, $this->scanner);
 
         resolve(PermissionRegistrar::class)->forgetCachedPermissions();
         Role::firstOrCreate(['name' => User::ROLE_SUPERUSER, 'guard_name' => 'web']);
