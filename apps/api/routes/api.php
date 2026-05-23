@@ -27,7 +27,15 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/organisations/{organisation}', Api\Organisations\ShowOrganisation::class);
         Route::patch('/organisations/{organisation}', Api\Organisations\UpdateOrganisation::class);
         Route::delete('/organisations/{organisation}', Api\Organisations\DeleteOrganisation::class);
+
+        // Cookie database review queue — global, not tenant-scoped.
+        Route::get('/cookie-imports', Api\CookieImports\ListCookieImports::class);
+        Route::post('/cookie-imports/{cookieImport}/promote', Api\CookieImports\PromoteCookieImport::class);
+        Route::post('/cookie-imports/{cookieImport}/reject', Api\CookieImports\RejectCookieImport::class);
     });
+
+    // The canonical cookie DB is global; anyone authed can read it.
+    Route::get('/cookies', Api\Cookies\ListCookies::class);
 
     // Anything tenant-scoped goes through the org.current middleware which
     // binds the CurrentOrganisation service from the session.

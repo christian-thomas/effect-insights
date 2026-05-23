@@ -1,0 +1,7 @@
+ID,Vendor,Category,Cookie / Data Key name,Domain,Description,Retention period,Data Controller,User Privacy & GDPR Rights Portals,Wildcard match
+1,Google,Analytics,_ga,.google.com,Registers a unique ID,2 years,Google LLC,https://policies.google.com,0
+2,Google,Analytics,_ga_,.google.com,GA4 property-scoped ID,2 years,Google LLC,https://policies.google.com,1
+3,Meta,Marketing,_fbp,.facebook.com,Facebook pixel browser ID,90 days,Meta,https://www.facebook.com/about/privacy,0
+4,Stripe,Functional,__stripe_mid,.stripe.com,Fraud-detection device ID,1 year,Stripe,https://stripe.com/privacy,0
+5,Acme,Made-Up-Category,acme_cookie,.acme.test,Should be skipped — unknown category,session,Acme,,0
+6,Bad,Analytics,,.bad.test,Skipped — no name,,Bad,,0
