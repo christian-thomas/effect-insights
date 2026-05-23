@@ -143,6 +143,110 @@ class BannerConfigTest extends TenantTestCase
     }
 
     #[Test]
+    public function first_publish_seeds_material_version_to_one(): void
+    {
+        $draftUrl = sprintf('/api/domains/%s/banner-config/draft', $this->domain->getKey());
+        $publishUrl = sprintf('/api/domains/%s/banner-config/publish', $this->domain->getKey());
+
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $this->validPayload())->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)
+            ->assertOk()
+            ->assertJsonPath('data.materialVersion', 1);
+    }
+
+    #[Test]
+    public function cosmetic_only_republish_keeps_material_version(): void
+    {
+        $draftUrl = sprintf('/api/domains/%s/banner-config/draft', $this->domain->getKey());
+        $publishUrl = sprintf('/api/domains/%s/banner-config/publish', $this->domain->getKey());
+
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $this->validPayload())->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)->assertJsonPath('data.materialVersion', 1);
+
+        // Cosmetic change only: layout flip + colour tweak + copy edit.
+        $cosmeticPayload = array_merge($this->validPayload(), [
+            'layout' => BannerConfig::LAYOUT_BAR_BOTTOM,
+            'colors' => array_merge(BannerConfigService::defaultColors(), ['primary' => '#ff0000']),
+        ]);
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $cosmeticPayload)->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)
+            ->assertJsonPath('data.version', 2)
+            ->assertJsonPath('data.materialVersion', 1);
+    }
+
+    #[Test]
+    public function gcm_default_change_bumps_material_version(): void
+    {
+        $draftUrl = sprintf('/api/domains/%s/banner-config/draft', $this->domain->getKey());
+        $publishUrl = sprintf('/api/domains/%s/banner-config/publish', $this->domain->getKey());
+
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $this->validPayload())->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)->assertJsonPath('data.materialVersion', 1);
+
+        // Flip analytics_storage from denied to granted → material.
+        $materialPayload = array_merge($this->validPayload(), [
+            'gcm_defaults' => array_merge(BannerConfigService::defaultGcmDefaults(), [
+                'analytics_storage' => 'granted',
+            ]),
+        ]);
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $materialPayload)->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)
+            ->assertJsonPath('data.version', 2)
+            ->assertJsonPath('data.materialVersion', 2);
+    }
+
+    #[Test]
+    public function geo_rule_mode_change_bumps_material_version(): void
+    {
+        $draftUrl = sprintf('/api/domains/%s/banner-config/draft', $this->domain->getKey());
+        $publishUrl = sprintf('/api/domains/%s/banner-config/publish', $this->domain->getKey());
+
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $this->validPayload())->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)->assertJsonPath('data.materialVersion', 1);
+
+        $materialPayload = array_merge($this->validPayload(), [
+            'geo_rules' => ['mode' => 'eu_uk_only', 'countries' => []],
+        ]);
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $materialPayload)->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)
+            ->assertJsonPath('data.materialVersion', 2);
+    }
+
+    #[Test]
+    public function honour_gpc_flip_bumps_material_version(): void
+    {
+        $draftUrl = sprintf('/api/domains/%s/banner-config/draft', $this->domain->getKey());
+        $publishUrl = sprintf('/api/domains/%s/banner-config/publish', $this->domain->getKey());
+
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $this->validPayload())->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)->assertJsonPath('data.materialVersion', 1);
+
+        $materialPayload = array_merge($this->validPayload(), [
+            'behaviour' => array_merge(BannerConfigService::defaultBehaviour(), ['honourGpc' => false]),
+        ]);
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $materialPayload)->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)
+            ->assertJsonPath('data.materialVersion', 2);
+    }
+
+    #[Test]
+    public function re_prompt_after_days_change_alone_is_not_material(): void
+    {
+        $draftUrl = sprintf('/api/domains/%s/banner-config/draft', $this->domain->getKey());
+        $publishUrl = sprintf('/api/domains/%s/banner-config/publish', $this->domain->getKey());
+
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $this->validPayload())->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)->assertJsonPath('data.materialVersion', 1);
+
+        $payload = array_merge($this->validPayload(), [
+            'behaviour' => array_merge(BannerConfigService::defaultBehaviour(), ['rePromptAfterDays' => 180]),
+        ]);
+        $this->actingAsMember($this->user, $this->org)->putJson($draftUrl, $payload)->assertOk();
+        $this->actingAsMember($this->user, $this->org)->postJson($publishUrl)
+            ->assertJsonPath('data.materialVersion', 1);
+    }
+
+    #[Test]
     public function banner_config_inherits_organisation_id_from_its_domain(): void
     {
         $this->actingAsMember($this->user, $this->org)

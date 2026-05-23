@@ -39,6 +39,11 @@ export interface BehaviourRules {
 export interface BannerConfig {
   readonly domainPublicKey: string;
   readonly version: number;
+  // Increments only when a publish materially changes how tracking runs —
+  // GCM defaults, geo rules, GPC / auto-deny / cross-subdomain flags, or the
+  // locale set. cmp.js stores this in the consent cookie; if the served
+  // config's materialVersion is ahead, the visitor sees the banner again.
+  readonly materialVersion: number;
   readonly localeDefault: string;
   readonly localesEnabled: ReadonlyArray<string>;
   readonly layout: BannerLayout;

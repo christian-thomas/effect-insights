@@ -12,7 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use RuntimeException;
 
 #[Fillable([
-    'domain_id', 'organisation_id', 'version', 'is_draft', 'is_published',
+    'domain_id', 'organisation_id', 'version', 'material_version',
+    'is_draft', 'is_published',
     'layout', 'locale_default', 'locales_enabled', 'colors', 'copy',
     'gcm_defaults', 'geo_rules', 'behaviour',
     'created_by_user_id', 'published_at',

@@ -34,6 +34,7 @@ final class BannerConfigPayloadBuilder
         return [
             'domainPublicKey' => $domain->getAttribute('public_key'),
             'version' => (int) $bannerConfig->getAttribute('version'),
+            'materialVersion' => (int) $bannerConfig->getAttribute('material_version'),
             'localeDefault' => (string) $bannerConfig->getAttribute('locale_default'),
             'localesEnabled' => (array) $bannerConfig->getAttribute('locales_enabled'),
             'layout' => (string) $bannerConfig->getAttribute('layout'),

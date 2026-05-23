@@ -4,6 +4,9 @@ export interface BannerConfig {
   id: string;
   domainId: string;
   version: number;
+  // Re-prompt key. Bumps only on a material publish (GCM defaults, geo
+  // rules, GPC / auto-deny / cross-subdomain flags, locale set).
+  materialVersion: number;
   isDraft: boolean;
   isPublished: boolean;
   layout: BannerDraftInput['layout'];

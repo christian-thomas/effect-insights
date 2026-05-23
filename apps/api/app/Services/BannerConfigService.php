@@ -9,6 +9,7 @@ use App\Models\Domain;
 use App\Models\User;
 use App\Services\Cloudflare\CloudflareKvClientContract;
 use App\Support\BannerConfigPayloadBuilder;
+use App\Support\MaterialChangeDetector;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -204,9 +205,23 @@ class BannerConfigService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            $previousPublished = BannerConfig::query()
+                ->where('domain_id', $lockedDomain->getKey())
+                ->where('is_published', true)
+                ->first();
+
             $nextVersion = (int) BannerConfig::query()
                 ->where('domain_id', $lockedDomain->getKey())
                 ->max('version') + 1;
+
+            // material_version bumps only on a material diff (GCM defaults,
+            // geo rules, compliance-behaviour flags, locale set). First-ever
+            // publish counts as the initial material version.
+            $nextMaterialVersion = match (true) {
+                $previousPublished === null => 1,
+                MaterialChangeDetector::isMaterial($previousPublished, $draft) => (int) $previousPublished->getAttribute('material_version') + 1,
+                default => (int) $previousPublished->getAttribute('material_version'),
+            };
 
             // Demote any currently-published config to history.
             BannerConfig::query()
@@ -219,15 +234,19 @@ class BannerConfigService
                 'is_draft' => false,
                 'is_published' => true,
                 'version' => $nextVersion,
+                'material_version' => $nextMaterialVersion,
                 'published_at' => now(),
                 'created_by_user_id' => $user->getKey(),
             ]);
 
             // Clone a fresh draft for further edits — carry every field
             // forward so the editor opens to the just-published state.
+            // material_version is carried so a cosmetic-only republish from
+            // the cloned draft won't accidentally re-bump.
             BannerConfig::create([
                 'domain_id' => $lockedDomain->getKey(),
                 'version' => 0,
+                'material_version' => $nextMaterialVersion,
                 'is_draft' => true,
                 'is_published' => false,
                 'layout' => $draft->getAttribute('layout'),

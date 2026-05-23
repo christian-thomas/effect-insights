@@ -23,6 +23,7 @@ class BannerConfigResource extends JsonResource
             'id' => $this->getAttribute('id'),
             'domainId' => $this->getAttribute('domain_id'),
             'version' => $this->getAttribute('version'),
+            'materialVersion' => $this->getAttribute('material_version'),
             'isDraft' => $this->getAttribute('is_draft'),
             'isPublished' => $this->getAttribute('is_published'),
             'layout' => $this->getAttribute('layout'),
