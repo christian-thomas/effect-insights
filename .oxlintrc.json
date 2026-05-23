@@ -52,6 +52,12 @@
       "rules": {
         "no-console": "off"
       }
+    },
+    {
+      "files": ["apps/edge/src/**/*.ts"],
+      "rules": {
+        "no-await-in-loop": "off"
+      }
     }
   ]
 }

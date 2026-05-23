@@ -14,6 +14,7 @@ export default defineConfig({
           ENVIRONMENT: 'test',
           LARAVEL_INGEST_URL: 'https://api.test/api/internal/consent-events',
           LARAVEL_INGEST_SECRET: 'test_ingest_secret',
+          SCANNER_SECRET: 'test_scanner_secret',
         },
       },
     }),

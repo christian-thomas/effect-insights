@@ -1,0 +1,24 @@
+name = "effect-cmp-scanner"
+main = "src/scanner-worker.ts"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+[vars]
+ENVIRONMENT = "production"
+
+# CF Browser Rendering binding. Available on the paid Workers + Browser
+# Rendering plan. The binding name BROWSER is what the worker code reads via
+# `c.env.BROWSER` when calling `puppeteer.launch()`.
+[browser]
+binding = "BROWSER"
+
+# SCANNER_SECRET is set via `wrangler secret put SCANNER_SECRET` rather than
+# [vars] — it must match the SCANNER_WORKER_SECRET env var on the Laravel side.
+# Generate with `openssl rand -hex 32`.
+
+# [routes]
+# pattern = "scanner.effectcmp.com/*"
+# custom_domain = true

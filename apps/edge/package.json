@@ -6,8 +6,10 @@
   "scripts": {
     "dev:config": "wrangler dev --config wrangler.config.toml",
     "dev:consent": "wrangler dev --config wrangler.consent.toml",
+    "dev:scanner": "wrangler dev --config wrangler.scanner.toml",
     "deploy:config": "wrangler deploy --config wrangler.config.toml",
     "deploy:consent": "wrangler deploy --config wrangler.consent.toml",
+    "deploy:scanner": "wrangler deploy --config wrangler.scanner.toml",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
     "test": "vitest run",
@@ -20,6 +22,7 @@
     "fix": "bun run format && bun run lint:fix"
   },
   "dependencies": {
+    "@cloudflare/puppeteer": "^1.1.0",
     "@effect-cmp/types": "workspace:*",
     "@hono/zod-validator": "latest",
     "hono": "latest",
