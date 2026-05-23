@@ -58,5 +58,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/scans', Api\Scans\ListScans::class);
         Route::get('/scans/{scan}', Api\Scans\ShowScan::class);
         Route::post('/domains/{domain}/scans', Api\Scans\TriggerScan::class);
+
+        // Per-organisation (and optionally per-domain) cookie categorisation
+        // overrides. Resolution precedence is enforced server-side by
+        // CookieCategoryResolver; these endpoints just CRUD the rows.
+        Route::get('/cookie-overrides', Api\CookieOverrides\ListCookieOverrides::class);
+        Route::post('/cookie-overrides', Api\CookieOverrides\CreateCookieOverride::class);
+        Route::patch('/cookie-overrides/{cookieOverride}', Api\CookieOverrides\UpdateCookieOverride::class);
+        Route::delete('/cookie-overrides/{cookieOverride}', Api\CookieOverrides\DeleteCookieOverride::class);
     });
 });
