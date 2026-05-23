@@ -64,19 +64,27 @@ const userItems = computed(() => [
       class="bg-gray-50/50 dark:bg-gray-900/50"
     >
       <template #header>
-        <div class="flex items-center gap-2 px-2 py-1">
-          <UIcon name="i-lucide-shield-check" class="text-primary-500 text-2xl" />
-          <span class="font-semibold">Effect CMP</span>
+        <div class="flex flex-col gap-2 w-full">
+          <div class="flex items-center gap-2 px-2 py-1 min-w-0">
+            <UIcon name="i-lucide-shield-check" class="text-primary-500 text-xl shrink-0" />
+            <span class="font-semibold truncate">Effect CMP</span>
+          </div>
+          <UDropdownMenu
+            v-if="auth.currentOrganisation"
+            :items="orgItems"
+            :ui="{ content: 'w-(--reka-dropdown-menu-trigger-width)' }"
+            class="w-full"
+          >
+            <UButton
+              color="neutral"
+              variant="ghost"
+              block
+              class="justify-between"
+              :label="auth.currentOrganisation.name"
+              trailing-icon="i-lucide-chevrons-up-down"
+            />
+          </UDropdownMenu>
         </div>
-        <UDropdownMenu v-if="auth.currentOrganisation" :items="orgItems" class="mt-2">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            class="w-full justify-between"
-            :label="auth.currentOrganisation.name"
-            trailing-icon="i-lucide-chevrons-up-down"
-          />
-        </UDropdownMenu>
       </template>
 
       <UNavigationMenu :items="nav" orientation="vertical" />
@@ -95,8 +103,10 @@ const userItems = computed(() => [
     </UDashboardSidebar>
 
     <UDashboardPanel>
-      <!-- Key-based remount: every page's onMounted re-fires on org switch. -->
-      <div :key="auth.organisationCacheKey" class="flex h-full flex-col">
+      <!-- Key-based remount: every page's onMounted re-fires on org switch.
+           `display: contents` keeps this div invisible to the layout so
+           UDashboardPanel's own scroll container still works. -->
+      <div :key="auth.organisationCacheKey" class="contents">
         <slot />
       </div>
     </UDashboardPanel>
