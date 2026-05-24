@@ -89,4 +89,12 @@ return [
         'cdn_url' => env('BANNER_CDN_URL', 'https://assets.effectcmp.com'),
     ],
 
+    'accessibility' => [
+        // Minimum axe-core impact that fires a Slack notification. Reads
+        // App\Enums\A11yImpact values: critical | serious | moderate | minor.
+        // Default `serious` means Critical or Serious violations alert;
+        // Moderate / Minor stay quiet. Override per-deploy via env.
+        'alert_threshold' => env('ACCESSIBILITY_ALERT_THRESHOLD', 'serious'),
+    ],
+
 ];

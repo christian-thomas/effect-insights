@@ -29,6 +29,16 @@ Schedule::command('scans:dispatch-scheduled')
     ->onOneServer()
     ->withoutOverlapping();
 
+// Daily sweep for scheduled accessibility scans. Same stagger
+// algorithm as the cookie scans but reads a11y_scan_cadence. Offset
+// by 1h so it doesn't fight the cookie scanner for Browser Rendering
+// quota — axe scans run 2-5s per page and are more bursty.
+Schedule::command('accessibility:dispatch-scheduled')
+    ->dailyAt('05:00')
+    ->name('dispatch-scheduled-a11y-scans')
+    ->onOneServer()
+    ->withoutOverlapping();
+
 // Daily purge of consent events past each org's configured retention
 // window. Runs at 02:00 — before the 03:00 archive so the two never
 // race for the same rows (purge only touches the MySQL archive; D1

@@ -228,6 +228,25 @@ return [
             'timeout' => 600,
             'nice' => 0,
         ],
+
+        // Accessibility scans (RunAccessibilityScanJob) — axe-core takes
+        // 2-5s per page (vs <2s for cookie scans), so a 50-URL crawl can
+        // run 4 minutes. Same 600s timeout and 2 retries as the cookie
+        // scanner; separate queue so a pile-up on either vertical can't
+        // starve the other.
+        'supervisor-accessibility-scans' => [
+            'connection' => 'redis',
+            'queue' => ['accessibility-scans'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 256,
+            'tries' => 2,
+            'timeout' => 600,
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [
@@ -242,6 +261,11 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
+            'supervisor-accessibility-scans' => [
+                'maxProcesses' => 5,
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 3,
+            ],
         ],
 
         'local' => [
@@ -249,6 +273,9 @@ return [
                 'maxProcesses' => 3,
             ],
             'supervisor-scans' => [
+                'maxProcesses' => 2,
+            ],
+            'supervisor-accessibility-scans' => [
                 'maxProcesses' => 2,
             ],
         ],

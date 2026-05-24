@@ -7,6 +7,8 @@ namespace Tests;
 use App\Enums\OrganisationRole;
 use App\Models\Organisation;
 use App\Models\User;
+use App\Services\Accessibility\AccessibilityScannerClientContract;
+use App\Services\Accessibility\ArrayA11yScanner;
 use App\Services\Cloudflare\ArrayCloudflareKvClient;
 use App\Services\Cloudflare\ArrayConsentEventsD1Repository;
 use App\Services\Cloudflare\CloudflareKvClientContract;
@@ -50,6 +52,8 @@ abstract class TenantTestCase extends TestCase
 
     protected ArrayScannerClient $scanner;
 
+    protected ArrayA11yScanner $a11yScanner;
+
     protected ArrayConsentEventsD1Repository $d1;
 
     protected function setUp(): void
@@ -72,6 +76,11 @@ abstract class TenantTestCase extends TestCase
         // $this->scanner->setNext(new ScannerResult(...)).
         $this->scanner = new ArrayScannerClient;
         $this->app->instance(ScannerClientContract::class, $this->scanner);
+
+        // And for the accessibility scanner — tests preload findings via
+        // $this->a11yScanner->setNext(new AccessibilityScannerResult(...)).
+        $this->a11yScanner = new ArrayA11yScanner;
+        $this->app->instance(AccessibilityScannerClientContract::class, $this->a11yScanner);
 
         // D1 fake for the consent-events archive job. Tests seed rows via
         // $this->d1->seedRow([...]) and assert via ->all().

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\Accessibility\AccessibilityScannerClientContract;
+use App\Services\Accessibility\HttpA11yScanner;
 use App\Services\BannerConfig\BannerConfigSigner;
 use App\Services\Cloudflare\CloudflareKvClientContract;
 use App\Services\Cloudflare\ConsentEventsD1RepositoryContract;
@@ -81,6 +83,23 @@ class AppServiceProvider extends ServiceProvider
                 workerUrl: (string) ($config['worker_url'] ?? ''),
                 secret: (string) ($config['secret'] ?? ''),
                 timeoutSeconds: (int) ($config['timeout_seconds'] ?? 60),
+            );
+        });
+
+        // Accessibility (axe-core) scanner. Reuses the cookie scanner's
+        // SCANNER_WORKER_URL + SCANNER_WORKER_SECRET — one worker, two
+        // routes (/scan vs /scan-a11y). Tests rebind to ArrayA11yScanner.
+        $this->app->singleton(AccessibilityScannerClientContract::class, function (Application $app): HttpA11yScanner {
+            /** @var array<string, mixed> $config */
+            $config = config('services.scanner', []);
+
+            return new HttpA11yScanner(
+                http: $app->make(HttpFactory::class),
+                workerUrl: (string) ($config['worker_url'] ?? ''),
+                secret: (string) ($config['secret'] ?? ''),
+                // axe runs 2-5s per page so we give a11y scans a
+                // longer HTTP budget than cookie scans (default 60s).
+                timeoutSeconds: (int) ($config['a11y_timeout_seconds'] ?? 120),
             );
         });
     }
