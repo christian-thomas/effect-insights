@@ -26,11 +26,20 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Configuring your site',
+          text: 'Configuring',
           items: [
+            { text: 'Banner configuration', link: '/guides/banner-configuration' },
+            { text: 'Managing domains', link: '/guides/managing-domains' },
             { text: 'Content Security Policy', link: '/guides/csp' },
             { text: 'Cross-subdomain consent', link: '/guides/cross-subdomain-consent' },
             { text: 'Blocking third-party scripts', link: '/guides/blocking-scripts' },
+          ],
+        },
+        {
+          text: 'Working with the data',
+          items: [
+            { text: 'Consent records + receipts', link: '/guides/consent-records' },
+            { text: 'JavaScript API surface', link: '/guides/javascript-api' },
           ],
         },
         {

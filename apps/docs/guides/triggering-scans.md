@@ -67,15 +67,10 @@ Anything that doesn't match lands in the [review queue](./troubleshooting#unknow
 
 ## Material vs cosmetic publishes
 
-Unrelated to scans but relevant when you're updating the banner config from
-the editor:
-
-- **Material changes** — GCM defaults, geo rules, GPC honouring, cross-subdomain
-  consent, locales enabled. Publishing these increments `materialVersion`,
-  which **re-prompts every consented visitor** on their next visit.
-- **Cosmetic changes** — colours, copy, layout, default locale, re-prompt-after-days.
-  These don't trigger a re-prompt; visitors keep their existing consent.
-
-The admin banner editor surfaces a **Pending changes** panel above the
-publish button showing exactly which fields will trigger a re-prompt, so you
-never accidentally invalidate consent across a portfolio.
+Unrelated to scans but relevant when you're updating the banner config
+from the editor. See [Banner configuration → Material vs cosmetic
+changes](./banner-configuration#material-vs-cosmetic-changes) for the
+authoritative list — the admin banner editor surfaces a **Pending
+changes** panel above the publish button showing exactly which fields
+you've staged and tags each one material or cosmetic, so you never
+accidentally invalidate consent across a portfolio.

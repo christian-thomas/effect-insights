@@ -53,11 +53,36 @@ message includes the org name so you can tell whose site triggered it.
 
 ## RUM telemetry
 
-The banner also fires a real-user-monitoring beacon to the edge `/rum`
-endpoint with paint-time + browser context. This isn't a notification —
-it's a structured log line captured by `wrangler tail` + Cloudflare
-Logpush so we can track p95 banner-paint against the <50ms budget. No
-operator action needed.
+The banner fires a real-user-monitoring beacon to the edge `/rum`
+endpoint on every render with paint-time + browser context. This is
+**not a notification** and there's no dashboard yet — each beacon
+becomes a single structured JSON log line emitted by the consent
+worker, which can be queried via:
+
+- `wrangler tail effect-cmp-consent --format=json | grep cmp_rum` for
+  live tailing during incidents.
+- Cloudflare Logpush → your data warehouse for aggregated analysis.
+
+The beacon shape:
+
+```json
+{
+  "type": "cmp_rum",
+  "domainPublicKey": "pk_…",
+  "paintMs": 23,
+  "hadStoredConsent": false,
+  "effectiveConnectionType": "4g",
+  "deviceMemoryGb": 8
+}
+```
+
+`hadStoredConsent: true` means cmp.js short-circuited via an existing
+valid cookie (the fast path, typically <10ms). `false` means it rendered
+the banner from a cold start. Track both p95s separately when you
+build the dashboard.
+
+A first-class RUM dashboard is on the roadmap. Until it lands, the
+logs are the source of truth.
 
 ## Coming soon
 
