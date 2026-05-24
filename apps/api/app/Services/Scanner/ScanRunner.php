@@ -14,6 +14,7 @@ use App\Models\Scan;
 use App\Models\ScanFinding;
 use App\Models\User;
 use App\Services\Cookies\CookieCategoryResolver;
+use App\Services\Notifications\UnknownCookieAlertService;
 use App\Support\Cookies\CookieResolution;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -40,6 +41,7 @@ final readonly class ScanRunner
     public function __construct(
         private ScannerClientContract $scanner,
         private CookieCategoryResolver $resolver,
+        private UnknownCookieAlertService $unknownCookieAlerts,
     ) {}
 
     /**
@@ -102,6 +104,15 @@ final readonly class ScanRunner
                 // App\Console\Commands\DispatchScheduledScans.
                 $domain->update(['last_scanned_at' => now()]);
             });
+
+            // Fire-and-forget alert if the scan turned up cookies the
+            // resolver couldn't categorise. Notifier failures must not
+            // propagate — they'd roll back the scan we just persisted.
+            try {
+                $this->unknownCookieAlerts->alertIfNeeded($scan, $domain);
+            } catch (Throwable) {
+                // Best-effort; alert delivery is not part of the canonical record.
+            }
         } catch (Throwable $exception) {
             $scan->update([
                 'status' => ScanStatus::Failed,
