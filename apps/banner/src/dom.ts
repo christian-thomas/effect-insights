@@ -12,6 +12,13 @@ interface RenderOptions {
   // Host page's CSP nonce (read once at boot). Stamped on the <style>
   // element so strict-CSP sites don't block our banner styles.
   cspNonce: string | null;
+  // When provided, Esc on the dialog + clicking the shell backdrop (not
+  // the card) records consent as denied + closes the dialog. Used to
+  // honour the operator's `behaviour.autoDenyOnDismiss` flag. When
+  // undefined (the default), Esc only collapses the customise pane and
+  // backdrop clicks do nothing — the visitor must make an explicit
+  // accept/reject/save choice.
+  onDismiss?: () => void;
   onAcceptAll: () => void;
   onRejectAll: () => void;
   onSavePreferences: (categories: ConsentCategories) => void;
@@ -186,22 +193,41 @@ export const renderBanner = (options: RenderOptions): RenderHandles => {
   });
 
   const onKey = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape' && customising) {
+    if (event.key !== 'Escape') return;
+    if (customising) {
       // Collapse the customise pane back to the simple Accept/Reject view
-      // rather than closing the whole banner. Closing the modal without an
-      // explicit consent choice would be a GDPR foot-gun (implicit denial
-      // / dismissal) so we deliberately don't expose Escape-to-dismiss.
+      // rather than closing the whole banner.
       customising = false;
       categoriesContainer.hidden = true;
       saveButton.hidden = true;
       customiseButton.setAttribute('aria-expanded', 'false');
       customiseButton.focus();
-      // Don't bubble — host page Esc handlers (modals on top of us) shouldn't
-      // see it.
       event.stopPropagation();
+      return;
     }
+    if (options.onDismiss) {
+      // Operator has opted in to dismiss-as-denial. Esc records denied
+      // consent and closes the banner.
+      event.stopPropagation();
+      options.onDismiss();
+    }
+    // Without onDismiss, Escape on the dialog (outside the customise pane)
+    // is a deliberate no-op — closing the modal without an explicit
+    // consent choice would be a GDPR foot-gun.
   };
   root.addEventListener('keydown', onKey);
+
+  // Backdrop dismissal — only when the operator opted in. Click on the
+  // shell wrapper (which sits behind the card) records denial. Clicks
+  // inside the card itself shouldn't dismiss; we stopPropagation on the
+  // card to be sure.
+  if (options.onDismiss) {
+    shell.addEventListener('click', (event: MouseEvent): void => {
+      if (event.target === shell) {
+        options.onDismiss?.();
+      }
+    });
+  }
 
   root.appendChild(shell);
 

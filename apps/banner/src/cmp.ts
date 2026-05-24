@@ -37,6 +37,17 @@ const findScriptTag = (): HTMLScriptElement | null => {
   return scripts.item(scripts.length - 1) ?? null;
 };
 
+// Global Privacy Control — browser-level signal that the visitor does not
+// consent to tracking. Currently exposed by Brave, DuckDuckGo, Firefox (with
+// the privacy.gpc.enabled flag), and a few extensions. Spec at
+// https://privacycg.github.io/gpc-spec/.
+const isGpcActive = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  return (
+    (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true
+  );
+};
+
 const readInlineConfig = (tag: HTMLScriptElement): BannerConfig | null => {
   const raw = tag.getAttribute(INLINE_CONFIG_ATTR);
   if (raw === null || raw === '') return null;
@@ -153,6 +164,32 @@ const boot = async (): Promise<void> => {
         });
         return;
       }
+
+      // Global Privacy Control — when the operator has opted in to
+      // honouring it AND the visitor's browser is sending the signal AND
+      // they have no stored consent yet, treat the GPC signal as a
+      // refusal. Record a `denied` consent event so we have an audit
+      // trail (the regulator wants proof we received + honoured GPC),
+      // write the cookie so we don't re-prompt on every page, and skip
+      // the banner. Doesn't override existing stored consent — the
+      // visitor's explicit prior choice always wins.
+      if (config.behaviour.honourGpc && isGpcActive()) {
+        await recordConsent({
+          config,
+          country,
+          categories: allDenied(),
+          consentBaseUrl,
+          cspNonce,
+          eventType: 'denied',
+        });
+        sendRumBeacon(consentBaseUrl, {
+          domainPublicKey: config.domainPublicKey,
+          paintMs: paintTimer.elapsed(),
+          hadStoredConsent: false,
+          ...collectNavigatorSignals(),
+        });
+        return;
+      }
     }
 
     const copy = config.copy[config.localeDefault] ?? Object.values(config.copy)[0];
@@ -178,6 +215,17 @@ const boot = async (): Promise<void> => {
       initial: allDenied(),
       styleText,
       cspNonce,
+      // Dismiss-as-denial only when the operator has opted in. Otherwise
+      // the visitor must make an explicit choice (no Esc-to-dismiss, no
+      // backdrop click). See behaviour.autoDenyOnDismiss in the banner
+      // config.
+      ...(config.behaviour.autoDenyOnDismiss
+        ? {
+            onDismiss: (): void => {
+              void finish(allDenied(), 'denied');
+            },
+          }
+        : {}),
       onAcceptAll: () => {
         void finish(allGranted(), 'granted');
       },
