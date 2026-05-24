@@ -14,6 +14,7 @@ import {
 import { detectCspNonce } from './csp';
 import { renderBanner } from './dom';
 import { installDefaults, sendUpdate } from './gcm';
+import { negotiateLocale } from './locale';
 import { flushOutbox, queueOutboxEntry } from './outbox';
 import { collectNavigatorSignals, sendRumBeacon, startPaintTimer } from './rum';
 import { unblockScripts, watchForBlockedScripts } from './scripts';
@@ -147,7 +148,18 @@ const boot = async (): Promise<void> => {
     };
 
     const buildBannerHandles = (initial: ConsentCategories): BannerHandles | null => {
-      const copy = config.copy[config.localeDefault] ?? Object.values(config.copy)[0];
+      // Honour the visitor's browser language preferences. Falls back to
+      // localeDefault when no Accept-Language entry matches any enabled
+      // locale, which is the same outcome as the old always-default
+      // behaviour.
+      const negotiated = negotiateLocale({
+        enabled: config.localesEnabled,
+        fallback: config.localeDefault,
+      });
+      const copy =
+        config.copy[negotiated] ??
+        config.copy[config.localeDefault] ??
+        Object.values(config.copy)[0];
       if (!copy) return null;
 
       const styleText = generateStyles(config.colors, config.layout);

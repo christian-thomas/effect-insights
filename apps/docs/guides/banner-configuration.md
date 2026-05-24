@@ -170,12 +170,24 @@ all categories under categorised mode still has the same stored
 consent under basic; they just won't see a customise UI on the next
 re-prompt window.
 
-## Coming soon
+## Locale negotiation
 
-- **Locale negotiation** — pick the visitor's preferred locale from
-  `Accept-Language` rather than always falling back to `localeDefault`.
-  Today, `localeDefault` is what every visitor sees regardless of
-  browser language.
+cmp.js reads the visitor's browser language preferences
+(`navigator.languages`, the client-side mirror of the
+`Accept-Language` header) and picks the best matching `localesEnabled`
+entry, falling back to `localeDefault` only when nothing matches.
+
+Selection order:
+
+1. **Exact match.** Browser says `en-GB` AND `en-GB` is in
+   `localesEnabled` → pick `en-GB`.
+2. **Primary subtag match.** Browser says `en-GB` and only `en` is
+   enabled → pick `en`. Also matches the other way — browser says
+   `en-US` and the only enabled English is `en-GB` → pick `en-GB`.
+3. **`localeDefault`** as a final fallback.
+
+`navigator.languages` is already ordered by visitor preference, so
+the visitor's first-choice language wins among matches.
 
 ## Material vs cosmetic changes
 
