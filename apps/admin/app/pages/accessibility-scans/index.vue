@@ -57,7 +57,19 @@ const domainFqdn = (id: string): string =>
     <UPageHeader
       title="Accessibility scans"
       description="Scheduled and manual axe-core scans across the active organisation's domains."
-    />
+    >
+      <template #links>
+        <UButton
+          to="/accessibility-rule-overrides"
+          color="neutral"
+          variant="soft"
+          size="sm"
+          icon="i-lucide-volume-x"
+        >
+          Rule overrides
+        </UButton>
+      </template>
+    </UPageHeader>
 
     <UCard class="mt-4">
       <div class="flex items-center gap-3">

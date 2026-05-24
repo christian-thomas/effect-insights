@@ -30,6 +30,7 @@ export default defineConfig({
           items: [
             { text: 'Banner configuration', link: '/guides/banner-configuration' },
             { text: 'Managing domains', link: '/guides/managing-domains' },
+            { text: 'Organisations (multi-tenant)', link: '/guides/organisations' },
             { text: 'Content Security Policy', link: '/guides/csp' },
             { text: 'Cross-subdomain consent', link: '/guides/cross-subdomain-consent' },
             { text: 'Blocking third-party scripts', link: '/guides/blocking-scripts' },

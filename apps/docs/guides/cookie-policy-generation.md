@@ -107,6 +107,61 @@ domain detail page, or the API), or wait for the next scheduled
 weekly/monthly run. The 1-hour cache means it can take an hour for new
 findings to appear in an embedded iframe.
 
+## Categorisation overrides
+
+When the scanner finds a cookie the resolver can't categorise (no
+canonical match, no override), it lands in the **review queue**. The
+admin surfaces this as the "Review queue" tab on the Cookie database
+page. From there, operators triage by creating a cookie override
+that pins the cookie to the right category for their org or domain.
+
+REST surface:
+
+```
+GET     /api/cookies                              List the canonical cookie DB (global, read-only)
+GET     /api/scan-findings/review                 Cookies pending review for the current org
+GET     /api/cookie-overrides                     List this org's overrides
+POST    /api/cookie-overrides                     Create override (rule pattern + category)
+PATCH   /api/cookie-overrides/{override}          Update reason / category
+DELETE  /api/cookie-overrides/{override}          Remove override
+```
+
+Override shape:
+
+```json
+{
+  "name_pattern": "_ga_*",
+  "category": "statistics",
+  "domain_id": null,
+  "purpose": "Google Analytics 4 client",
+  "justification": "Signed off by legal 2026-04-01"
+}
+```
+
+`domain_id: null` makes it org-wide; setting it to a domain UUID
+scopes the override to that domain only.
+[CookieCategoryResolver](./troubleshooting#unknown-cookies-in-the-review-queue)
+walks `domain override → org override → canonical DB` in that order
+when classifying.
+
+### Superuser: promoting community cookies into the canonical DB
+
+The platform-wide canonical cookie database is curated by Effect
+Digital. Community submissions (e.g. an OpenCookieDatabase import)
+land in a staging table for review before going live.
+
+Superuser-only endpoints:
+
+```
+GET   /api/cookie-imports                         List pending imports
+POST  /api/cookie-imports/{import}/promote        Move into canonical DB
+POST  /api/cookie-imports/{import}/reject         Reject the import
+```
+
+The admin's Cookie database → "Pending imports" tab is the UI for
+this workflow. Imports are seeded via
+`php artisan cookies:import --file=ocd.csv` in `apps/api`.
+
 ## Limitations
 
 - **No cookie expiry data.** The scanner doesn't currently capture

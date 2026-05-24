@@ -218,6 +218,32 @@ each as material or cosmetic. The button label changes to **Publish
 (re-prompts visitors)** when any material change is staged so you
 can't miss it.
 
+The panel is backed by
+`GET /api/domains/{domain}/banner-config/diff`, which returns:
+
+```json
+{
+  "data": {
+    "hasChanges": true,
+    "isMaterial": false,
+    "isFirstPublish": false,
+    "changes": [
+      {
+        "field": "colors",
+        "category": "cosmetic",
+        "previous": { "primary": "#2563eb", ... },
+        "next":     { "primary": "#000000", ... },
+        "reason": "Visual restyle only"
+      }
+    ]
+  }
+}
+```
+
+Useful for CI integrations that want to gate on material changes
+("don't auto-publish if `isMaterial: true`"). Classification stays
+in lock-step with `MaterialChangeDetector` server-side.
+
 ## Version history + rollback
 
 Every publish writes a new row to `banner_configs` rather than

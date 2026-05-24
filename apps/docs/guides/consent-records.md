@@ -91,6 +91,27 @@ The bundle bundles every event in chronological order with the banner
 config snapshots they reference. Single signature over the whole
 bundle.
 
+## REST surface
+
+Every receipt + listing path the admin uses is also reachable from
+scripts and CI. Tenant-scoped under Sanctum SPA auth.
+
+```
+GET  /api/consent-events                                   Paginated list, filter ?domain_id= ?anonymous_id= ?event_type= ?from= ?to=
+GET  /api/consent-events.csv                               Streamed CSV bulk export (same filters)
+GET  /api/consent-events/{event}/receipt?format=json|pdf   Single-event signed receipt
+GET  /api/consent-events/receipts/by-anonymous-id?anonymous_id=…&domain_id=…&format=json|pdf
+                                                           Per-visitor bundle receipt
+```
+
+The list endpoint returns paginated `ConsentEvent` resources (see the
+admin's consent log table). The two receipt endpoints stream a file
+with `Content-Disposition: attachment; filename=…` — call them from
+a server-side context, save the response body, and you're done.
+
+`format=json` is the regulator-verifiable artefact; `format=pdf` is
+the human-readable rendering of the same data.
+
 ## Bulk CSV export
 
 For tooling that needs the whole consent log — BI dashboards,
