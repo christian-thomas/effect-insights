@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Banner e2e — strict CSP + nonce</title>
+    <!--
+      Strict CSP with a nonce. Every script + style on the page must carry
+      the matching `nonce` attribute or the browser refuses to execute /
+      apply it. cmp.js itself loads via the embed script tag below (which
+      has the nonce). The banner's injected <style> and any re-injected
+      blocked scripts must inherit the nonce or they get blocked silently.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'nonce-csp-test-nonce-123'; style-src 'self' 'nonce-csp-test-nonce-123'; connect-src 'self' https://assets.effectcmp.com; img-src 'self' data: https:;"
+    />
+    <meta name="csp-nonce" content="csp-test-nonce-123" />
+  </head>
+  <body>
+    <h1>Strict CSP host</h1>
+
+    <!-- Blocked scripts that flag window when released — used by the e2e
+         to assert cmp.js' re-injected scripts actually executed under CSP. -->
+    <script type="text/plain" data-category="statistics">
+      window.__cspStatsFired = true;
+    </script>
+    <script type="text/plain" data-category="marketing">
+      window.__cspMarketingFired = true;
+    </script>
+
+    <script
+      src="/dist/cmp.js"
+      data-domain-id="pk_test_abc123"
+      data-cmp-base="https://assets.effectcmp.com"
+      nonce="csp-test-nonce-123"
+      async
+    ></script>
+  </body>
+</html>
