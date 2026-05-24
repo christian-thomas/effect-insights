@@ -63,6 +63,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/domains/{domain}/banner-preview', Api\BannerPreview\ShowBannerPreview::class);
 
         Route::get('/consent-events', Api\ConsentEvents\ListConsentEvents::class);
+        // CSV bulk export. Same filter surface as the list endpoint
+        // (domain_id / anonymous_id / event_type / from / to). Streamed
+        // via DB cursor — no pagination.
+        Route::get('/consent-events.csv', Api\ConsentEvents\ExportConsentEventsCsv::class);
         // Visitor-level (anonymous_id + domain_id) bundle must be declared
         // BEFORE the {event} binding below so /receipts/by-anonymous-id isn't
         // mis-resolved as an event UUID.

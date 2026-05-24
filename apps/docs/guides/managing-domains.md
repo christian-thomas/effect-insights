@@ -46,11 +46,16 @@ serving the banner, **pause the domain instead**.
 :::
 
 If you need to delete a domain that's been live, export the consent
-log first via **Consent log → Download CSV** (TODO: this export
-doesn't exist yet — for now, run the per-event signed receipt
-download from the slideover, or use the `php artisan
-consent-events:archive` flow to push events to the long-term MySQL
-archive before deletion). Then proceed with the delete.
+log first. There are three export paths depending on what you need:
+
+- `GET /api/consent-events.csv?domain_id=...` — bulk CSV export of
+  every consent event for the domain. Same filter surface as the list
+  endpoint (`domain_id`, `anonymous_id`, `event_type`, `from`, `to`).
+  Streamed via DB cursor so even large logs don't OOM the API.
+- Per-event signed receipt from the consent slideover — single event
+  as a regulator-verifiable JSON or human-readable PDF.
+- `php artisan consent-events:archive` to flush D1 hot rows into the
+  MySQL long-term archive before deletion.
 
 ## Scan cadence
 
