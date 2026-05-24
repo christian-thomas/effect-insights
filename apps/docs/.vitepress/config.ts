@@ -38,6 +38,7 @@ export default defineConfig({
         {
           text: 'Working with the data',
           items: [
+            { text: 'Cookie policy generation', link: '/guides/cookie-policy-generation' },
             { text: 'Consent records + receipts', link: '/guides/consent-records' },
             { text: 'JavaScript API surface', link: '/guides/javascript-api' },
           ],
@@ -53,7 +54,6 @@ export default defineConfig({
         {
           text: 'Coming soon',
           items: [
-            { text: 'Cookie policy generation', link: '/guides/cookie-policy-generation' },
             { text: 'Vendor / sub-processor management', link: '/guides/vendors' },
             { text: 'Banner A/B testing', link: '/guides/ab-testing' },
           ],

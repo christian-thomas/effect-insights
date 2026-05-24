@@ -46,16 +46,22 @@ serving the banner, **pause the domain instead**.
 :::
 
 If you need to delete a domain that's been live, export the consent
-log first. There are three export paths depending on what you need:
+log first. Two export paths, depending on whether you need a
+regulator-verifiable record or just data:
 
-- `GET /api/consent-events.csv?domain_id=...` — bulk CSV export of
-  every consent event for the domain. Same filter surface as the list
-  endpoint (`domain_id`, `anonymous_id`, `event_type`, `from`, `to`).
-  Streamed via DB cursor so even large logs don't OOM the API.
-- Per-event signed receipt from the consent slideover — single event
-  as a regulator-verifiable JSON or human-readable PDF.
-- `php artisan consent-events:archive` to flush D1 hot rows into the
-  MySQL long-term archive before deletion.
+- **Bulk CSV** — `GET /api/consent-events.csv?domain_id=...` (or the
+  **Export CSV** button on the consent log filter bar). Streamed via
+  DB cursor so even large logs don't OOM the API. Unsigned — fine for
+  internal archives and BI, not for legal proof.
+- **Signed receipts** — open the consent log, filter by the domain,
+  download per-event or per-visitor bundles in JSON or PDF. These
+  carry the HMAC signature regulators ask for.
+
+Either way, run `php artisan consent-events:archive` first if you
+suspect there are recent events still in D1 that haven't drained to
+MySQL yet. The archive job rotates D1 → MySQL daily at 03:00 but
+running it ad-hoc guarantees the CSV / receipt sees the latest hot
+rows.
 
 ## Scan cadence
 

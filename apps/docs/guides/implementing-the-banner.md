@@ -76,8 +76,12 @@ These go on the same `<script>` tag as the embed.
   blocked scripts unblock, the banner disappears.
 - **Subsequent visits**: cmp.js reads the cookie, replays the GCM signals,
   unblocks the right scripts, and **doesn't render the banner again** —
-  unless the publisher made a [material change](./../guides/triggering-scans#material-vs-cosmetic-publishes)
-  or it's been more than 12 months (configurable per domain).
+  unless the publisher made a [material change](./banner-configuration#material-vs-cosmetic-changes)
+  or `behaviour.rePromptAfterDays` (12 months by default) has elapsed.
+
+If the host page wants to give the visitor a "Cookie preferences" link, see
+[`window.cmp`](./javascript-api#window-cmp) — `openBanner()`, `withdraw()`,
+and `onConsentChange()` are the most-used methods.
 
 ## How long until visitors see it?
 

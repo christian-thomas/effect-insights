@@ -21,10 +21,10 @@ Changing layout is **cosmetic** — visitors keep their existing consent.
 ## Locales
 
 Each locale you enable needs a complete copy block (title, body,
-buttons, category descriptions). The banner picks the locale based on
-`localeDefault`; runtime negotiation against the visitor's
-`Accept-Language` header isn't shipped yet — see
-[Coming soon — locale negotiation](#coming-soon).
+buttons, category descriptions). cmp.js picks the best match by
+walking the visitor's browser language preferences against your
+enabled locales — see [Locale negotiation](#locale-negotiation) below.
+When nothing matches, `localeDefault` is the fallback.
 
 If you add a new locale, the banner re-prompts every consented visitor
 (it's material — the visitor sees a different document than they
@@ -107,8 +107,7 @@ the publish.
 
 ### `honourGpc`
 
-Boolean (default `false` — but the admin pre-fills it `true` on new
-domains). When `true`, cmp.js reads
+Boolean (default `true`). When `true`, cmp.js reads
 `navigator.globalPrivacyControl`. If the visitor's browser is sending
 the signal (Brave, DuckDuckGo, Firefox with `privacy.gpc.enabled`)
 and they have no stored consent yet, cmp.js auto-records a `denied`

@@ -100,7 +100,12 @@ With Laravel running in Herd and `bun run dev` going at the root:
    fires-and-forgets to Laravel's `/api/internal/consent-events`.
 5. Back in the admin, `Consent log` (`/consent`) shows the event. Click
    the row, hit "Download receipt → JSON" to grab a signed regulator-ready
-   artefact.
+   artefact. The "Export CSV" button on the filter bar pulls the whole
+   filtered list as a streamed download.
+6. On the domain detail page (`/domains/<id>`) you'll see a Cookie Policy
+   card once a scan has completed — it generates from the latest scan
+   findings + canonical cookie DB. Copy the iframe snippet to embed the
+   policy on the client's privacy page.
 
 ### Testing pieces in isolation
 
@@ -140,6 +145,38 @@ End-user docs (banner implementation, CSP setup, troubleshooting,
 operations) are written in VitePress under `apps/docs/`. Run locally with
 `bun --filter @effect-cmp/docs run dev`, or visit the deployed site at
 [docs.effectcmp.com](https://docs.effectcmp.com).
+
+## Host-page integration surface
+
+Once cmp.js is embedded, host pages can integrate via:
+
+- **`window.cmp`** — installed eagerly on script load. 9 methods:
+  `getConsent`, `isReady`, `ready`, `openBanner`, `withdraw`,
+  `acceptAll`, `rejectAll`, `setConsent`, `onConsentChange`. Wire
+  `cmp.withdraw()` to a "Cookie preferences" footer link for GDPR
+  Article 7(3) compliance.
+- **`cmp:consent-change` DOM event** on `document` — for Tag Manager
+  style integrations that listen via `addEventListener` instead of
+  importing modules.
+- **`window.dataLayer`** GCM v2 signals — standard GTM/GA4 path.
+- **`/api/cookie-policy/{publicKey}.html`** — drop into an iframe on
+  the client's privacy page for an auto-updating cookie policy.
+
+See `apps/docs/guides/javascript-api.md` and
+`apps/docs/guides/cookie-policy-generation.md` for the full reference.
+
+## Operations
+
+Scheduled commands fire daily under Horizon (see `apps/api/routes/console.php`):
+
+- **02:00** `consent-events:purge` — hard-deletes events past each
+  org's `consent_retention_days` window. NULL = retain forever.
+- **03:00** `archive-consent-events` — drains D1 → MySQL.
+- **04:00** `scans:dispatch-scheduled` — dispatches `RunScanJob` for
+  every domain whose cadence is due.
+
+Slack alerts fire on unknown-cookie discoveries and scan failures —
+see `apps/docs/guides/notifications.md`.
 
 ## Reference
 

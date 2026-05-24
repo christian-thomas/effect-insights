@@ -3,13 +3,20 @@
 Laravel 13 backend for the Effect CMP. Provides:
 
 - Admin REST API (Sanctum) consumed by `apps/admin`
+- Public cookie-policy embed endpoint (`/api/cookie-policy/{publicKey}.html`)
+  — unauthenticated, served as a self-contained iframe-friendly HTML
 - Multi-tenancy via `organisation_id` global scopes (no tenancy package)
 - Cookie database + OpenCookieDatabase importer (driven by `packages/cookie-db-seed`)
-- Banner config storage + publish-to-Cloudflare-KV
-- Scan dispatch to Cloudflare Browser Rendering REST API
-- Consent ingest endpoint (receives mirrored events from edge Worker)
-- Nightly archive job: D1 hot → MySQL `consent_event_archive`
-- Scheduled scans via Laravel scheduler + Horizon queues
+- Banner config storage + publish-to-Cloudflare-KV (HMAC-signed) +
+  history/rollback
+- Scan dispatch to a Cloudflare Browser Rendering worker
+- Consent ingest endpoint (receives mirrored events from the edge worker)
+- Signed consent receipts (per-event + per-visitor, JSON + PDF) and bulk
+  CSV export of the consent log
+- Slack notifications for unknown cookies + scan failures via
+  `laravel/slack-notification-channel`
+- Three scheduled commands via the Laravel scheduler + Horizon queues
+  (see [Scheduler](#scheduler) below)
 
 ## First-run
 
@@ -24,6 +31,30 @@ mysql -h 127.0.0.1 -uroot -e \
 
 php artisan migrate:fresh --seed
 php artisan serve   # http://localhost:8000
+```
+
+## Scheduler
+
+Three jobs fire daily off `routes/console.php`:
+
+| Time (UTC) | Command                       | What it does                                              |
+| ---------- | ----------------------------- | --------------------------------------------------------- |
+| 02:00      | `consent-events:purge`        | Hard-deletes MySQL consent events past each org's `consent_retention_days` window. NULL = retain forever. |
+| 03:00      | `archive-consent-events`      | Drains D1 → MySQL `consent_events`, idempotent on UUID.   |
+| 04:00      | `scans:dispatch-scheduled`    | Dispatches `RunScanJob` for every domain whose cadence is due, staggered to avoid hammering the scanner. |
+
+Each is `->onOneServer()->withoutOverlapping()` so multi-server
+deploys can't double-fire. Make sure `php artisan schedule:work` (dev)
+or a system cron entry calling `php artisan schedule:run` (prod) is
+wired up.
+
+Ad-hoc commands:
+
+```bash
+php artisan banner-configs:re-sign    # re-publish every active banner config to KV
+php artisan consent-events:archive    # force a D1 → MySQL drain outside the 03:00 slot
+php artisan consent-events:purge      # force a retention-window purge outside the 02:00 slot
+php artisan scans:dispatch-scheduled  # force the scan-dispatch sweep
 ```
 
 ## Queues + Horizon
@@ -91,24 +122,62 @@ Default credentials (from `DatabaseSeeder`):
 - **Laravel Horizon** for queue dashboards
 - **Sanctum** for SPA auth
 - **spatie/laravel-permission** for per-organisation roles
+- **`laravel/slack-notification-channel`** for unknown-cookie + scan-failure alerts
+- **`barryvdh/laravel-dompdf`** for consent-receipt PDF rendering
 
-## What lives here (planned)
+## What lives here
 
 ```
 app/
-  Models/          Organisation, Domain, BannerConfig, Scan, ScanFinding,
-                   Cookie, ConsentEventArchive, Vendor, ...
-  Concerns/        BelongsToOrganisation trait
-  Http/
-    Controllers/Api/
-      Admin/       organisations, domains, scans, banner configs
-      Internal/    consent mirror webhook, scan findings webhook
-  Services/
-    Cloudflare/    KV publishing, Browser Rendering dispatch
-    CookieDb/      Pattern matcher, OCD importer
-    ConsentArchive/ Nightly D1 → MySQL job
-  Jobs/            DispatchScan, ArchiveConsentBatch, PublishBannerConfig
+├── Console/Commands/
+│   ├── ArchiveConsentEvents.php
+│   ├── DispatchScheduledScans.php
+│   ├── PurgeConsentEvents.php
+│   └── ResignBannerConfigs.php
+├── Enums/              BannerLayout, BannerGranularity, ConsentEventType,
+│                       CookieCategory, DomainStatus, ScanStatus, ...
+├── Http/
+│   ├── Controllers/Api/
+│   │   ├── Auth/                Login, Logout, Me
+│   │   ├── BannerConfigs/       Show + Diff + History + Rollback + Draft + Publish
+│   │   ├── BannerPreview/       ShowBannerPreview (HTML iframe for admin preview)
+│   │   ├── ConsentEvents/       List + ExportCsv + EventReceipt + VisitorReceipt
+│   │   ├── CookieImports/       List + Promote + Reject (superuser)
+│   │   ├── CookieOverrides/     List + Create + Update + Delete (per-org)
+│   │   ├── CookiePolicies/      ShowCookiePolicy (JSON) + ShowPublicCookiePolicy (HTML)
+│   │   ├── Cookies/             ListCookies (global canonical)
+│   │   ├── Dashboard/           ShowDashboard
+│   │   ├── Domains/             CRUD
+│   │   ├── Internal/            IngestConsentEvent (edge-worker-only)
+│   │   ├── Organisations/       CRUD + SwitchOrganisation
+│   │   ├── ScanFindings/        ListReviewQueue
+│   │   └── Scans/               List + Show + TriggerScan
+│   ├── Requests/                FormRequests with persist() helpers
+│   ├── Resources/               JSON resources mirroring packages/types
+│   └── Middleware/              consent.ingest, org.current, superuser
+├── Jobs/
+│   └── RunScanJob.php           Pinned to the scans queue
+├── Models/                      Eloquent — all UUID keys, all enum-casted
+├── Notifications/
+│   ├── ScanFailed.php           Slack on scan failure
+│   └── UnknownCookieFound.php   Slack on uncategorised scan findings
+├── Services/
+│   ├── BannerConfig/            Signer (HMAC-SHA-256)
+│   ├── BannerConfigService.php  Draft/publish/rollback + edge KV sync
+│   ├── Cloudflare/              HttpCloudflareKvClient + Array fake
+│   ├── ConsentArchive/          ArchiveConsentEventsService
+│   ├── ConsentEvents/           Receipt builder + signer + purge service
+│   ├── Cookies/                 CookieCategoryResolver + CookiePolicyBuilder
+│   │                            + OpenCookieDatabaseImporter
+│   ├── Notifications/           UnknownCookieAlertService + ScanFailureAlertService
+│   └── Scanner/                 ScanRunner + HttpCfBrowserRenderingScanner
+│                                + SitemapDiscoveryService + Array fakes
+└── Support/                     BannerConfigPayloadBuilder, BannerConfigDiffer,
+                                 MaterialChangeDetector, CurrentOrganisation
 ```
+
+`routes/api.php` is namespace-aliased — every route reads as
+`Api\Feature\Action` so the file stays scannable.
 
 ## Out of scope (deferred)
 

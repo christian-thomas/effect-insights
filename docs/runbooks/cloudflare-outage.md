@@ -91,9 +91,110 @@ tomorrow per cadence + stagger.
 **Visitor impact**: None. Scanner only powers the cookie discovery feature
 in the admin.
 
+**Slack noise**: Every failed scan fires a `ScanFailed` Slack alert via
+`App\Services\Notifications\ScanFailureAlertService`. During a sustained
+Browser Rendering outage with N domains on the scheduler this is N alerts
+in a row — **expected, ignore**. Don't mute the channel permanently;
+once Browser Rendering recovers the alerts stop on their own at the next
+scheduler run.
+
 **Action**:
 1. `wrangler tail effect-cmp-scanner`.
 2. No client-facing impact, no urgent action.
+
+### Rate limiter throttling legitimate traffic
+
+**Symptom**: `effect-cmp-consent` returns 429 to a slice of `/consent` or
+`/rum` POSTs. cmp.js' outbox retries — events eventually land — but the
+short-term log dip shows up in BI dashboards.
+
+**Visitor impact**: Cookie + GCM signals are local; client experience is
+fine. The audit log lags by however long the retry window takes.
+
+**Cause**: The `CONSENT_RATE_LIMITER` binding is 60 req / 60s **per
+`cf-connecting-ip`**. Legitimate spikes (mobile carrier NAT, corporate
+proxies sharing an egress IP) can trip it.
+
+**Action**:
+1. Confirm via `wrangler tail effect-cmp-consent --format=json | grep 429`.
+2. If the spike is from a known shared-egress IP (e.g. a client's office
+   VPN), nothing to do — outbox retries will catch up.
+3. If sustained from many IPs: raise the limiter ceiling in
+   `apps/edge/wrangler.consent.toml` and `wrangler deploy --config
+   wrangler.consent.toml`. The fail-open wrapper means the limiter
+   binding errors never drop legitimate consent, so raising is safe.
+
+### Laravel API outage (admin + cookie-policy embed)
+
+**Symptom**: `api.effectcmp.com` is 5xx or timing out (Forge VPS down,
+RDS flap, app exception, etc).
+
+**Visitor impact on the consent flow**: **None at the edge.** cmp.js
+talks only to the Cloudflare workers — banner config (KV), consent POST
+(consent worker → D1), RUM, bundle fetch. None of these hit Laravel
+synchronously. Even the consent worker's mirror to Laravel is
+fire-and-forget; failures are silently dropped (D1 stays the canonical
+write).
+
+**Visitor impact on embedded cookie policies**: Sites that iframe
+`https://api.effectcmp.com/api/cookie-policy/{publicKey}.html` will see
+the iframe 5xx during the outage. Cloudflare's
+`Cache-Control: public, max-age=3600, stale-while-revalidate=86400`
+on the response keeps already-cached copies serving stale for up to 24
+hours, so clients embedding via Cloudflare-fronted hostnames may not
+notice short outages at all.
+
+**Admin impact**: Operators can't log in or use the admin during the
+outage. New banner publishes can't happen, scans can't be triggered.
+
+**Scheduled jobs**: If MySQL or Laravel is down at 02:00 / 03:00 /
+04:00 UTC:
+- `consent-events:purge` (02:00) — fails for that day. Retention is a
+  ceiling, not a floor — events older than the window persist one
+  extra day. Re-run manually via
+  `php artisan consent-events:purge` once Laravel recovers, or wait
+  for the next 02:00 slot.
+- `archive-consent-events` (03:00) — fails. D1 keeps growing until
+  the job runs next; D1's storage cap is generous so this is fine for
+  short outages. Run `php artisan consent-events:archive` ad-hoc to
+  catch up.
+- `scans:dispatch-scheduled` (04:00) — fails. Next day's run picks up
+  every domain whose interval has elapsed (no events lost; just a
+  day late).
+
+**Action**:
+1. Triage Laravel side first — Forge dashboard, RDS metrics, Sentry.
+2. Once recovered, re-run the missed schedulers ad-hoc (commands
+   listed above). All three are idempotent — safe to re-run.
+3. If a domain was paused/unpaused via admin during the outage but
+   the KV sync silently failed, run `php artisan banner-configs:re-sign`
+   from the recovered Laravel side to reconcile.
+
+### Bad banner config published (rollback lever)
+
+**Symptom**: A publish made it through but it's wrong — broken copy,
+material change that re-prompts every visitor unexpectedly, GCM
+defaults that leak tracking.
+
+**Visitor impact**: Whatever the bad config does. Could be ugly text,
+re-prompt fatigue, or compliance leak depending on what changed.
+
+**Action**:
+1. Open the admin → domain → Banner config. The **Version history**
+   panel below "Pending changes" lists every published version newest
+   first.
+2. Click "Roll back" on the version you want. The draft is overwritten
+   with that version's content but is NOT auto-published.
+3. Review the pending-changes panel — confirm the diff matches your
+   intent — and click **Publish**. The new publish lands in KV
+   immediately; cmp.js picks it up on the next config fetch (no edge
+   cache; KV writes propagate within seconds globally).
+4. The rolled-back version becomes the new current, and the previous
+   bad publish stays in history (don't delete it — append-only is the
+   audit guarantee).
+
+If the rollback itself doesn't land because KV is the failure mode,
+read the **KV namespace is down** section above first.
 
 ### DNS / total blackout
 

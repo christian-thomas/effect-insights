@@ -76,7 +76,8 @@ For each cookie observed in the most recent **completed** scan
 4. Cookies the resolver couldn't categorise land in an
    **"Unknown — pending review"** bucket so legal can see them rather
    than have them silently disappear. They also surface in the admin's
-   [Review queue](./cookies-review-queue) for one-click override.
+   [review queue](./troubleshooting#unknown-cookies-in-the-review-queue)
+   for one-click override.
 
 `script` and `iframe` scan findings are deliberately excluded — the
 policy is a cookie policy, not a third-party-services policy. Future

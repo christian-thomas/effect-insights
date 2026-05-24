@@ -91,6 +91,44 @@ The bundle bundles every event in chronological order with the banner
 config snapshots they reference. Single signature over the whole
 bundle.
 
+## Bulk CSV export
+
+For tooling that needs the whole consent log — BI dashboards,
+spreadsheet pivots, e-discovery exports — the consent log page has an
+**Export CSV** button on the filter bar. It hits:
+
+```
+GET /api/consent-events.csv
+  ?domain_id=...        (optional)
+  ?anonymous_id=...     (optional)
+  ?event_type=granted|denied|changed|withdrawn   (optional)
+  ?from=YYYY-MM-DD      (optional)
+  ?to=YYYY-MM-DD        (optional)
+```
+
+Same filter surface as the list endpoint, so any query you can run in
+the admin can be exported. Response is streamed via a DB cursor so
+even multi-million-row exports don't OOM the API.
+
+Columns are stable wire-format:
+
+```
+id, occurred_at, domain_id, organisation_id, banner_config_version,
+anonymous_id, event_type, country_code, categories, gcm_signals,
+banner_text_hash, user_agent_hash, ip_hash, created_at
+```
+
+`categories` and `gcm_signals` JSON-encode into a single CSV cell each
+so the grid stays flat. To unpack: `JSON.parse(row.categories)` in any
+spreadsheet macro or BI tool that handles nested JSON.
+
+::: warning Use receipts for legal proof, not the CSV
+The CSV is unsigned — fine for analytics, BI, internal audit. For
+regulator submissions ("prove this visitor consented"), download a
+signed [per-event](#receipt-downloads) or
+[per-visitor](#per-visitor-bundle-downloads) receipt instead.
+:::
+
 ## Data retention
 
 - **D1 (Cloudflare hot store)**: bounded by the nightly archive job
