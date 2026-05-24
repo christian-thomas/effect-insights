@@ -11,9 +11,29 @@ interface ItemResponse {
   data: BannerConfig;
 }
 
+export interface BannerConfigChange {
+  field: string;
+  category: 'material' | 'cosmetic';
+  previous: unknown;
+  next: unknown;
+  reason: string;
+}
+
+export interface BannerConfigDiff {
+  hasChanges: boolean;
+  isMaterial: boolean;
+  isFirstPublish: boolean;
+  changes: BannerConfigChange[];
+}
+
+interface DiffResponse {
+  data: BannerConfigDiff;
+}
+
 interface BannerSlot {
   draft: BannerConfig | null;
   published: BannerConfig | null;
+  diff: BannerConfigDiff | null;
   loading: boolean;
   error: Error | null;
 }
@@ -21,6 +41,7 @@ interface BannerSlot {
 const emptySlot = (): BannerSlot => ({
   draft: null,
   published: null,
+  diff: null,
   loading: false,
   error: null,
 });
@@ -57,10 +78,22 @@ export const useBannerConfigsStore = defineStore('bannerConfigs', {
         const response = await $api<FetchResponse>(`/api/domains/${domainId}/banner-config`);
         slot.draft = response.draft.data;
         slot.published = response.published?.data ?? null;
+        await this.fetchDiff(domainId);
       } catch (caught) {
         slot.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
         slot.loading = false;
+      }
+    },
+
+    async fetchDiff(domainId: string): Promise<void> {
+      const slot = this.ensureSlot(domainId);
+      try {
+        const response = await $api<DiffResponse>(`/api/domains/${domainId}/banner-config/diff`);
+        slot.diff = response.data;
+      } catch {
+        // Diff is non-critical — don't blow up the editor if it 500s.
+        slot.diff = null;
       }
     },
 
@@ -71,6 +104,8 @@ export const useBannerConfigsStore = defineStore('bannerConfigs', {
         body: input,
       });
       slot.draft = response.data;
+      // Pending-changes panel needs to reflect the just-saved draft.
+      await this.fetchDiff(domainId);
       return response.data;
     },
 

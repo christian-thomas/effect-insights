@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::delete('/domains/{domain}', Api\Domains\DeleteDomain::class);
 
         Route::get('/domains/{domain}/banner-config', Api\BannerConfigs\ShowBannerConfig::class);
+        Route::get('/domains/{domain}/banner-config/diff', Api\BannerConfigs\ShowBannerConfigDiff::class);
         Route::put('/domains/{domain}/banner-config/draft', Api\BannerConfigs\UpdateBannerDraft::class);
         Route::post('/domains/{domain}/banner-config/publish', Api\BannerConfigs\PublishBannerConfig::class);
         Route::get('/domains/{domain}/banner-preview', Api\BannerPreview\ShowBannerPreview::class);

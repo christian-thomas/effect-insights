@@ -19,6 +19,7 @@ await bannerStore.fetch(domainId);
 const slot = computed(() => bannerStore.forDomain(domainId));
 const draft = computed(() => slot.value.draft);
 const published = computed(() => slot.value.published);
+const diff = computed(() => slot.value.diff);
 const loading = computed(() => slot.value.loading);
 const error = computed(() => slot.value.error);
 
@@ -590,6 +591,8 @@ const gcmSignals = [
           </div>
         </UCard>
 
+        <BannerPendingChangesPanel :diff="diff" />
+
         <div class="flex justify-end gap-2">
           <UButton
             type="submit"
@@ -601,8 +604,13 @@ const gcmSignals = [
           />
           <UButton
             :loading="publishing"
+            :color="diff?.isMaterial && !diff?.isFirstPublish ? 'warning' : 'primary'"
             icon="i-lucide-rocket"
-            label="Publish"
+            :label="
+              diff?.isMaterial && !diff?.isFirstPublish
+                ? 'Publish (re-prompts visitors)'
+                : 'Publish'
+            "
             @click="onPublish"
           />
         </div>
