@@ -24,6 +24,8 @@ class DomainResource extends JsonResource
             'fqdn' => $this->getAttribute('fqdn'),
             'apexDomain' => $this->getAttribute('apex_domain'),
             'status' => $this->getAttribute('status'),
+            'scanCadence' => $this->getAttribute('scan_cadence'),
+            'lastScannedAt' => $this->getAttribute('last_scanned_at')?->toIso8601String(),
             'publicKey' => $this->getAttribute('public_key'),
             'settings' => $this->getAttribute('settings'),
             'createdAt' => $this->getAttribute('created_at')?->toIso8601String(),

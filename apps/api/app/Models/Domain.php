@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\DomainStatus;
+use App\Enums\ScanCadence;
 use App\Models\Concerns\BelongsToOrganisation;
 use Database\Factories\DomainFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-#[Fillable(['fqdn', 'apex_domain', 'status', 'public_key', 'settings'])]
+#[Fillable(['fqdn', 'apex_domain', 'status', 'public_key', 'settings', 'scan_cadence', 'last_scanned_at'])]
 class Domain extends Model
 {
     /** @use HasFactory<DomainFactory> */
@@ -28,6 +29,8 @@ class Domain extends Model
         return [
             'status' => DomainStatus::class,
             'settings' => 'array',
+            'scan_cadence' => ScanCadence::class,
+            'last_scanned_at' => 'datetime',
         ];
     }
 

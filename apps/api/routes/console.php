@@ -19,3 +19,12 @@ Schedule::job(new ArchiveConsentEventsJob)
     ->name('archive-consent-events')
     ->onOneServer()
     ->withoutOverlapping();
+
+// Daily sweep that dispatches RunScanJob for every domain whose cadence
+// is due today. Spread across the cadence window so the scanner worker
+// isn't hammered. See DispatchScheduledScans for the stagger algorithm.
+Schedule::command('scans:dispatch-scheduled')
+    ->dailyAt('04:00')
+    ->name('dispatch-scheduled-scans')
+    ->onOneServer()
+    ->withoutOverlapping();

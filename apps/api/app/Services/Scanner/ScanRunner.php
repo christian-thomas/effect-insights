@@ -97,6 +97,10 @@ final readonly class ScanRunner
                     'urls_discovered' => $result->urlsDiscovered,
                     'urls_scanned' => $result->urlsScanned,
                 ]);
+
+                // Powers the scheduled-scan "is due today" check — see
+                // App\Console\Commands\DispatchScheduledScans.
+                $domain->update(['last_scanned_at' => now()]);
             });
         } catch (Throwable $exception) {
             $scan->update([

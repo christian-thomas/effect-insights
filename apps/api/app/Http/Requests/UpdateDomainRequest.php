@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\DomainStatus;
+use App\Enums\ScanCadence;
 use App\Models\Domain;
 use App\Support\CurrentOrganisation;
 use Illuminate\Foundation\Http\FormRequest;
@@ -35,6 +36,11 @@ class UpdateDomainRequest extends FormRequest
                 DomainStatus::Pending,
                 DomainStatus::Active,
                 DomainStatus::Paused,
+            ])],
+            'scan_cadence' => ['sometimes', Rule::in([
+                ScanCadence::Weekly,
+                ScanCadence::Monthly,
+                ScanCadence::Never,
             ])],
             'settings' => ['sometimes', 'nullable', 'array'],
         ];

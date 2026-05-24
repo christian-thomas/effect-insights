@@ -10,6 +10,7 @@ use App\Http\Resources\ScanResource;
 use App\Models\Domain;
 use App\Models\User;
 use App\Services\Scanner\ScanRunner;
+use App\Services\Scanner\SitemapDiscoveryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,11 +21,14 @@ class TriggerScan extends Controller
         Request $request,
         Domain $domain,
         ScanRunner $runner,
+        SitemapDiscoveryService $discovery,
     ): JsonResponse {
         /** @var User $user */
         $user = $request->user();
 
-        $urls = [sprintf('https://%s/', $domain->getAttribute('fqdn'))];
+        // Sitemap-driven URL list; falls back to apex-only when the domain
+        // has no discoverable sitemap.
+        $urls = $discovery->discover($domain);
 
         // Returns immediately with the queued Scan; the actual crawl runs
         // in the background via RunScanJob. The admin polls /api/scans/{id}
