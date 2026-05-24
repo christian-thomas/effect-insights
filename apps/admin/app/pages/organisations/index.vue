@@ -23,6 +23,7 @@ const schema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'lowercase letters, digits, single hyphens'),
   consent_retention_days: z.number().int().min(1).max(3650).nullable(),
   notification_email: z.string().max(320).nullable(),
+  a11y_alert_threshold: z.enum(['critical', 'serious', 'moderate', 'minor']).nullable(),
 });
 
 const slideoverOpen = ref(false);
@@ -40,6 +41,7 @@ const openCreate = (): void => {
   state.slug = '';
   state.consent_retention_days = null;
   state.notification_email = null;
+  state.a11y_alert_threshold = null;
   retentionIndefinite.value = true;
   retentionDays.value = 365;
   slideoverOpen.value = true;
@@ -51,6 +53,7 @@ const openEdit = (organisation: Organisation): void => {
   state.slug = organisation.slug;
   state.consent_retention_days = organisation.consentRetentionDays;
   state.notification_email = organisation.notificationEmail;
+  state.a11y_alert_threshold = organisation.a11yAlertThreshold;
   retentionIndefinite.value = organisation.consentRetentionDays === null;
   retentionDays.value = organisation.consentRetentionDays ?? 365;
   slideoverOpen.value = true;
@@ -253,6 +256,31 @@ const columns: TableColumn<Organisation>[] = [
               placeholder="alerts@client.com, ops@client.com"
               class="w-full"
               @update:model-value="(value: string) => state.notification_email = value === '' ? null : String(value)"
+            />
+          </UFormField>
+        </div>
+
+        <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
+          <div>
+            <p class="text-sm font-medium">Accessibility alert threshold</p>
+            <p class="text-xs text-gray-500">
+              Minimum impact that fires an accessibility-violations alert. Leave blank to inherit
+              the platform default (<code>serious</code>). Pick <code>critical</code> to alert only
+              on the most severe findings, <code>minor</code> to alert on everything.
+            </p>
+          </div>
+          <UFormField label="Threshold" name="a11y_alert_threshold">
+            <USelect
+              :model-value="state.a11y_alert_threshold ?? ''"
+              :items="[
+                { label: 'Inherit platform default', value: '' },
+                { label: 'Critical only', value: 'critical' },
+                { label: 'Serious or higher', value: 'serious' },
+                { label: 'Moderate or higher', value: 'moderate' },
+                { label: 'Minor (every violation)', value: 'minor' },
+              ]"
+              class="w-full"
+              @update:model-value="(value: string) => state.a11y_alert_threshold = value === '' ? null : (value as 'critical' | 'serious' | 'moderate' | 'minor')"
             />
           </UFormField>
         </div>

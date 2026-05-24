@@ -108,22 +108,38 @@ axe-core's own taxonomy.
 
 ## Alert threshold
 
-The Slack alert fires when any violation at or above the configured
-impact threshold exists in a completed scan. Default is `serious`,
-meaning Critical or Serious findings trigger an alert and Moderate or
-Minor stay quiet.
+The alert fires when any violation at or above the configured impact
+threshold exists in a completed scan. The platform default is
+`serious`, meaning Critical or Serious findings trigger an alert and
+Moderate or Minor stay quiet.
 
-Override via env var:
+Two override layers:
+
+1. **Platform-wide** (env var) — applies to every org that doesn't set
+   their own override.
+2. **Per-organisation** (`organisations.a11y_alert_threshold` column) —
+   overrides the platform default for one tenant. Set via the admin's
+   organisation slideover or `PATCH /api/organisations/{id}`.
 
 ```bash
+# Platform default
 ACCESSIBILITY_ALERT_THRESHOLD=critical   # only Critical alerts
 ACCESSIBILITY_ALERT_THRESHOLD=serious    # default
 ACCESSIBILITY_ALERT_THRESHOLD=moderate   # Moderate and worse
 ACCESSIBILITY_ALERT_THRESHOLD=minor      # every violation
+
+# Per-org override (via API)
+PATCH /api/organisations/{uuid}
+{ "a11y_alert_threshold": "minor" }
 ```
 
-Setting it to a value below `serious` is noisy — most axe runs find
-at least a handful of `minor` issues even on well-built sites.
+Per-org override is `null` by default, meaning "inherit the platform
+default". Resolution order in
+{@see App\Services\Notifications\AccessibilityAlertService}:
+per-org column → platform env → `serious`.
+
+Setting a threshold below `serious` is noisy — most axe runs find at
+least a handful of `minor` issues even on well-built sites.
 
 ## Cost / quota considerations
 

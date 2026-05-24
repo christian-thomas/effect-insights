@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'name', 'slug', 'settings',
     'consent_retention_days',
     'notification_email',
+    'a11y_alert_threshold',
 ])]
 class Organisation extends Model
 {

@@ -25,6 +25,7 @@ class OrganisationResource extends JsonResource
             'slug' => $this->getAttribute('slug'),
             'consentRetentionDays' => $this->getAttribute('consent_retention_days'),
             'notificationEmail' => $this->getAttribute('notification_email'),
+            'a11yAlertThreshold' => $this->getAttribute('a11y_alert_threshold'),
         ];
     }
 }

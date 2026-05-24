@@ -1,3 +1,5 @@
+export type A11yAlertThreshold = 'critical' | 'serious' | 'moderate' | 'minor';
+
 export interface Organisation {
   readonly id: string;
   readonly name: string;
@@ -9,6 +11,9 @@ export interface Organisation {
   // notifications for all four alert types (unknown cookies, scan
   // failures, accessibility violations, a11y scan failures).
   readonly notificationEmail: string | null;
+  // NULL = inherit the global `services.accessibility.alert_threshold`
+  // env default. Override per-org for tenant-specific alert policies.
+  readonly a11yAlertThreshold: A11yAlertThreshold | null;
 }
 
 export interface OrganisationInput {
@@ -16,4 +21,5 @@ export interface OrganisationInput {
   slug: string;
   consent_retention_days?: number | null;
   notification_email?: string | null;
+  a11y_alert_threshold?: A11yAlertThreshold | null;
 }

@@ -44,7 +44,7 @@ readonly class AccessibilityAlertService
             return;
         }
 
-        if (! $this->meetsThreshold($byImpact)) {
+        if (! $this->meetsThreshold($byImpact, $domain)) {
             return;
         }
 
@@ -94,9 +94,9 @@ readonly class AccessibilityAlertService
     /**
      * @param  array<string, int>  $byImpact
      */
-    private function meetsThreshold(array $byImpact): bool
+    private function meetsThreshold(array $byImpact, Domain $domain): bool
     {
-        $threshold = $this->configuredThreshold();
+        $threshold = $this->configuredThreshold($domain);
 
         foreach ($byImpact as $impactValue => $count) {
             if ($count <= 0) {
@@ -112,11 +112,27 @@ readonly class AccessibilityAlertService
         return false;
     }
 
-    private function configuredThreshold(): A11yImpact
+    /**
+     * Per-org override falls back to the global config setting, which
+     * itself falls back to `Serious`. Allows different tenants to run
+     * different alert policies on the same platform deploy — e.g. a
+     * media client on `minor` and an internal-tools client on
+     * `critical`.
+     */
+    private function configuredThreshold(Domain $domain): A11yImpact
     {
-        $raw = (string) config('services.accessibility.alert_threshold', A11yImpact::Serious->value);
+        $organisation = $domain->organisation()->withoutGlobalScope('organisation')->first();
+        $perOrg = (string) ($organisation?->getAttribute('a11y_alert_threshold') ?? '');
+        if ($perOrg !== '') {
+            $candidate = A11yImpact::tryFrom($perOrg);
+            if ($candidate !== null) {
+                return $candidate;
+            }
+        }
 
-        return A11yImpact::tryFrom($raw) ?? A11yImpact::Serious;
+        $global = (string) config('services.accessibility.alert_threshold', A11yImpact::Serious->value);
+
+        return A11yImpact::tryFrom($global) ?? A11yImpact::Serious;
     }
 
     private function detailUrlFor(AccessibilityScan $scan): string

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\A11yImpact;
 use App\Models\Organisation;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -37,6 +38,15 @@ class UpdateOrganisationRequest extends FormRequest
             // = Slack only. Each address is light-validated (RFC checks
             // happen on the model's notificationEmails() splitter).
             'notification_email' => ['sometimes', 'nullable', 'string', 'max:320'],
+
+            // Per-org a11y alert threshold. NULL = inherit the global
+            // services.accessibility.alert_threshold env default.
+            'a11y_alert_threshold' => ['sometimes', 'nullable', Rule::in([
+                A11yImpact::Critical->value,
+                A11yImpact::Serious->value,
+                A11yImpact::Moderate->value,
+                A11yImpact::Minor->value,
+            ])],
         ];
     }
 
