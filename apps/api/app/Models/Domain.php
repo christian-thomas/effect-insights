@@ -14,7 +14,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-#[Fillable(['fqdn', 'apex_domain', 'status', 'public_key', 'settings', 'scan_cadence', 'last_scanned_at'])]
+#[Fillable([
+    'fqdn', 'apex_domain', 'status', 'public_key', 'settings',
+    'scan_cadence', 'last_scanned_at',
+    'a11y_scan_cadence', 'last_a11y_scanned_at',
+])]
 class Domain extends Model
 {
     /** @use HasFactory<DomainFactory> */
@@ -31,6 +35,8 @@ class Domain extends Model
             'settings' => 'array',
             'scan_cadence' => ScanCadence::class,
             'last_scanned_at' => 'datetime',
+            'a11y_scan_cadence' => ScanCadence::class,
+            'last_a11y_scanned_at' => 'datetime',
         ];
     }
 
