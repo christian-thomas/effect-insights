@@ -10,6 +10,7 @@ import {
   writeStoredConsent,
   type ConsentPostBody,
 } from './consent';
+import { detectCspNonce } from './csp';
 import { renderBanner } from './dom';
 import { installDefaults, sendUpdate } from './gcm';
 import { unblockScripts, watchForBlockedScripts } from './scripts';
@@ -50,9 +51,10 @@ const recordConsent = async (params: {
   country: string | null;
   categories: ConsentCategories;
   consentBaseUrl: string;
+  cspNonce: string | null;
   eventType: ConsentPostBody['eventType'];
 }): Promise<void> => {
-  const { config, country, categories, consentBaseUrl, eventType } = params;
+  const { config, country, categories, consentBaseUrl, cspNonce, eventType } = params;
 
   const stored = readStoredConsent();
   const anonymousId = stored?.anonymousId ?? generateAnonymousId();
@@ -68,7 +70,7 @@ const recordConsent = async (params: {
   );
 
   sendUpdate(categories);
-  unblockScripts(categories);
+  unblockScripts(categories, cspNonce);
 
   try {
     await postConsentEvent(
@@ -92,6 +94,7 @@ const boot = async (): Promise<void> => {
     const baseUrl = (tag.getAttribute(BASE_ATTR) ?? DEFAULT_BASE).replace(/\/$/, '');
     const consentBaseUrl = (tag.getAttribute(CONSENT_BASE_ATTR) ?? baseUrl).replace(/\/$/, '');
     const previewMode = tag.hasAttribute(PREVIEW_MODE_ATTR);
+    const cspNonce = detectCspNonce(tag);
 
     // Inline config — used by the admin preview iframe. Bypasses the edge
     // fetch entirely; the host page passes the draft config as a JSON
@@ -124,13 +127,13 @@ const boot = async (): Promise<void> => {
       watchForBlockedScripts(() => {
         const current = readStoredConsent();
         return current === null ? null : current.categories;
-      });
+      }, cspNonce);
 
       // Prior consent still valid? Replay it as an `update`, unblock the
       // already-rendered blocked scripts, and skip the modal entirely.
       if (isStoredConsentStillValid(stored, config) && stored !== null) {
         sendUpdate(stored.categories);
-        unblockScripts(stored.categories);
+        unblockScripts(stored.categories, cspNonce);
         return;
       }
     }
@@ -150,13 +153,14 @@ const boot = async (): Promise<void> => {
         // No POST + no cookie writes — preview is a no-side-effect render.
         return;
       }
-      await recordConsent({ config, country, categories, consentBaseUrl, eventType });
+      await recordConsent({ config, country, categories, consentBaseUrl, cspNonce, eventType });
     };
 
     handles = renderBanner({
       copy,
       initial: allDenied(),
       styleText,
+      cspNonce,
       onAcceptAll: () => {
         void finish(allGranted(), 'granted');
       },

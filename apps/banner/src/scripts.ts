@@ -1,3 +1,4 @@
+import { applyNonce } from './csp';
 import type { ConsentCategories, CookieCategory } from './types';
 
 /**
@@ -28,12 +29,13 @@ const isConsentedCategory = (category: string, categories: ConsentCategories): b
   return categories[category as CookieCategory] === true;
 };
 
-const cloneScript = (original: HTMLScriptElement): HTMLScriptElement => {
+const cloneScript = (original: HTMLScriptElement, cspNonce: string | null): HTMLScriptElement => {
   const clone = document.createElement('script');
 
   for (const attr of Array.from(original.attributes)) {
     if (attr.name === 'type') continue;
     if (attr.name === 'data-category') continue;
+    if (attr.name === 'nonce') continue; // applied via property below
     clone.setAttribute(attr.name, attr.value);
   }
 
@@ -42,6 +44,12 @@ const cloneScript = (original: HTMLScriptElement): HTMLScriptElement => {
     clone.textContent = original.textContent;
   }
 
+  // Browsers wipe the `nonce` HTML attribute after parsing so the
+  // original.attributes loop above can't see it. Read it off the property
+  // (preserved) and fall back to the host-page nonce we detected at boot.
+  const inheritedNonce = original.nonce || cspNonce;
+  applyNonce(clone, inheritedNonce);
+
   return clone;
 };
 
@@ -49,7 +57,10 @@ const cloneScript = (original: HTMLScriptElement): HTMLScriptElement => {
  * Unblocks every script in the DOM whose data-category is in the granted set.
  * Returns the count of scripts released — useful for tests + diagnostics.
  */
-export const unblockScripts = (categories: ConsentCategories): number => {
+export const unblockScripts = (
+  categories: ConsentCategories,
+  cspNonce: string | null = null,
+): number => {
   if (typeof document === 'undefined') return 0;
 
   const blocked = document.querySelectorAll<HTMLScriptElement>(SELECTOR);
@@ -59,7 +70,7 @@ export const unblockScripts = (categories: ConsentCategories): number => {
     const category = blockedScript.getAttribute('data-category');
     if (category === null || !isConsentedCategory(category, categories)) return;
 
-    const replacement = cloneScript(blockedScript);
+    const replacement = cloneScript(blockedScript, cspNonce);
     blockedScript.parentNode?.replaceChild(replacement, blockedScript);
     released += 1;
   });
@@ -74,6 +85,7 @@ export const unblockScripts = (categories: ConsentCategories): number => {
  */
 export const watchForBlockedScripts = (
   getCategories: () => ConsentCategories | null,
+  cspNonce: string | null = null,
 ): (() => void) => {
   if (typeof MutationObserver === 'undefined') {
     return () => {};
@@ -82,7 +94,7 @@ export const watchForBlockedScripts = (
   const observer = new MutationObserver(() => {
     const categories = getCategories();
     if (categories === null) return;
-    unblockScripts(categories);
+    unblockScripts(categories, cspNonce);
   });
 
   observer.observe(document.documentElement, {

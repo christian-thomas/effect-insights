@@ -1,3 +1,4 @@
+import { applyNonce } from './csp';
 import type { BannerCopy, ConsentCategories, CookieCategory } from './types';
 import { cls } from './styles';
 
@@ -7,6 +8,9 @@ interface RenderOptions {
   copy: BannerCopy;
   initial: ConsentCategories;
   styleText: string;
+  // Host page's CSP nonce (read once at boot). Stamped on the <style>
+  // element so strict-CSP sites don't block our banner styles.
+  cspNonce: string | null;
   onAcceptAll: () => void;
   onRejectAll: () => void;
   onSavePreferences: (categories: ConsentCategories) => void;
@@ -36,6 +40,7 @@ export const renderBanner = (options: RenderOptions): RenderHandles => {
 
   const style = document.createElement('style');
   style.textContent = options.styleText;
+  applyNonce(style, options.cspNonce);
   root.appendChild(style);
 
   const shell = document.createElement('div');

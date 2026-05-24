@@ -106,4 +106,48 @@ describe('scripts', () => {
     expect(live?.getAttribute('type')).not.toBe('text/plain');
     stop();
   });
+
+  it('propagates the host-page CSP nonce to released scripts', () => {
+    document.body.innerHTML = `
+      <script type="text/plain" data-category="statistics" src="https://example.test/ga.js"></script>
+    `;
+
+    unblockScripts(allowAll, 'host-nonce-123');
+
+    const live = document.querySelector<HTMLScriptElement>(
+      'script[src="https://example.test/ga.js"]',
+    );
+    expect(live).not.toBeNull();
+    expect(live?.getAttribute('nonce')).toBe('host-nonce-123');
+    expect(live?.nonce).toBe('host-nonce-123');
+  });
+
+  it('preserves the original script nonce property over the host-page nonce', () => {
+    const original = document.createElement('script');
+    original.setAttribute('type', 'text/plain');
+    original.setAttribute('data-category', 'statistics');
+    original.setAttribute('src', 'https://example.test/ga.js');
+    (original as HTMLScriptElement & { nonce?: string }).nonce = 'original-nonce';
+    document.body.appendChild(original);
+
+    unblockScripts(allowAll, 'host-fallback-nonce');
+
+    const live = document.querySelector<HTMLScriptElement>(
+      'script[src="https://example.test/ga.js"]',
+    );
+    expect(live?.getAttribute('nonce')).toBe('original-nonce');
+  });
+
+  it('does not add a nonce when none is configured', () => {
+    document.body.innerHTML = `
+      <script type="text/plain" data-category="statistics" src="https://example.test/ga.js"></script>
+    `;
+
+    unblockScripts(allowAll, null);
+
+    const live = document.querySelector<HTMLScriptElement>(
+      'script[src="https://example.test/ga.js"]',
+    );
+    expect(live?.hasAttribute('nonce')).toBe(false);
+  });
 });
