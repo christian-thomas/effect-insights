@@ -14,6 +14,12 @@ Route::middleware('consent.ingest')->group(function (): void {
     Route::post('/internal/consent-events', Api\Internal\IngestConsentEvent::class);
 });
 
+// Public cookie-policy embed. Looked up by domain.public_key so embedders
+// never need the internal UUID. Caching is moderate (1h fresh, 24h SWR) —
+// a fresh scan needs ~an hour to surface to embedded iframes.
+Route::get('/cookie-policy/{publicKey}.html', Api\CookiePolicies\ShowPublicCookiePolicy::class)
+    ->where('publicKey', 'pk_[A-Za-z0-9_-]+');
+
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/me', Api\Auth\Me::class);
     Route::post('/logout', Api\Auth\Logout::class);
@@ -47,6 +53,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/domains/{domain}', Api\Domains\ShowDomain::class);
         Route::patch('/domains/{domain}', Api\Domains\UpdateDomain::class);
         Route::delete('/domains/{domain}', Api\Domains\DeleteDomain::class);
+
+        Route::get('/domains/{domain}/cookie-policy', Api\CookiePolicies\ShowCookiePolicy::class);
 
         Route::get('/domains/{domain}/banner-config', Api\BannerConfigs\ShowBannerConfig::class);
         Route::get('/domains/{domain}/banner-config/diff', Api\BannerConfigs\ShowBannerConfigDiff::class);
