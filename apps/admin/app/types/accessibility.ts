@@ -41,4 +41,8 @@ export interface AccessibilityFinding {
   readonly url: string;
   readonly tags: ReadonlyArray<string>;
   readonly nodes: ReadonlyArray<AccessibilityFindingNode>;
+  // Computed at request time by the server from
+  // `accessibility_rule_overrides`. When true, the rule is org-wide
+  // muted OR muted for this specific domain.
+  readonly muted: boolean;
 }

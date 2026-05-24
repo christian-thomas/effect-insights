@@ -6,15 +6,21 @@ namespace App\Http\Controllers\Api\AccessibilityScans;
 
 use App\Enums\A11yImpact;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\AccessibilityFindingResource;
 use App\Http\Resources\AccessibilityScanResource;
+use App\Models\AccessibilityFinding;
 use App\Models\AccessibilityScan;
+use App\Services\Accessibility\AccessibilityRuleMuteResolver;
 use Illuminate\Http\JsonResponse;
 
 /**
  * Returns the scan envelope + every finding it produced. Findings come
  * back ordered by impact severity (Critical → Minor) so the admin
  * never has to re-sort client-side.
+ *
+ * Each finding carries a computed `muted` flag derived at request time
+ * from the org's {@see \App\Models\AccessibilityRuleOverride} rows.
+ * Mute resolution is dynamic — operators can mute/unmute without
+ * re-running the scan, and the next list/show reflects it.
  */
 class ShowAccessibilityScan extends Controller
 {
@@ -32,15 +38,30 @@ class ShowAccessibilityScan extends Controller
             A11yImpact::Minor->value,
         );
 
+        /** @var \Illuminate\Database\Eloquent\Collection<int, AccessibilityFinding> $findings */
         $findings = $accessibilityScan->findings()
             ->orderByRaw($impactOrder)
             ->orderBy('rule_id')
             ->orderBy('url')
             ->get();
 
+        $resolver = AccessibilityRuleMuteResolver::forOrganisation(
+            (string) $accessibilityScan->getAttribute('organisation_id'),
+        );
+        $domainId = (string) $accessibilityScan->getAttribute('domain_id');
+
+        // Pre-compute the mute flag once per finding and attach it as
+        // a non-DB attribute so AccessibilityFindingResource can emit it.
+        $findings->each(function (AccessibilityFinding $finding) use ($resolver, $domainId): void {
+            $finding->setAttribute(
+                'muted',
+                $resolver->isMuted((string) $finding->getAttribute('rule_id'), $domainId),
+            );
+        });
+
         return response()->json([
             'scan' => AccessibilityScanResource::make($accessibilityScan),
-            'findings' => AccessibilityFindingResource::collection($findings),
+            'findings' => \App\Http\Resources\AccessibilityFindingResource::collection($findings),
         ]);
     }
 }

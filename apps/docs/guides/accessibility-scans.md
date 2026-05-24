@@ -170,6 +170,56 @@ distinguish — a `serious` best-practice rule trips the same
 threshold as a `serious` WCAG rule. Tag-aware alert filtering is on
 the roadmap if that gets noisy.
 
+## Rule muting
+
+Some rules will never apply to your sites — accessibility is
+case-by-case, and a "violation" that legal has explicitly signed off
+as acceptable shouldn't keep paging on-call. The
+`accessibility_rule_overrides` table lets you mute a rule:
+
+- **Org-wide** — applies across every domain in the organisation.
+- **Per-domain** — applies only to one domain's scans.
+
+Muting has two effects:
+
+1. The Slack/email alert pipeline skips findings for that rule when
+   computing the impact-threshold count. A scan that finds only
+   muted rules above the threshold won't fire an alert.
+2. The admin's scan detail page tags those findings with a "Muted"
+   badge and dims them so they're visually de-emphasised.
+
+The audit trail stays intact — muted findings still land in
+`accessibility_findings` and the per-scan counters still reflect
+what axe actually found. Mute is a reporting layer, not a deletion.
+
+### Adding a mute
+
+From the scan detail page, expand any finding card and click
+**Just this domain** or **Org-wide**. The prompt asks for a reason
+(helps the next person reading the audit trail know why).
+
+Or via the API:
+
+```bash
+curl -X POST https://api.tracewatch.io/api/accessibility-rule-overrides \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <sanctum-session>" \
+  -d '{
+    "rule_id": "color-contrast",
+    "domain_id": null,
+    "reason": "Brand colours signed off by legal 2026-04-01 — ENG-123"
+  }'
+```
+
+`domain_id: null` makes it org-wide; a domain UUID scopes it.
+
+### Reviewing + removing mutes
+
+`/accessibility-rule-overrides` in admin lists every active override
+for the current org with rule id, scope, reason, and a delete button.
+Removing an override un-mutes immediately — the next scan + alert run
+treats the rule as active again.
+
 ## Limitations
 
 - **CDN-loaded axe-core.** The worker pulls `axe.min.js` from
@@ -178,16 +228,13 @@ the roadmap if that gets noisy.
   runner records the error, fires the failure alert, moves on).
   Acceptable for v1; we can switch to a Wrangler text-bundle import
   later for offline guarantees.
-- **No rule muting.** Every violation is reported every time. Per-org
-  or per-domain rule muting (the equivalent of `cookie_overrides`)
-  is on the wishlist.
 - **No historical trend dashboard.** The violations_by_impact counts
   are stored per scan but there's no chart of "Critical violations
   on example.com over the last 90 days" yet.
 - **No tag-aware alert filtering.** Best-practice + WCAG rules at the
   same impact level trip the same threshold. Filter visually in the
   admin via the WCAG/Best-practice tab on the scan detail page; or
-  raise the global threshold to suppress.
+  mute the noisy rules.
 
 ## Related
 

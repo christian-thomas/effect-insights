@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Notifications;
 
 use App\Enums\A11yImpact;
+use App\Models\AccessibilityFinding;
 use App\Models\AccessibilityScan;
 use App\Models\Domain;
 use App\Notifications\AccessibilityIssuesFound;
 use App\Notifications\AccessibilityScanFailed;
+use App\Services\Accessibility\AccessibilityRuleMuteResolver;
 use Illuminate\Notifications\Notification as BaseNotification;
 use Illuminate\Support\Facades\Notification;
 
@@ -37,14 +39,25 @@ readonly class AccessibilityAlertService
 {
     public function alertIfNeeded(AccessibilityScan $scan, Domain $domain): void
     {
-        $byImpact = (array) $scan->getAttribute('violations_by_impact');
         $total = (int) $scan->getAttribute('violations_total');
 
         if ($total === 0) {
             return;
         }
 
-        if (! $this->meetsThreshold($byImpact, $domain)) {
+        // Drop muted findings before counting. We recompute the
+        // by-impact map from the actual findings rows rather than
+        // reading the stored aggregate, because muting is a runtime
+        // resolution — operators can add/remove overrides without
+        // re-running the scan.
+        $effective = $this->effectiveByImpact($scan, $domain);
+        $effectiveTotal = array_sum($effective);
+
+        if ($effectiveTotal === 0) {
+            return;
+        }
+
+        if (! $this->meetsThreshold($effective, $domain)) {
             return;
         }
 
@@ -52,12 +65,50 @@ readonly class AccessibilityAlertService
             new AccessibilityIssuesFound(
                 scan: $scan,
                 domain: $domain,
-                byImpact: $byImpact,
-                total: $total,
+                byImpact: $effective,
+                total: $effectiveTotal,
                 detailUrl: $this->detailUrlFor($scan),
             ),
             $domain,
         );
+    }
+
+    /**
+     * Build a fresh by-impact map from findings rows minus anything an
+     * active override mutes. Doesn't touch the stored `violations_by_impact`
+     * column — that stays the audit-time aggregate of what axe found.
+     *
+     * @return array<string, int>
+     */
+    private function effectiveByImpact(AccessibilityScan $scan, Domain $domain): array
+    {
+        $resolver = AccessibilityRuleMuteResolver::forOrganisation(
+            (string) $domain->getAttribute('organisation_id'),
+        );
+
+        $byImpact = [
+            A11yImpact::Critical->value => 0,
+            A11yImpact::Serious->value => 0,
+            A11yImpact::Moderate->value => 0,
+            A11yImpact::Minor->value => 0,
+        ];
+
+        AccessibilityFinding::query()
+            ->withoutGlobalScope('organisation')
+            ->where('accessibility_scan_id', $scan->getKey())
+            ->get(['rule_id', 'impact'])
+            ->each(function ($finding) use ($resolver, $domain, &$byImpact): void {
+                if ($resolver->isMutedForDomain((string) $finding->getAttribute('rule_id'), $domain)) {
+                    return;
+                }
+                $impact = $finding->getAttribute('impact');
+                $impactValue = $impact instanceof A11yImpact ? $impact->value : (string) $impact;
+                if (isset($byImpact[$impactValue])) {
+                    $byImpact[$impactValue]++;
+                }
+            });
+
+        return $byImpact;
     }
 
     /**

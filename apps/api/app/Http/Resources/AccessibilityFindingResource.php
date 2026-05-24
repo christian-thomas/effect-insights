@@ -30,6 +30,10 @@ class AccessibilityFindingResource extends JsonResource
             'url' => $this->getAttribute('url'),
             'tags' => $this->getAttribute('tags'),
             'nodes' => $this->getAttribute('nodes'),
+            // Computed at request time by ShowAccessibilityScan via
+            // AccessibilityRuleMuteResolver. False when the controller
+            // hasn't attached the flag so the field is always present.
+            'muted' => (bool) $this->getAttribute('muted'),
         ];
     }
 }

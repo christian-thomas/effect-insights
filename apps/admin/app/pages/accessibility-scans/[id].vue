@@ -79,6 +79,75 @@ const expandedRule = ref<string | null>(null);
 const toggleRule = (ruleId: string): void => {
   expandedRule.value = expandedRule.value === ruleId ? null : ruleId;
 };
+
+const overridesStore = useAccessibilityRuleOverridesStore();
+const toast = useToast();
+const muting = ref<string | null>(null);
+
+const muteRuleOrgWide = async (finding: AccessibilityFinding): Promise<void> => {
+  const reason = window.prompt(
+    `Mute rule "${finding.ruleId}" org-wide? Add a reason (e.g. tracked in Linear ENG-…).`,
+    '',
+  );
+  if (reason === null) return; // cancelled
+  muting.value = finding.id;
+  try {
+    await overridesStore.create({
+      rule_id: finding.ruleId,
+      domain_id: null,
+      reason: reason || null,
+    });
+    await scansStore.show(scanId.value);
+    toast.add({
+      title: `Muted ${finding.ruleId}`,
+      description: 'Future scans (and this view) will treat this rule as muted across every domain.',
+      color: 'success',
+      icon: 'i-lucide-volume-x',
+    });
+  } catch (caught) {
+    toast.add({
+      title: 'Failed to mute rule',
+      description: caught instanceof Error ? caught.message : 'Please try again',
+      color: 'error',
+      icon: 'i-lucide-triangle-alert',
+    });
+  } finally {
+    muting.value = null;
+  }
+};
+
+const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> => {
+  const domainId = scan.value?.domainId;
+  if (!domainId) return;
+  const reason = window.prompt(
+    `Mute rule "${finding.ruleId}" for this domain only? Add a reason.`,
+    '',
+  );
+  if (reason === null) return;
+  muting.value = finding.id;
+  try {
+    await overridesStore.create({
+      rule_id: finding.ruleId,
+      domain_id: domainId,
+      reason: reason || null,
+    });
+    await scansStore.show(scanId.value);
+    toast.add({
+      title: `Muted ${finding.ruleId} on this domain`,
+      color: 'success',
+      icon: 'i-lucide-volume-x',
+    });
+  } catch (caught) {
+    toast.add({
+      title: 'Failed to mute rule',
+      description: caught instanceof Error ? caught.message : 'Please try again',
+      color: 'error',
+      icon: 'i-lucide-triangle-alert',
+    });
+  } finally {
+    muting.value = null;
+  }
+};
 </script>
 
 <template>
@@ -190,12 +259,23 @@ const toggleRule = (ruleId: string): void => {
             v-for="finding in group"
             :key="finding.id"
             class="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-900"
+            :class="finding.muted ? 'opacity-60' : ''"
             @click="toggleRule(finding.id)"
           >
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <code class="text-sm font-medium">{{ finding.ruleId }}</code>
+                  <UBadge
+                    v-if="finding.muted"
+                    color="neutral"
+                    variant="subtle"
+                    size="sm"
+                    icon="i-lucide-volume-x"
+                    title="Muted by an active rule override — doesn't contribute to alert thresholds."
+                  >
+                    Muted
+                  </UBadge>
                   <span class="text-xs text-gray-500">
                     {{ finding.nodes.length }} element{{ finding.nodes.length === 1 ? '' : 's' }}
                   </span>
@@ -254,6 +334,39 @@ const toggleRule = (ruleId: string): void => {
                     </p>
                   </li>
                 </ul>
+              </div>
+
+              <div
+                v-if="!finding.muted"
+                class="pt-3 border-t border-gray-200 dark:border-gray-800 flex items-center gap-2 flex-wrap"
+              >
+                <span class="text-xs text-gray-500">Mute this rule:</span>
+                <UButton
+                  size="xs"
+                  variant="soft"
+                  color="neutral"
+                  icon="i-lucide-volume-x"
+                  :loading="muting === finding.id"
+                  @click.stop="muteRuleForDomain(finding)"
+                >
+                  Just this domain
+                </UButton>
+                <UButton
+                  size="xs"
+                  variant="soft"
+                  color="neutral"
+                  icon="i-lucide-volume-x"
+                  :loading="muting === finding.id"
+                  @click.stop="muteRuleOrgWide(finding)"
+                >
+                  Org-wide
+                </UButton>
+                <span class="text-xs text-gray-400 ml-2">
+                  Stops this rule from counting toward alert thresholds. Manage overrides in
+                  <NuxtLink to="/accessibility-rule-overrides" class="underline">
+                    settings
+                  </NuxtLink>.
+                </span>
               </div>
             </div>
           </UCard>

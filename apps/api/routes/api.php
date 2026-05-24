@@ -86,6 +86,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/accessibility-scans/{accessibilityScan}', Api\AccessibilityScans\ShowAccessibilityScan::class);
         Route::post('/domains/{domain}/accessibility-scans', Api\AccessibilityScans\TriggerAccessibilityScan::class);
 
+        // Per-org / per-domain mute list for axe-core rule IDs. Sibling
+        // of cookie-overrides; suppresses a rule from alert thresholds
+        // and dims it in the scan detail UI.
+        Route::get('/accessibility-rule-overrides', Api\AccessibilityRuleOverrides\ListAccessibilityRuleOverrides::class);
+        Route::post('/accessibility-rule-overrides', Api\AccessibilityRuleOverrides\CreateAccessibilityRuleOverride::class);
+        Route::delete('/accessibility-rule-overrides/{accessibilityRuleOverride}', Api\AccessibilityRuleOverrides\DeleteAccessibilityRuleOverride::class);
+
         // Manual review queue: cookies the scanner saw but the resolver
         // couldn't categorise, grouped by name. The /cookies admin page
         // surfaces this as the "Review queue" tab.
