@@ -30,10 +30,16 @@ interface DiffResponse {
   data: BannerConfigDiff;
 }
 
+interface ListResponse {
+  data: BannerConfig[];
+}
+
 interface BannerSlot {
   draft: BannerConfig | null;
   published: BannerConfig | null;
   diff: BannerConfigDiff | null;
+  history: BannerConfig[];
+  historyLoading: boolean;
   loading: boolean;
   error: Error | null;
 }
@@ -42,6 +48,8 @@ const emptySlot = (): BannerSlot => ({
   draft: null,
   published: null,
   diff: null,
+  history: [],
+  historyLoading: false,
   loading: false,
   error: null,
 });
@@ -114,7 +122,38 @@ export const useBannerConfigsStore = defineStore('bannerConfigs', {
         method: 'POST',
       });
       // Refresh both draft + published from the server canonical state.
+      // History gains a new row on every publish — refetch alongside.
       await this.fetch(domainId);
+      await this.fetchHistory(domainId);
+      return response.data;
+    },
+
+    async fetchHistory(domainId: string): Promise<void> {
+      const slot = this.ensureSlot(domainId);
+      slot.historyLoading = true;
+      try {
+        const response = await $api<ListResponse>(
+          `/api/domains/${domainId}/banner-config/history`,
+        );
+        slot.history = response.data;
+      } finally {
+        slot.historyLoading = false;
+      }
+    },
+
+    async rollback(domainId: string, version: number): Promise<BannerConfig> {
+      const response = await $api<ItemResponse>(
+        `/api/domains/${domainId}/banner-config/rollback`,
+        {
+          method: 'POST',
+          body: { version },
+        },
+      );
+      const slot = this.ensureSlot(domainId);
+      // The endpoint returns the new draft — slot it in and refresh the
+      // diff so the pending-changes panel reflects the rollback.
+      slot.draft = response.data;
+      await this.fetchDiff(domainId);
       return response.data;
     },
   },

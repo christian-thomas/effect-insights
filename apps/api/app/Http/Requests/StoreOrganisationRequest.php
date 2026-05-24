@@ -24,6 +24,9 @@ class StoreOrganisationRequest extends FormRequest
                 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
                 Rule::unique('organisations', 'slug'),
             ],
+            // NULL = retain consent events indefinitely (the default).
+            // Positive integer = nightly purge cuts anything older.
+            'consent_retention_days' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:3650'],
         ];
     }
 

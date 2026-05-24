@@ -177,6 +177,12 @@ const copyEmbed = async (): Promise<void> => {
           class="rounded bg-gray-50 dark:bg-gray-900 p-4 text-xs overflow-x-auto"
         ><code>{{ embedSnippet }}</code></pre>
       </UCard>
+
+      <CookiePolicyPanel
+        :domain-id="domain.id"
+        :public-key="domain.publicKey"
+        :fqdn="domain.fqdn"
+      />
     </template>
 
     <USkeleton v-else-if="loading" class="h-48 w-full" />

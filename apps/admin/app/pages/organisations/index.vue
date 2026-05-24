@@ -21,17 +21,25 @@ const schema = z.object({
     .min(1, 'Slug is required')
     .max(64)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'lowercase letters, digits, single hyphens'),
+  consent_retention_days: z.number().int().min(1).max(3650).nullable(),
 });
 
 const slideoverOpen = ref(false);
 const editing = ref<Organisation | null>(null);
 const state = reactive<Partial<OrganisationInput>>({});
 const submitting = ref(false);
+// Mirror the nullable retention field with a boolean for the toggle —
+// the API uses NULL = indefinite but a toggle is friendlier in the UI.
+const retentionIndefinite = ref(true);
+const retentionDays = ref<number>(365);
 
 const openCreate = (): void => {
   editing.value = null;
   state.name = '';
   state.slug = '';
+  state.consent_retention_days = null;
+  retentionIndefinite.value = true;
+  retentionDays.value = 365;
   slideoverOpen.value = true;
 };
 
@@ -39,8 +47,18 @@ const openEdit = (organisation: Organisation): void => {
   editing.value = organisation;
   state.name = organisation.name;
   state.slug = organisation.slug;
+  state.consent_retention_days = organisation.consentRetentionDays;
+  retentionIndefinite.value = organisation.consentRetentionDays === null;
+  retentionDays.value = organisation.consentRetentionDays ?? 365;
   slideoverOpen.value = true;
 };
+
+// Keep state.consent_retention_days in sync with whichever input is
+// active: when the toggle is on we send null (indefinite); otherwise
+// we send the number from the days input.
+watch([retentionIndefinite, retentionDays], (): void => {
+  state.consent_retention_days = retentionIndefinite.value ? null : retentionDays.value;
+});
 
 const onSubmit = async (event: FormSubmitEvent<OrganisationInput>): Promise<void> => {
   submitting.value = true;
@@ -87,6 +105,7 @@ const confirmDelete = async (organisation: Organisation): Promise<void> => {
 const columns: TableColumn<Organisation>[] = [
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'slug', header: 'Slug' },
+  { accessorKey: 'consentRetentionDays', header: 'Consent retention' },
   { id: 'actions', header: '' },
 ];
 </script>
@@ -129,6 +148,14 @@ const columns: TableColumn<Organisation>[] = [
       <template #slug-cell="{ row }">
         <code class="text-sm">{{ row.original.slug }}</code>
       </template>
+      <template #consentRetentionDays-cell="{ row }">
+        <span v-if="row.original.consentRetentionDays === null" class="text-sm text-gray-500">
+          Indefinite
+        </span>
+        <span v-else class="text-sm">
+          {{ row.original.consentRetentionDays }} days
+        </span>
+      </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end gap-1">
           <UButton
@@ -162,6 +189,51 @@ const columns: TableColumn<Organisation>[] = [
         <UFormField label="Slug" name="slug" help="Used in URLs and CDN paths. Lowercase, hyphens.">
           <UInput v-model="state.slug" placeholder="acme-corp" class="w-full" />
         </UFormField>
+
+        <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
+          <div>
+            <p class="text-sm font-medium">Consent event retention</p>
+            <p class="text-xs text-gray-500">
+              How long to keep this tenant's consent log in the MySQL archive. The nightly
+              <code>consent-events:purge</code> command hard-deletes anything older.
+            </p>
+          </div>
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1">
+              <p class="text-sm">Retain indefinitely</p>
+              <p class="text-xs text-gray-500">
+                Default. Consent events stay in the archive until you delete the parent domain.
+              </p>
+            </div>
+            <USwitch v-model="retentionIndefinite" />
+          </div>
+          <UFormField
+            v-if="!retentionIndefinite"
+            label="Retain for"
+            name="consent_retention_days"
+            help="Days. Min 1, max 3650 (10 years)."
+          >
+            <div class="flex items-center gap-2">
+              <UInput
+                v-model.number="retentionDays"
+                type="number"
+                :min="1"
+                :max="3650"
+                class="w-32"
+              />
+              <span class="text-sm text-gray-500">days</span>
+            </div>
+          </UFormField>
+          <UAlert
+            v-if="!retentionIndefinite"
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-triangle-alert"
+            title="Hard delete"
+            description="The purge bypasses receipts and the archive — deleted events cannot be re-downloaded."
+          />
+        </div>
+
         <div class="flex justify-end gap-2 pt-2">
           <UButton color="neutral" variant="ghost" label="Cancel" @click="slideoverOpen = false" />
           <UButton

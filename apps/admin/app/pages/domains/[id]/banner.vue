@@ -15,6 +15,7 @@ const bannerStore = useBannerConfigsStore();
 const domainId = route.params.id as string;
 
 await bannerStore.fetch(domainId);
+await bannerStore.fetchHistory(domainId);
 
 const slot = computed(() => bannerStore.forDomain(domainId));
 const draft = computed(() => slot.value.draft);
@@ -22,6 +23,40 @@ const published = computed(() => slot.value.published);
 const diff = computed(() => slot.value.diff);
 const loading = computed(() => slot.value.loading);
 const error = computed(() => slot.value.error);
+const history = computed(() => slot.value.history);
+const historyLoading = computed(() => slot.value.historyLoading);
+const rollingBackVersion = ref<number | null>(null);
+
+const onRollback = async (version: number): Promise<void> => {
+  if (
+    !window.confirm(
+      `Roll back the draft to version ${version}? This loads the historic content into the draft — you'll still need to click Publish to make it live.`,
+    )
+  ) {
+    return;
+  }
+  rollingBackVersion.value = version;
+  try {
+    await bannerStore.rollback(domainId, version);
+    hydrateFromDraft();
+    previewVersion.value++;
+    toast.add({
+      title: `Rolled back to v${version}`,
+      description: 'Review the pending changes, then Publish to make it live.',
+      color: 'success',
+      icon: 'i-lucide-check',
+    });
+  } catch (caught) {
+    toast.add({
+      title: 'Rollback failed',
+      description: caught instanceof Error ? caught.message : 'Please try again',
+      color: 'error',
+      icon: 'i-lucide-triangle-alert',
+    });
+  } finally {
+    rollingBackVersion.value = null;
+  }
+};
 
 const state = reactive<BannerDraftInput>({
   layout: 'modal',
@@ -620,6 +655,13 @@ const gcmSignals = [
         </UCard>
 
         <BannerPendingChangesPanel :diff="diff" />
+
+        <BannerHistoryPanel
+          :history="history"
+          :loading="historyLoading"
+          :rolling-back-version="rollingBackVersion"
+          @rollback="onRollback"
+        />
 
         <div class="flex justify-end gap-2">
           <UButton
