@@ -5,15 +5,37 @@ interface PaginatedResponse<T> {
   data: T[];
 }
 
+export interface ScanDiffEntry {
+  name: string;
+  category: string | null;
+  firstSeenUrl: string | null;
+}
+
+export interface ScanCategoryChange {
+  name: string;
+  previousCategory: string | null;
+  currentCategory: string | null;
+}
+
+export interface ScanDiff {
+  previousScanId: string;
+  previousFinishedAt: string | null;
+  new: ScanDiffEntry[];
+  removed: ScanDiffEntry[];
+  categoryChanged: ScanCategoryChange[];
+}
+
 interface ScanDetailResponse {
   scan: { data: Scan };
   findings: { data: ScanFinding[] };
+  diff: ScanDiff | null;
 }
 
 interface ScansState {
   scans: Scan[];
   selected: Scan | null;
   findings: ScanFinding[];
+  diff: ScanDiff | null;
   loading: boolean;
   triggering: boolean;
   error: Error | null;
@@ -24,6 +46,7 @@ export const useScansStore = defineStore('scans', {
     scans: [],
     selected: null,
     findings: [],
+    diff: null,
     loading: false,
     triggering: false,
     error: null,
@@ -51,6 +74,7 @@ export const useScansStore = defineStore('scans', {
         const response = await $api<ScanDetailResponse>(`/api/scans/${scanId}`);
         this.selected = response.scan.data;
         this.findings = response.findings.data;
+        this.diff = response.diff;
       } catch (caught) {
         this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {

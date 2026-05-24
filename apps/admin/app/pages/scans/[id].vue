@@ -6,7 +6,7 @@ type BadgeColor = NonNullable<BadgeProps['color']>;
 
 const route = useRoute();
 const scansStore = useScansStore();
-const { selected: scan, findings, loading } = storeToRefs(scansStore);
+const { selected: scan, findings, diff, loading } = storeToRefs(scansStore);
 
 const scanId = computed((): string => String(route.params.id));
 
@@ -57,6 +57,76 @@ const categoryLabel = (key: string): string =>
         :title="`Scan failed: ${String(scan.errorLog.message ?? 'unknown error')}`"
         class="mt-4"
       />
+
+      <UCard v-if="diff" class="mt-6">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold">Compared to previous scan</h3>
+            <NuxtLink
+              :to="`/scans/${diff.previousScanId}`"
+              class="text-xs text-gray-500 hover:underline"
+            >
+              {{ diff.previousScanId.slice(0, 8) }}…
+            </NuxtLink>
+          </div>
+        </template>
+
+        <div
+          v-if="
+            diff.new.length === 0 && diff.removed.length === 0 && diff.categoryChanged.length === 0
+          "
+        >
+          <p class="text-sm text-gray-500">
+            No changes since the previous scan — same cookies, same categories.
+          </p>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <UBadge color="success" variant="soft">New ({{ diff.new.length }})</UBadge>
+            </div>
+            <ul v-if="diff.new.length > 0" class="space-y-1 text-sm">
+              <li v-for="entry in diff.new" :key="entry.name" class="font-mono text-xs">
+                {{ entry.name }}
+                <span v-if="entry.category" class="text-gray-500"> · {{ entry.category }}</span>
+              </li>
+            </ul>
+            <p v-else class="text-xs text-gray-500">No new cookies.</p>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <UBadge color="error" variant="soft">Removed ({{ diff.removed.length }})</UBadge>
+            </div>
+            <ul v-if="diff.removed.length > 0" class="space-y-1 text-sm">
+              <li v-for="entry in diff.removed" :key="entry.name" class="font-mono text-xs">
+                {{ entry.name }}
+                <span v-if="entry.category" class="text-gray-500"> · {{ entry.category }}</span>
+              </li>
+            </ul>
+            <p v-else class="text-xs text-gray-500">Nothing dropped off.</p>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <UBadge color="warning" variant="soft">
+                Category changes ({{ diff.categoryChanged.length }})
+              </UBadge>
+            </div>
+            <ul v-if="diff.categoryChanged.length > 0" class="space-y-1 text-sm">
+              <li v-for="entry in diff.categoryChanged" :key="entry.name" class="text-xs">
+                <span class="font-mono">{{ entry.name }}</span>
+                <span class="text-gray-500">
+                  : {{ entry.previousCategory ?? 'unknown' }} →
+                  {{ entry.currentCategory ?? 'unknown' }}
+                </span>
+              </li>
+            </ul>
+            <p v-else class="text-xs text-gray-500">No re-categorisations.</p>
+          </div>
+        </div>
+      </UCard>
 
       <div v-for="(group, key) in findingsByCategory" :key="key" class="mt-6">
         <div class="flex items-center gap-2 mb-2">
