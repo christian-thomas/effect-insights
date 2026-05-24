@@ -134,7 +134,7 @@ scanner's 04:00 so the two don't fight for Cloudflare Browser
 Rendering quota.
 
 If client adoption grows and a11y scans start starving cookie scans,
-the next step is a dedicated `effect-cmp-accessibility-scanner`
+the next step is a dedicated `tracewatch-accessibility-scanner`
 worker on a separate Browser Rendering plan. Until then, the shared
 worker is the simpler operationally.
 

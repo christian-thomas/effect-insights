@@ -1,6 +1,6 @@
 # Cookie policy generation
 
-Effect CMP generates a per-domain cookie policy from the latest scan
+Tracewatch generates a per-domain cookie policy from the latest scan
 findings + your canonical cookie database + per-org overrides. Two
 endpoints are available — one structured for programmatic use, one
 ready-to-embed HTML.
@@ -16,7 +16,7 @@ data leak risk.
 
 ```html
 <iframe
-  src="https://api.effectcmp.com/api/cookie-policy/pk_xxx.html"
+  src="https://api.tracewatch.io/api/cookie-policy/pk_xxx.html"
   title="Cookies in use"
   style="width: 100%; min-height: 600px; border: 0;"
 ></iframe>

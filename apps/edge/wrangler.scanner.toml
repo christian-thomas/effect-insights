@@ -1,4 +1,4 @@
-name = "effect-cmp-scanner"
+name = "tracewatch-scanner"
 main = "src/scanner-worker.ts"
 compatibility_date = "2026-05-01"
 compatibility_flags = ["nodejs_compat"]
@@ -20,5 +20,5 @@ binding = "BROWSER"
 # Generate with `openssl rand -hex 32`.
 
 # [routes]
-# pattern = "scanner.effectcmp.com/*"
+# pattern = "scanner.tracewatch.io/*"
 # custom_domain = true

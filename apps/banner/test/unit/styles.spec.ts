@@ -12,8 +12,8 @@ const colors: BannerColors = {
 };
 
 describe('styles', () => {
-  it('prefixes class names with effectcmp', () => {
-    expect(cls('card')).toBe('effectcmp-card');
+  it('prefixes class names with tracewatch', () => {
+    expect(cls('card')).toBe('tracewatch-card');
   });
 
   it('interpolates the colour palette into the stylesheet', () => {
@@ -28,9 +28,9 @@ describe('styles', () => {
     expect(generateStyles(colors, 'modal')).toContain('z-index: 2147483647');
   });
 
-  it('declares the .effectcmp-switch on/off styles for category toggles', () => {
+  it('declares the .tracewatch-switch on/off styles for category toggles', () => {
     const css = generateStyles(colors, 'modal');
-    expect(css).toMatch(/\.effectcmp-switch\[data-on="true"\]/);
+    expect(css).toMatch(/\.tracewatch-switch\[data-on="true"\]/);
   });
 
   describe('layouts', () => {

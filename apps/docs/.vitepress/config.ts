@@ -1,17 +1,17 @@
 import { defineConfig } from 'vitepress';
 
 export default defineConfig({
-  title: 'Effect CMP',
+  title: 'Tracewatch',
   description: 'Effect Digital Consent Management Platform — implementation + operator docs',
   cleanUrls: true,
   lastUpdated: true,
 
   themeConfig: {
-    siteTitle: 'Effect CMP',
+    siteTitle: 'Tracewatch',
 
     nav: [
       { text: 'Guides', link: '/guides/implementing-the-banner' },
-      { text: 'Admin app', link: 'https://admin.effectcmp.com', target: '_blank' },
+      { text: 'Admin app', link: 'https://admin.tracewatch.io', target: '_blank' },
     ],
 
     sidebar: {

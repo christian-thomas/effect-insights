@@ -8,32 +8,32 @@ the on-call rotation tool.
 
 | Layer            | What we use it for                                       | Blast radius if it goes down                            |
 | ---------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| Workers          | `effect-cmp-config`, `effect-cmp-consent`, `effect-cmp-scanner` | All three endpoints 5xx; cmp.js' try/catch fails silently |
+| Workers          | `tracewatch-config`, `tracewatch-consent`, `tracewatch-scanner` | All three endpoints 5xx; cmp.js' try/catch fails silently |
 | KV (`BANNER_CONFIGS`) | Banner config payloads (HMAC-signed)                | Config fetch fails; cmp.js refuses to render the banner |
-| R2 (`effect-cmp-bundles`) | Loader + hashed cmp.js bundle                  | Cold loads can't fetch the script; cached browsers unaffected |
-| D1 (`effect-cmp-consent`) | Hot consent log (last ~90 days)                | Consent POSTs 500; cmp.js outbox queues + retries        |
+| R2 (`tracewatch-bundles`) | Loader + hashed cmp.js bundle                  | Cold loads can't fetch the script; cached browsers unaffected |
+| D1 (`tracewatch-consent`) | Hot consent log (last ~90 days)                | Consent POSTs 500; cmp.js outbox queues + retries        |
 | Browser Rendering | Scanner worker only                                    | Scheduled scans fail; next day's scheduler retries       |
-| CDN / DNS         | Routing for `assets.effectcmp.com` and `scanner.effectcmp.com` | Total blackout: nothing reaches us                       |
+| CDN / DNS         | Routing for `assets.tracewatch.io` and `scanner.tracewatch.io` | Total blackout: nothing reaches us                       |
 
 cmp.js is wrapped in an outer `try/catch` (see `apps/banner/src/cmp.ts`) so a
 broken endpoint never throws into the host page. Worst case the visitor sees
 no banner, the host page renders normally, and the visitor's prior consent
-(if any) stays in effect via the `_effectcmp` cookie.
+(if any) stays in effect via the `_tracewatch` cookie.
 
 ## Per-failure decisions
 
 ### KV namespace is down (no banner config)
 
-**Symptom**: `effect-cmp-config` returns 503 on `/config/:publicKey`. cmp.js
+**Symptom**: `tracewatch-config` returns 503 on `/config/:publicKey`. cmp.js
 silently no-ops on every page load.
 
 **Visitor impact**: New visitors don't see a banner. Repeat visitors with a
-valid `_effectcmp` cookie still get GCM signals + script unblocking from the
+valid `_tracewatch` cookie still get GCM signals + script unblocking from the
 cookie payload — they're unaffected. cmp.js' fail-silent design means the
 host page never breaks.
 
 **Action**:
-1. Confirm via `wrangler tail effect-cmp-config` — look for KV errors.
+1. Confirm via `wrangler tail tracewatch-config` — look for KV errors.
 2. Check CF status page (https://www.cloudflarestatus.com).
 3. If CF-wide: nothing to do but wait. Update internal status.
 4. If isolated: re-run `php artisan banner-configs:re-sign` from the Laravel
@@ -41,14 +41,14 @@ host page never breaks.
 
 ### D1 is down (consent POSTs failing)
 
-**Symptom**: `effect-cmp-consent` returns 500 on `/consent`. cmp.js queues
+**Symptom**: `tracewatch-consent` returns 500 on `/consent`. cmp.js queues
 the event in the localStorage outbox and retries on next page load.
 
 **Visitor impact**: Their cookie is set, scripts unblock locally — the
 client experience is fine. But the server-side log misses events.
 
 **Action**:
-1. Confirm via `wrangler tail effect-cmp-consent`.
+1. Confirm via `wrangler tail tracewatch-consent`.
 2. Each visitor's next page load triggers `flushOutbox()` which retries up
    to 5x. Most events come through within a few minutes of D1 recovering.
 3. Do NOT manually replay anything from the Laravel mirror — the worker is
@@ -65,9 +65,9 @@ Repeat visitors are fine because the bundle is in their browser cache for a
 year.
 
 **Action**:
-1. Confirm via `wrangler tail effect-cmp-config`.
+1. Confirm via `wrangler tail tracewatch-config`.
 2. If isolated to one client domain: re-upload the bundle via
-   `bun --filter @effect-cmp/banner run build` then push to R2.
+   `bun --filter @tracewatch/banner run build` then push to R2.
 3. If account-wide: wait. CF status.
 
 ### Workers runtime is down (everything 5xx)
@@ -84,7 +84,7 @@ visitors with cookies still work normally.
 
 ### Browser Rendering is down (both scanners)
 
-**Symptom**: `effect-cmp-scanner` returns 500 on `/scan` and `/scan-a11y`.
+**Symptom**: `tracewatch-scanner` returns 500 on `/scan` and `/scan-a11y`.
 Both scheduled pipelines fail; the daily dispatch commands
 (`scans:dispatch-scheduled` at 04:00 and
 `accessibility:dispatch-scheduled` at 05:00) re-dispatch tomorrow per
@@ -106,12 +106,12 @@ Browser Rendering recovers the alerts stop on their own at the next
 scheduler run.
 
 **Action**:
-1. `wrangler tail effect-cmp-scanner`.
+1. `wrangler tail tracewatch-scanner`.
 2. No client-facing impact, no urgent action.
 
 ### Rate limiter throttling legitimate traffic
 
-**Symptom**: `effect-cmp-consent` returns 429 to a slice of `/consent` or
+**Symptom**: `tracewatch-consent` returns 429 to a slice of `/consent` or
 `/rum` POSTs. cmp.js' outbox retries — events eventually land — but the
 short-term log dip shows up in BI dashboards.
 
@@ -123,7 +123,7 @@ fine. The audit log lags by however long the retry window takes.
 proxies sharing an egress IP) can trip it.
 
 **Action**:
-1. Confirm via `wrangler tail effect-cmp-consent --format=json | grep 429`.
+1. Confirm via `wrangler tail tracewatch-consent --format=json | grep 429`.
 2. If the spike is from a known shared-egress IP (e.g. a client's office
    VPN), nothing to do — outbox retries will catch up.
 3. If sustained from many IPs: raise the limiter ceiling in
@@ -133,7 +133,7 @@ proxies sharing an egress IP) can trip it.
 
 ### Laravel API outage (admin + cookie-policy embed)
 
-**Symptom**: `api.effectcmp.com` is 5xx or timing out (Forge VPS down,
+**Symptom**: `api.tracewatch.io` is 5xx or timing out (Forge VPS down,
 RDS flap, app exception, etc).
 
 **Visitor impact on the consent flow**: **None at the edge.** cmp.js
@@ -144,7 +144,7 @@ fire-and-forget; failures are silently dropped (D1 stays the canonical
 write).
 
 **Visitor impact on embedded cookie policies**: Sites that iframe
-`https://api.effectcmp.com/api/cookie-policy/{publicKey}.html` will see
+`https://api.tracewatch.io/api/cookie-policy/{publicKey}.html` will see
 the iframe 5xx during the outage. Cloudflare's
 `Cache-Control: public, max-age=3600, stale-while-revalidate=86400`
 on the response keeps already-cached copies serving stale for up to 24
@@ -205,7 +205,7 @@ read the **KV namespace is down** section above first.
 
 ### DNS / total blackout
 
-**Symptom**: `assets.effectcmp.com` doesn't resolve at all. Nothing reaches
+**Symptom**: `assets.tracewatch.io` doesn't resolve at all. Nothing reaches
 us; cmp.js can't even load.
 
 **Visitor impact**: First-time visitors on host pages with our snippet see
@@ -225,9 +225,9 @@ fetch. cmp.js never executes so nothing crashes.
   email account managers with a one-line "we're tracking a Cloudflare
   incident affecting [X]; no action required from you."
 - **Wrangler tail**:
-  - `wrangler tail effect-cmp-config --format=json`
-  - `wrangler tail effect-cmp-consent --format=json`
-  - `wrangler tail effect-cmp-scanner --format=json`
+  - `wrangler tail tracewatch-config --format=json`
+  - `wrangler tail tracewatch-consent --format=json`
+  - `wrangler tail tracewatch-scanner --format=json`
 - **CF Logpush**: forwards every worker's log to our centralised store —
   see the analytics dashboard for trend lines on 5xx rates.
 

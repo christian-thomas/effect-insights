@@ -1,4 +1,4 @@
-import type { BannerDraftInput } from '@effect-cmp/types/schemas/banner';
+import type { BannerDraftInput } from '@tracewatch/types/schemas/banner';
 
 export interface BannerConfig {
   id: string;

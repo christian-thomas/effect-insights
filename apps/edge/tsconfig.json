@@ -6,8 +6,8 @@
     "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers"],
     "noEmit": true,
     "paths": {
-      "@effect-cmp/types": ["../../packages/types/src/index.ts"],
-      "@effect-cmp/types/*": ["../../packages/types/src/*"]
+      "@tracewatch/types": ["../../packages/types/src/index.ts"],
+      "@tracewatch/types/*": ["../../packages/types/src/*"]
     }
   },
   "include": ["src/**/*", "test/**/*", "vitest.config.ts"]

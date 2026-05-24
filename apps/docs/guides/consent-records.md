@@ -146,7 +146,7 @@ Each organisation has a `consentRetentionDays` field (NULL by default
 days). Set via the `PATCH /api/organisations/{id}` endpoint:
 
 ```bash
-curl -X PATCH https://api.effectcmp.com/api/organisations/<uuid> \
+curl -X PATCH https://api.tracewatch.io/api/organisations/<uuid> \
   -H "Content-Type: application/json" \
   -H "Cookie: <sanctum-session>" \
   -d '{ "consent_retention_days": 365 }'
@@ -176,7 +176,7 @@ in force" — typically the rePromptAfterDays window is the lower bound).
 
 - The raw IP address (only the hash).
 - The raw User-Agent string (only the hash).
-- The visitor's identity beyond `anonymous_id` — Effect CMP doesn't
+- The visitor's identity beyond `anonymous_id` — Tracewatch doesn't
   know who the visitor is.
 - Linking to other systems (CRM, support tickets, etc.) — out of scope.
 

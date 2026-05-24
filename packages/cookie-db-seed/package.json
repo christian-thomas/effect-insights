@@ -1,5 +1,5 @@
 {
-  "name": "@effect-cmp/cookie-db-seed",
+  "name": "@tracewatch/cookie-db-seed",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "build": "echo 'source-only' && exit 0"
   },
   "dependencies": {
-    "@effect-cmp/types": "workspace:*"
+    "@tracewatch/types": "workspace:*"
   },
   "devDependencies": {
     "tsx": "latest",

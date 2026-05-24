@@ -2,7 +2,7 @@
 
 Many sites span multiple subdomains — `www.example.com`,
 `app.example.com`, `docs.example.com`. By default, consent on one doesn't
-carry over to the others, because the `_effectcmp` cookie is scoped to
+carry over to the others, because the `_tracewatch` cookie is scoped to
 the host that wrote it.
 
 Cross-subdomain consent makes the cookie apex-scoped so every subdomain
@@ -27,9 +27,9 @@ button will swap to "Publish (re-prompts visitors)" so you can't miss it.
 
 ## What changes
 
-- **Before**: cookie set as `_effectcmp=…; Domain=www.example.com; Path=/`.
+- **Before**: cookie set as `_tracewatch=…; Domain=www.example.com; Path=/`.
   Only `www.example.com` reads it.
-- **After**: cookie set as `_effectcmp=…; Domain=.example.com; Path=/`.
+- **After**: cookie set as `_tracewatch=…; Domain=.example.com; Path=/`.
   Every host ending in `.example.com` reads it.
 
 ## Caveats

@@ -3,8 +3,8 @@
   "compilerOptions": {
     "noEmit": true,
     "paths": {
-      "@effect-cmp/types": ["../types/src/index.ts"],
-      "@effect-cmp/types/*": ["../types/src/*"]
+      "@tracewatch/types": ["../types/src/index.ts"],
+      "@tracewatch/types/*": ["../types/src/*"]
     }
   },
   "include": ["src/**/*"]

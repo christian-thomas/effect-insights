@@ -6,7 +6,7 @@ import {
   scannerRequestSchema,
   type AccessibilityScannerResultInput,
   type ScannerResultInput,
-} from '@effect-cmp/types/schemas/scanner';
+} from '@tracewatch/types/schemas/scanner';
 
 // axe-core is loaded into each crawled page via CDN. Bundling the
 // ~500KB axe.min.js source into the worker bundle isn't worth the

@@ -31,13 +31,13 @@ jobs:
         run: bun run test
 
       - name: Install Playwright browsers
-        run: bun --filter @effect-cmp/banner run test:e2e:install
+        run: bun --filter @tracewatch/banner run test:e2e:install
 
       - name: Build banner bundle for e2e
-        run: bun --filter @effect-cmp/banner run build
+        run: bun --filter @tracewatch/banner run build
 
       - name: Banner Playwright e2e (incl. axe-core)
-        run: bun --filter @effect-cmp/banner run test:e2e
+        run: bun --filter @tracewatch/banner run test:e2e
 
   php:
     name: Laravel (apps/api)

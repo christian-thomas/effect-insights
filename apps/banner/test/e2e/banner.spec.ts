@@ -57,7 +57,7 @@ interface ConsentPostCaptor {
 }
 
 const setupRoutes = async (page: Page, captor: ConsentPostCaptor): Promise<void> => {
-  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+  await page.route('**/assets.tracewatch.io/config/*', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -65,7 +65,7 @@ const setupRoutes = async (page: Page, captor: ConsentPostCaptor): Promise<void>
     });
   });
 
-  await page.route('**/assets.effectcmp.com/consent', async (route, request: Request) => {
+  await page.route('**/assets.tracewatch.io/consent', async (route, request: Request) => {
     captor.body = JSON.parse(request.postData() ?? '{}') as Record<string, unknown>;
     await route.fulfill({
       status: 202,
@@ -81,8 +81,8 @@ test('renders modal with copy from the config and dataLayer gets defaults', asyn
 
   await page.goto('/');
 
-  await expect(page.locator('.effectcmp-card')).toBeVisible();
-  await expect(page.locator('.effectcmp-title')).toHaveText('We use cookies');
+  await expect(page.locator('.tracewatch-card')).toBeVisible();
+  await expect(page.locator('.tracewatch-title')).toHaveText('We use cookies');
   await expect(page.getByRole('button', { name: 'Accept all' })).toBeVisible();
 
   const dataLayer = await page.evaluate(
@@ -100,12 +100,12 @@ test('accept all writes cookie, fires update, posts consent event', async ({ pag
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Accept all' }).click();
-  await expect(page.locator('.effectcmp-card')).toBeHidden();
+  await expect(page.locator('.tracewatch-card')).toBeHidden();
 
   // Cookie set with our consent record. Read via document.cookie since
   // file:// origins don't surface through page.context().cookies().
   const cookieValue = await page.evaluate(() => {
-    const match = document.cookie.match(/(?:^|;\s*)_effectcmp=([^;]+)/);
+    const match = document.cookie.match(/(?:^|;\s*)_tracewatch=([^;]+)/);
     return match ? decodeURIComponent(match[1] ?? '') : null;
   });
   expect(cookieValue).not.toBeNull();
@@ -156,7 +156,7 @@ test('customise lets the user toggle individual categories before saving', async
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Customise' }).click();
-  await expect(page.locator('.effectcmp-categories')).toBeVisible();
+  await expect(page.locator('.tracewatch-categories')).toBeVisible();
 
   // Toggle statistics on. The switch's accessible name is sourced from the
   // category label element (aria-labelledby), which the host-page copy
@@ -178,12 +178,12 @@ test('banner does not re-show on second visit with valid stored consent', async 
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Accept all' }).click();
-  await expect(page.locator('.effectcmp-card')).toBeHidden();
+  await expect(page.locator('.tracewatch-card')).toBeHidden();
 
   // Second visit — same session, cookie should be there.
   await page.goto('/');
   await page.waitForTimeout(300);
-  await expect(page.locator('.effectcmp-card')).toBeHidden();
+  await expect(page.locator('.tracewatch-card')).toBeHidden();
 });
 
 test('banner re-shows after a material version bump', async ({ page }) => {
@@ -192,12 +192,12 @@ test('banner re-shows after a material version bump', async ({ page }) => {
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Accept all' }).click();
-  await expect(page.locator('.effectcmp-card')).toBeHidden();
+  await expect(page.locator('.tracewatch-card')).toBeHidden();
 
   // Re-route /config to return a bumped materialVersion. Cosmetic-only
   // republishes wouldn't bump it; this simulates a real material change.
-  await page.unroute('**/assets.effectcmp.com/config/*');
-  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+  await page.unroute('**/assets.tracewatch.io/config/*');
+  await page.route('**/assets.tracewatch.io/config/*', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -209,7 +209,7 @@ test('banner re-shows after a material version bump', async ({ page }) => {
   });
 
   await page.goto('/');
-  await expect(page.locator('.effectcmp-card')).toBeVisible();
+  await expect(page.locator('.tracewatch-card')).toBeVisible();
 });
 
 test('banner stays hidden when only the per-publish version bumps (cosmetic)', async ({ page }) => {
@@ -218,11 +218,11 @@ test('banner stays hidden when only the per-publish version bumps (cosmetic)', a
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Accept all' }).click();
-  await expect(page.locator('.effectcmp-card')).toBeHidden();
+  await expect(page.locator('.tracewatch-card')).toBeHidden();
 
   // Cosmetic republish: version moves, materialVersion stays.
-  await page.unroute('**/assets.effectcmp.com/config/*');
-  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+  await page.unroute('**/assets.tracewatch.io/config/*');
+  await page.route('**/assets.tracewatch.io/config/*', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -235,20 +235,20 @@ test('banner stays hidden when only the per-publish version bumps (cosmetic)', a
 
   await page.goto('/');
   await page.waitForTimeout(300);
-  await expect(page.locator('.effectcmp-card')).toBeHidden();
+  await expect(page.locator('.tracewatch-card')).toBeHidden();
 });
 
 test('banner re-shows once the consent cookie is older than rePromptAfterDays', async ({
   page,
 }) => {
-  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+  await page.route('**/assets.tracewatch.io/config/*', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ config: sampleConfig, country: 'GB' }),
     });
   });
-  await page.route('**/assets.effectcmp.com/consent', async (route) => {
+  await page.route('**/assets.tracewatch.io/consent', async (route) => {
     await route.fulfill({
       status: 202,
       contentType: 'application/json',
@@ -267,16 +267,16 @@ test('banner re-shows once the consent cookie is older than rePromptAfterDays', 
         consentedAt,
       }),
     );
-    document.cookie = `_effectcmp=${value}; Path=/`;
+    document.cookie = `_tracewatch=${value}; Path=/`;
   }, staleConsentedAt);
 
   await page.goto('/');
-  await expect(page.locator('.effectcmp-card')).toBeVisible();
+  await expect(page.locator('.tracewatch-card')).toBeVisible();
 });
 
 test('renders the bar-bottom layout pinned to the viewport bottom', async ({ page }) => {
   const captor: ConsentPostCaptor = { body: null };
-  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+  await page.route('**/assets.tracewatch.io/config/*', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -286,7 +286,7 @@ test('renders the bar-bottom layout pinned to the viewport bottom', async ({ pag
       }),
     });
   });
-  await page.route('**/assets.effectcmp.com/consent', async (route) => {
+  await page.route('**/assets.tracewatch.io/consent', async (route) => {
     await route.fulfill({
       status: 202,
       contentType: 'application/json',
@@ -295,7 +295,7 @@ test('renders the bar-bottom layout pinned to the viewport bottom', async ({ pag
   });
 
   await page.goto('/');
-  const shell = page.locator('.effectcmp-shell');
+  const shell = page.locator('.tracewatch-shell');
   await expect(shell).toBeVisible();
   // Bar layout has the shell pinned with explicit bottom positioning.
   const styles = await shell.evaluate((node) => {
@@ -308,7 +308,7 @@ test('renders the bar-bottom layout pinned to the viewport bottom', async ({ pag
 });
 
 test('renders the corner layout with the compact card in bottom-right', async ({ page }) => {
-  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+  await page.route('**/assets.tracewatch.io/config/*', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -318,12 +318,12 @@ test('renders the corner layout with the compact card in bottom-right', async ({
       }),
     });
   });
-  await page.route('**/assets.effectcmp.com/consent', async (route) => {
+  await page.route('**/assets.tracewatch.io/consent', async (route) => {
     await route.fulfill({ status: 202, body: '{}' });
   });
 
   await page.goto('/');
-  const shell = page.locator('.effectcmp-shell');
+  const shell = page.locator('.tracewatch-shell');
   await expect(shell).toBeVisible();
   const styles = await shell.evaluate((node) => {
     const computed = window.getComputedStyle(node);
@@ -378,7 +378,7 @@ test('leaves denied-category scripts blocked when user rejects', async ({ page }
 });
 
 test('does nothing dangerous if /config returns 404', async ({ page }) => {
-  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+  await page.route('**/assets.tracewatch.io/config/*', async (route) => {
     await route.fulfill({ status: 404, body: 'not found' });
   });
 
@@ -389,7 +389,7 @@ test('does nothing dangerous if /config returns 404', async ({ page }) => {
   await page.waitForTimeout(300);
 
   expect(errors).toHaveLength(0);
-  await expect(page.locator('.effectcmp-card')).toHaveCount(0);
+  await expect(page.locator('.tracewatch-card')).toHaveCount(0);
 });
 
 test('preview mode renders from inline config without fetching /config or posting /consent', async ({
@@ -397,11 +397,11 @@ test('preview mode renders from inline config without fetching /config or postin
 }) => {
   // Treat any unexpected network call as a hard failure.
   const violations: string[] = [];
-  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+  await page.route('**/assets.tracewatch.io/config/*', async (route) => {
     violations.push('fetched /config in preview mode');
     await route.fulfill({ status: 500, body: '' });
   });
-  await page.route('**/assets.effectcmp.com/consent', async (route) => {
+  await page.route('**/assets.tracewatch.io/consent', async (route) => {
     violations.push('posted /consent in preview mode');
     await route.fulfill({ status: 500, body: '' });
   });
@@ -409,8 +409,8 @@ test('preview mode renders from inline config without fetching /config or postin
   await page.goto('/test/e2e/fixtures/host-preview.html');
 
   // Banner renders straight from data-cmp-config.
-  await expect(page.locator('.effectcmp-card')).toBeVisible();
-  await expect(page.locator('.effectcmp-title')).toHaveText('Preview banner');
+  await expect(page.locator('.tracewatch-card')).toBeVisible();
+  await expect(page.locator('.tracewatch-title')).toHaveText('Preview banner');
 
   // Clicking Accept doesn't POST anything — preview is a no-side-effect render.
   await page.getByRole('button', { name: 'Accept all' }).click();
@@ -419,7 +419,7 @@ test('preview mode renders from inline config without fetching /config or postin
 
   // No consent cookie was written either.
   const cookie = await page.evaluate(() => {
-    const match = document.cookie.match(/(?:^|;\s*)_effectcmp=([^;]+)/);
+    const match = document.cookie.match(/(?:^|;\s*)_tracewatch=([^;]+)/);
     return match ? decodeURIComponent(match[1] ?? '') : null;
   });
   expect(cookie).toBeNull();

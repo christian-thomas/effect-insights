@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: Effect CMP
+  name: Tracewatch
   text: Consent Management Platform
   tagline: White-label cookie consent, scanner, and audit log — owned end-to-end.
   actions:

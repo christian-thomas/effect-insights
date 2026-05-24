@@ -1,19 +1,29 @@
-# Effect CMP
+# Tracewatch
 
-Effect Digital's white-label Consent Management Platform — a CookieBot/CookieYes replacement owned end-to-end.
+Effect Digital's white-label website-audit platform. Multi-module, multi-tenant,
+owned end-to-end. Current modules:
+
+- **CMP** — GDPR-ready consent banner + cookie scanner + signed audit log
+  (CookieBot / CookieYes replacement).
+- **Accessibility** — scheduled axe-core WCAG audits with Slack alerts.
+
+Future modules (performance, SEO, security, …) plug into the same admin SPA,
+organisations, domain registry, scheduler, and notification channel.
 
 ## What's in this monorepo
 
 ```
 apps/
-  api/             Laravel 13 (PHP 8.3+) — admin API, scan dispatch, cookie DB
-  admin/           Nuxt 4 + Tailwind 4 — admin dashboard
+  api/             Laravel 13 (PHP 8.3+) — admin API, scheduled scans + a11y,
+                   cookie DB, consent log
+  admin/           Nuxt 4 + Pinia + Nuxt UI v4 — operator SPA
   banner/          Vanilla TS (Vite) — embeddable consent banner script
   docs/            VitePress — user-facing documentation site
-  edge/            Cloudflare Workers — config delivery + consent ingest
+  edge/            Cloudflare Workers — config delivery, consent ingest,
+                   cookie + a11y scanners
 
 packages/
-  types/           Shared TS types: BannerConfig, ConsentEvent, GcmSignals
+  types/           Shared TS types + zod schemas
   cookie-db-seed/  OpenCookieDatabase importer → canonical cookie schema
 ```
 
@@ -69,12 +79,12 @@ When debugging a single piece (wrangler's output is noisy and prefix-merged
 output can be fiddly to read), invoke the per-workspace scripts directly:
 
 ```bash
-bun --filter @effect-cmp/admin run dev
-bun --filter @effect-cmp/banner run dev:watch        # vite watcher only
-bun --filter @effect-cmp/banner run serve:local      # fixture host only
-bun --filter @effect-cmp/edge   run dev:config       # one worker only
-bun --filter @effect-cmp/edge   run dev:consent
-bun --filter @effect-cmp/edge   run dev:scanner
+bun --filter @tracewatch/admin run dev
+bun --filter @tracewatch/banner run dev:watch        # vite watcher only
+bun --filter @tracewatch/banner run serve:local      # fixture host only
+bun --filter @tracewatch/edge   run dev:config       # one worker only
+bun --filter @tracewatch/edge   run dev:consent
+bun --filter @tracewatch/edge   run dev:scanner
 ```
 
 The scanner worker needs the paid Browser Rendering plan and can't run
@@ -90,7 +100,7 @@ With Laravel running in Herd and `bun run dev` going at the root:
    via `CloudflareKvClient` so the local config worker can serve it on
    the next request.
 2. Apply the consent D1 schema locally:
-   `bun --filter @effect-cmp/edge run db:migrate:consent:local`.
+   `bun --filter @tracewatch/edge run db:migrate:consent:local`.
 3. Open `http://127.0.0.1:4173/test/e2e/fixtures/host-local.html`. Replace
    `data-domain-id="pk_test_LOCAL_REPLACE_ME"` in the file with the
    `publicKey` from the domain you just created.
@@ -113,7 +123,7 @@ With Laravel running in Herd and `bun run dev` going at the root:
   `xl+` screens that uses `data-cmp-preview` + `data-cmp-config` to skip the
   edge entirely. Best for iterating on layout, colours, copy.
 - **Banner against prod** — `host-local.html` flipping `data-cmp-base` back
-  to `https://assets.effectcmp.com` (and removing `data-cmp-consent-base`)
+  to `https://assets.tracewatch.io` (and removing `data-cmp-consent-base`)
   lets you eyeball the production-served banner from a local page.
 - **Consent worker only** — POST a sample event with `curl`:
   ```bash
@@ -143,8 +153,8 @@ See each app's own README:
 
 End-user docs (banner implementation, CSP setup, troubleshooting,
 operations) are written in VitePress under `apps/docs/`. Run locally with
-`bun --filter @effect-cmp/docs run dev`, or visit the deployed site at
-[docs.effectcmp.com](https://docs.effectcmp.com).
+`bun --filter @tracewatch/docs run dev`, or visit the deployed site at
+[docs.tracewatch.io](https://docs.tracewatch.io).
 
 ## Host-page integration surface
 

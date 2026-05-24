@@ -1,6 +1,6 @@
 # Notifications
 
-Effect CMP can ping Slack when something needs an operator's attention.
+Tracewatch can ping Slack when something needs an operator's attention.
 Today there's one notification; more land here as we add them.
 
 ## Unknown cookies found
@@ -15,7 +15,7 @@ single Slack message lands in your configured channel:
 > • `_fb_xyz`
 > • `foo_bar`
 >
-> [Open the review queue →](https://admin.effectcmp.com/cookies?tab=review)
+> [Open the review queue →](https://admin.tracewatch.io/cookies?tab=review)
 
 Clicking the link drops you on the Cookie database admin page with the
 **Review queue** tab pre-selected — see [Troubleshooting →
@@ -36,7 +36,7 @@ configured channel:
 > Browser binding timeout
 > ```
 >
-> [Open scan in admin →](https://admin.effectcmp.com/scans/uuid-here)
+> [Open scan in admin →](https://admin.tracewatch.io/scans/uuid-here)
 
 The alert fires regardless of how the scan was triggered (manual,
 scheduled, or API). The scan row stays at `failed` with the original
@@ -52,7 +52,7 @@ configured impact threshold, a Slack message lands in your channel:
 >
 > Critical 1 · Serious 1 · Moderate 0 · Minor 0
 >
-> [Open scan in admin →](https://admin.effectcmp.com/accessibility-scans/uuid-here)
+> [Open scan in admin →](https://admin.tracewatch.io/accessibility-scans/uuid-here)
 
 The default threshold is **`serious`** — Critical or Serious violations
 alert; Moderate or Minor stay quiet. Override per-deploy via
@@ -105,7 +105,7 @@ endpoint on every render with paint-time + browser context. This is
 becomes a single structured JSON log line emitted by the consent
 worker, which can be queried via:
 
-- `wrangler tail effect-cmp-consent --format=json | grep cmp_rum` for
+- `wrangler tail tracewatch-consent --format=json | grep cmp_rum` for
   live tailing during incidents.
 - Cloudflare Logpush → your data warehouse for aggregated analysis.
 

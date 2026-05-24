@@ -3,7 +3,7 @@ import {
   bannerDraftSchema,
   type BannerCopy,
   type BannerDraftInput,
-} from '@effect-cmp/types/schemas/banner';
+} from '@tracewatch/types/schemas/banner';
 import type { FormSubmitEvent } from '@nuxt/ui';
 import { geoCountries } from '~/components/banner/countries';
 import { defaultCopyForLocale } from '~/components/banner/defaults';

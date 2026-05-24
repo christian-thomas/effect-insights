@@ -1,12 +1,12 @@
-# @effect-cmp/edge
+# @tracewatch/edge
 
-Three Cloudflare Workers behind `assets.effectcmp.com` (and `scanner.effectcmp.com` for the scanner):
+Three Cloudflare Workers behind `assets.tracewatch.io` (and `scanner.tracewatch.io` for the scanner):
 
 | Worker               | Path(s)                                                    | Local port | Backed by                          |
 | -------------------- | ---------------------------------------------------------- | ---------- | ---------------------------------- |
-| `effect-cmp-config`  | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | 8787       | KV (configs), R2 (bundles)         |
-| `effect-cmp-consent` | `/consent` (POST), `/rum` (POST)                           | 8788       | D1 (hot log) + Laravel mirror, native rate limiter |
-| `effect-cmp-scanner` | `/scan` (POST)                                             | 8789       | Browser Rendering (paid plan only) |
+| `tracewatch-config`  | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | 8787       | KV (configs), R2 (bundles)         |
+| `tracewatch-consent` | `/consent` (POST), `/rum` (POST)                           | 8788       | D1 (hot log) + Laravel mirror, native rate limiter |
+| `tracewatch-scanner` | `/scan` (POST)                                             | 8789       | Browser Rendering (paid plan only) |
 
 ## How the workers connect
 
@@ -35,8 +35,8 @@ wrangler login
 
 # Create the backing resources (one-time)
 wrangler kv namespace create BANNER_CONFIGS
-wrangler r2 bucket create effect-cmp-bundles
-wrangler d1 create effect-cmp-consent
+wrangler r2 bucket create tracewatch-bundles
+wrangler d1 create tracewatch-consent
 
 # Paste the IDs into wrangler.config.toml / wrangler.consent.toml
 # Then apply the consent D1 migrations:
@@ -136,6 +136,6 @@ beacon shape:
 ```
 
 Emits a structured JSON log line per beacon — no D1 writes yet.
-`wrangler tail effect-cmp-consent --format=json | grep cmp_rum` for
+`wrangler tail tracewatch-consent --format=json | grep cmp_rum` for
 live tailing during incidents, or Cloudflare Logpush to a data
 warehouse for aggregation.

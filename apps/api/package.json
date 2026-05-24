@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.schemastore.org/package.json",
-  "name": "@effect-cmp/api",
+  "name": "@tracewatch/api",
   "version": "0.0.0",
   "private": true,
   "type": "module",

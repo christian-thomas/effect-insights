@@ -1,13 +1,13 @@
-# @effect-cmp/banner
+# @tracewatch/banner
 
 The embeddable consent banner — vanilla TypeScript, built with Vite,
-served from R2 behind `assets.effectcmp.com`. ≤15 KB gzipped budget.
+served from R2 behind `assets.tracewatch.io`. ≤15 KB gzipped budget.
 
 ## How clients embed it
 
 ```html
 <script
-  src="https://assets.effectcmp.com/loader.js"
+  src="https://assets.tracewatch.io/loader.js"
   data-domain-id="<public-key>"
   async
 ></script>
@@ -28,7 +28,7 @@ build through the config worker's `dist/loader.js` resolver.
 1. Find the embed script tag (last match wins for multi-embed pages).
 2. Fetch the signed config from the edge config worker (KV).
 3. Push GCM v2 defaults to `dataLayer` _before_ anything else runs.
-4. If the visitor has a valid stored consent cookie (`_effectcmp`) →
+4. If the visitor has a valid stored consent cookie (`_tracewatch`) →
    replay the GCM update, unblock previously-blocked scripts, skip
    rendering the banner. RUM beacon fires for the short-circuit path.
 5. If GPC is on AND the browser is sending it AND no stored consent →
@@ -114,7 +114,7 @@ via `bun run dev` at the repo root.
   page's nonce when present.
 - **p95 paint < 50ms.** RUM beacon (`rum.ts`) measures from boot to
   banner mount (or short-circuit). Pick up via `wrangler tail
-  effect-cmp-consent | grep cmp_rum`.
+  tracewatch-consent | grep cmp_rum`.
 - **Bundle budget ≤ 15 KB gzipped.** Anything that pushes us over
   needs to be tree-shakeable or behind a feature flag.
 

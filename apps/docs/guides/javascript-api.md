@@ -47,7 +47,7 @@ for how to gate your existing tags on these signals.
 
 ### The consent cookie
 
-cmp.js writes consent to a cookie named `_effectcmp`. The value is a
+cmp.js writes consent to a cookie named `_tracewatch`. The value is a
 URL-encoded JSON object:
 
 ```js
@@ -67,7 +67,7 @@ URL-encoded JSON object:
 You can read this from your own code:
 
 ```ts
-const cookie = document.cookie.split('; ').find((c) => c.startsWith('_effectcmp='));
+const cookie = document.cookie.split('; ').find((c) => c.startsWith('_tracewatch='));
 
 if (cookie) {
   const stored = JSON.parse(decodeURIComponent(cookie.split('=')[1]));

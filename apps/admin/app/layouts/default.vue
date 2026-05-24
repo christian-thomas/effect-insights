@@ -67,7 +67,7 @@ const userItems = computed(() => [
       <template #header>
         <div class="flex items-center gap-2 min-w-0">
           <UIcon name="i-lucide-shield-check" class="text-primary-500 text-xl shrink-0" />
-          <span class="font-semibold truncate">Effect CMP</span>
+          <span class="font-semibold truncate">Tracewatch</span>
         </div>
       </template>
 

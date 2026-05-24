@@ -1,6 +1,6 @@
 import type { BannerColors, BannerLayout } from './types';
 
-const PREFIX = 'effectcmp';
+const PREFIX = 'tracewatch';
 
 const layoutPositioning = (layout: BannerLayout): string => {
   if (layout === 'modal') {
@@ -51,7 +51,7 @@ const layoutPositioning = (layout: BannerLayout): string => {
  * inside the banner root, avoiding any pollution of the host page's
  * stylesheet.
  *
- * Class names are prefixed with `effectcmp-` to avoid collisions.
+ * Class names are prefixed with `tracewatch-` to avoid collisions.
  */
 export const generateStyles = (colors: BannerColors, layout: BannerLayout = 'modal'): string =>
   `

@@ -86,7 +86,7 @@ return [
         // the production CDN; in dev, point at the local Vite/Bun banner
         // server (e.g. http://localhost:4173/dist) so previews use unbuilt
         // bundles immediately.
-        'cdn_url' => env('BANNER_CDN_URL', 'https://assets.effectcmp.com'),
+        'cdn_url' => env('BANNER_CDN_URL', 'https://assets.tracewatch.io'),
     ],
 
     'accessibility' => [

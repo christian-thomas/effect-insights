@@ -6,8 +6,8 @@
     "noEmit": true,
     "types": ["node"],
     "paths": {
-      "@effect-cmp/types": ["../../packages/types/src/index.ts"],
-      "@effect-cmp/types/*": ["../../packages/types/src/*"]
+      "@tracewatch/types": ["../../packages/types/src/index.ts"],
+      "@tracewatch/types/*": ["../../packages/types/src/*"]
     }
   },
   "include": ["src/**/*", "vite.config.ts"]

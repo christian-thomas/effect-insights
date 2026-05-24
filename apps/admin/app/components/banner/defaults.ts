@@ -1,4 +1,4 @@
-import type { BannerCopy } from '@effect-cmp/types/schemas/banner';
+import type { BannerCopy } from '@tracewatch/types/schemas/banner';
 
 /**
  * Fallback copy seeded into a new locale tab when the editor adds it. The

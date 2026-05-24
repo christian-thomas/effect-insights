@@ -37,7 +37,7 @@ const onSubmit = async (event: FormSubmitEvent<LoginForm>) => {
     <template #header>
       <div class="flex items-center gap-2">
         <UIcon name="i-lucide-shield-check" class="text-primary-500 text-2xl" />
-        <h1 class="text-lg font-semibold">Effect CMP</h1>
+        <h1 class="text-lg font-semibold">Tracewatch</h1>
       </div>
     </template>
 

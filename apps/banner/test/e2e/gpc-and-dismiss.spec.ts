@@ -65,14 +65,14 @@ const setupRoutes = async (
     ...baseConfig,
     behaviour: { ...baseConfig.behaviour, ...configOverrides },
   };
-  await page.route('**/assets.effectcmp.com/config/*', async (route) => {
+  await page.route('**/assets.tracewatch.io/config/*', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ config, country: 'GB' }),
     });
   });
-  await page.route('**/assets.effectcmp.com/consent', async (route, request: Request) => {
+  await page.route('**/assets.tracewatch.io/consent', async (route, request: Request) => {
     captor.body = JSON.parse(request.postData() ?? '{}') as Record<string, unknown>;
     await route.fulfill({
       status: 202,
@@ -102,7 +102,7 @@ test.describe('Global Privacy Control', () => {
     await page.goto('/');
 
     // Banner should NOT render — auto-deny short-circuit.
-    await expect(page.locator('.effectcmp-card')).toBeHidden();
+    await expect(page.locator('.tracewatch-card')).toBeHidden();
 
     // A consent event should be POSTed with eventType=denied.
     await expect.poll(() => captor.body).not.toBeNull();
@@ -119,7 +119,7 @@ test.describe('Global Privacy Control', () => {
 
     await page.goto('/');
 
-    await expect(page.locator('.effectcmp-card')).toBeVisible();
+    await expect(page.locator('.tracewatch-card')).toBeVisible();
     expect(captor.body).toBeNull();
   });
 
@@ -132,7 +132,7 @@ test.describe('Global Privacy Control', () => {
 
     await page.goto('/');
 
-    await expect(page.locator('.effectcmp-card')).toBeVisible();
+    await expect(page.locator('.tracewatch-card')).toBeVisible();
     expect(captor.body).toBeNull();
   });
 });
@@ -145,9 +145,9 @@ test.describe('autoDenyOnDismiss', () => {
     await setupRoutes(page, captor, { autoDenyOnDismiss: true });
 
     await page.goto('/');
-    await page.locator('.effectcmp-card').waitFor({ state: 'visible' });
+    await page.locator('.tracewatch-card').waitFor({ state: 'visible' });
     await page.keyboard.press('Escape');
-    await expect(page.locator('.effectcmp-card')).toBeHidden();
+    await expect(page.locator('.tracewatch-card')).toBeHidden();
 
     await expect.poll(() => captor.body).not.toBeNull();
     expect(captor.body?.eventType).toBe('denied');
@@ -160,11 +160,11 @@ test.describe('autoDenyOnDismiss', () => {
     await setupRoutes(page, captor, { autoDenyOnDismiss: true });
 
     await page.goto('/');
-    await page.locator('.effectcmp-card').waitFor({ state: 'visible' });
+    await page.locator('.tracewatch-card').waitFor({ state: 'visible' });
 
     // Click the shell wrapper outside the card. Use force=true with a
     // position on the far edge so we don't hit the card.
-    const shell = page.locator('.effectcmp-shell');
+    const shell = page.locator('.tracewatch-shell');
     const box = await shell.boundingBox();
     expect(box).not.toBeNull();
     if (box) {
@@ -172,7 +172,7 @@ test.describe('autoDenyOnDismiss', () => {
       await page.mouse.click(box.x + 5, box.y + 5);
     }
 
-    await expect(page.locator('.effectcmp-card')).toBeHidden();
+    await expect(page.locator('.tracewatch-card')).toBeHidden();
     await expect.poll(() => captor.body).not.toBeNull();
     expect(captor.body?.eventType).toBe('denied');
   });
@@ -184,11 +184,11 @@ test.describe('autoDenyOnDismiss', () => {
     await setupRoutes(page, captor, { autoDenyOnDismiss: false });
 
     await page.goto('/');
-    await page.locator('.effectcmp-card').waitFor({ state: 'visible' });
+    await page.locator('.tracewatch-card').waitFor({ state: 'visible' });
     await page.keyboard.press('Escape');
     // Banner stays open + no consent recorded.
     await page.waitForTimeout(150);
-    await expect(page.locator('.effectcmp-card')).toBeVisible();
+    await expect(page.locator('.tracewatch-card')).toBeVisible();
     expect(captor.body).toBeNull();
   });
 
@@ -198,12 +198,12 @@ test.describe('autoDenyOnDismiss', () => {
 
     await page.goto('/');
     await page.getByRole('button', { name: 'Customise' }).click();
-    await expect(page.locator('.effectcmp-categories')).toBeVisible();
+    await expect(page.locator('.tracewatch-categories')).toBeVisible();
 
     await page.keyboard.press('Escape');
     // Customise pane collapses, banner stays open, no consent recorded.
-    await expect(page.locator('.effectcmp-categories')).toBeHidden();
-    await expect(page.locator('.effectcmp-card')).toBeVisible();
+    await expect(page.locator('.tracewatch-categories')).toBeHidden();
+    await expect(page.locator('.tracewatch-card')).toBeVisible();
     expect(captor.body).toBeNull();
   });
 });

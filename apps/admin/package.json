@@ -1,5 +1,5 @@
 {
-  "name": "@effect-cmp/admin",
+  "name": "@tracewatch/admin",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
     "fix": "bun run format && bun run lint:fix"
   },
   "dependencies": {
-    "@effect-cmp/types": "workspace:*",
+    "@tracewatch/types": "workspace:*",
     "@nuxt/ui": "latest",
     "@pinia/nuxt": "latest",
     "nuxt": "latest",

@@ -1,6 +1,6 @@
-# @effect-cmp/docs
+# @tracewatch/docs
 
-User-facing documentation for Effect CMP, built with [VitePress](https://vitepress.dev/).
+User-facing documentation for Tracewatch, built with [VitePress](https://vitepress.dev/).
 
 Covers:
 
@@ -14,7 +14,7 @@ Covers:
 ## Local dev
 
 ```bash
-bun --filter @effect-cmp/docs run dev
+bun --filter @tracewatch/docs run dev
 ```
 
 Serves at `http://localhost:5173` by default. Picked up automatically by
@@ -23,11 +23,11 @@ Serves at `http://localhost:5173` by default. Picked up automatically by
 ## Build
 
 ```bash
-bun --filter @effect-cmp/docs run build
+bun --filter @tracewatch/docs run build
 ```
 
 Outputs to `apps/docs/.vitepress/dist`. Deploy via Cloudflare Pages
-(target: `apps/docs/.vitepress/dist`) at `docs.effectcmp.com`.
+(target: `apps/docs/.vitepress/dist`) at `docs.tracewatch.io`.
 
 ## Editing
 

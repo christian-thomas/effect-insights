@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "effect-cmp",
+      "name": "tracewatch",
       "devDependencies": {
         "oxfmt": "^0.51.0",
         "oxlint": "^1.66.0",
@@ -12,12 +12,12 @@
       },
     },
     "apps/admin": {
-      "name": "@effect-cmp/admin",
+      "name": "@tracewatch/admin",
       "version": "0.0.0",
       "dependencies": {
-        "@effect-cmp/types": "workspace:*",
         "@nuxt/ui": "latest",
         "@pinia/nuxt": "latest",
+        "@tracewatch/types": "workspace:*",
         "nuxt": "latest",
         "pinia": "latest",
         "vue": "latest",
@@ -36,14 +36,14 @@
       },
     },
     "apps/api": {
-      "name": "@effect-cmp/api",
+      "name": "@tracewatch/api",
       "version": "0.0.0",
     },
     "apps/banner": {
-      "name": "@effect-cmp/banner",
+      "name": "@tracewatch/banner",
       "version": "0.0.0",
       "dependencies": {
-        "@effect-cmp/types": "workspace:*",
+        "@tracewatch/types": "workspace:*",
       },
       "devDependencies": {
         "@axe-core/playwright": "^4.11.3",
@@ -57,7 +57,7 @@
       },
     },
     "apps/docs": {
-      "name": "@effect-cmp/docs",
+      "name": "@tracewatch/docs",
       "version": "0.0.0",
       "devDependencies": {
         "typescript": "latest",
@@ -66,12 +66,12 @@
       },
     },
     "apps/edge": {
-      "name": "@effect-cmp/edge",
+      "name": "@tracewatch/edge",
       "version": "0.0.0",
       "dependencies": {
         "@cloudflare/puppeteer": "^1.1.0",
-        "@effect-cmp/types": "workspace:*",
         "@hono/zod-validator": "latest",
+        "@tracewatch/types": "workspace:*",
         "axe-core": "^4.11.4",
         "hono": "latest",
         "zod": "latest",
@@ -85,10 +85,10 @@
       },
     },
     "packages/cookie-db-seed": {
-      "name": "@effect-cmp/cookie-db-seed",
+      "name": "@tracewatch/cookie-db-seed",
       "version": "0.0.0",
       "dependencies": {
-        "@effect-cmp/types": "workspace:*",
+        "@tracewatch/types": "workspace:*",
       },
       "devDependencies": {
         "tsx": "latest",
@@ -96,7 +96,7 @@
       },
     },
     "packages/types": {
-      "name": "@effect-cmp/types",
+      "name": "@tracewatch/types",
       "version": "0.0.0",
       "dependencies": {
         "zod": "latest",
@@ -248,20 +248,6 @@
     "@dxup/nuxt": ["@dxup/nuxt@0.4.1", "", { "dependencies": { "@dxup/unimport": "^0.1.2", "@nuxt/kit": "^4.4.2", "chokidar": "^5.0.0", "pathe": "^2.0.3", "tinyglobby": "^0.2.16" }, "peerDependencies": { "typescript": "*" }, "optionalPeers": ["typescript"] }, "sha512-gtYffW6OfWNvoLW+XD3Mx/K8uUq08PMGLYJoDxc92EzZAWqR0FhcR5iaLm5r/OxyGTKz+P5f5Y7Aoir9+SjYaw=="],
 
     "@dxup/unimport": ["@dxup/unimport@0.1.2", "", {}, "sha512-/B8YJGPzaYq1NbsQmwgP8EZqg40NpTw4ZB3suuI0TplbxKHeK94jeaawLmVhCv+YwUnOpiWEz9U6SeThku/8JQ=="],
-
-    "@effect-cmp/admin": ["@effect-cmp/admin@workspace:apps/admin"],
-
-    "@effect-cmp/api": ["@effect-cmp/api@workspace:apps/api"],
-
-    "@effect-cmp/banner": ["@effect-cmp/banner@workspace:apps/banner"],
-
-    "@effect-cmp/cookie-db-seed": ["@effect-cmp/cookie-db-seed@workspace:packages/cookie-db-seed"],
-
-    "@effect-cmp/docs": ["@effect-cmp/docs@workspace:apps/docs"],
-
-    "@effect-cmp/edge": ["@effect-cmp/edge@workspace:apps/edge"],
-
-    "@effect-cmp/types": ["@effect-cmp/types@workspace:packages/types"],
 
     "@emnapi/core": ["@emnapi/core@1.10.0", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.1", "tslib": "^2.4.0" } }, "sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw=="],
 
@@ -974,6 +960,20 @@
     "@tiptap/y-tiptap": ["@tiptap/y-tiptap@3.0.3", "", { "dependencies": { "lib0": "^0.2.100" }, "peerDependencies": { "prosemirror-model": "^1.7.1", "prosemirror-state": "^1.2.3", "prosemirror-view": "^1.9.10", "y-protocols": "^1.0.1", "yjs": "^13.5.38" } }, "sha512-8UvuV4lTisCE9cMTc/X8kRyTn9edUO7Kball0I6wb17VwZSjNDfh/YKtP4O5vcPawEzFHQIvZGq/k1h37kAf0w=="],
 
     "@tootallnate/quickjs-emscripten": ["@tootallnate/quickjs-emscripten@0.23.0", "", {}, "sha512-C5Mc6rdnsaJDjO3UpGW/CQTHtCKaYlScZTly4JIu97Jxo/odCiH0ITnDXSJPTOrEKk/ycSZ0AOgTmkDtkOsvIA=="],
+
+    "@tracewatch/admin": ["@tracewatch/admin@workspace:apps/admin"],
+
+    "@tracewatch/api": ["@tracewatch/api@workspace:apps/api"],
+
+    "@tracewatch/banner": ["@tracewatch/banner@workspace:apps/banner"],
+
+    "@tracewatch/cookie-db-seed": ["@tracewatch/cookie-db-seed@workspace:packages/cookie-db-seed"],
+
+    "@tracewatch/docs": ["@tracewatch/docs@workspace:apps/docs"],
+
+    "@tracewatch/edge": ["@tracewatch/edge@workspace:apps/edge"],
+
+    "@tracewatch/types": ["@tracewatch/types@workspace:packages/types"],
 
     "@turbo/darwin-64": ["@turbo/darwin-64@2.9.14", "", { "os": "darwin", "cpu": "x64" }, "sha512-t7QiPflaEyBE4oayeZtSmu4mEfjgIrcNlNNl1z1dmIVPqEdtA7+CfTf8d7KXsOGPh6aNgWjKxyvQg9uGfDQF+A=="],
 

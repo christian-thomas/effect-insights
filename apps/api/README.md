@@ -1,6 +1,6 @@
-# @effect-cmp/api
+# @tracewatch/api
 
-Laravel 13 backend for the Effect CMP. Provides:
+Laravel 13 backend for the Tracewatch. Provides:
 
 - Admin REST API (Sanctum) consumed by `apps/admin`
 - Public cookie-policy embed endpoint (`/api/cookie-policy/{publicKey}.html`)
@@ -93,7 +93,7 @@ asks the running master to drain + exit so the new code is picked up.
 Forge / GitHub Actions / whatever runs after `git pull` on the box:
 
 ```bash
-cd /home/forge/effectcmp/apps/api && ./deploy.sh
+cd /home/forge/tracewatch/apps/api && ./deploy.sh
 ```
 
 The script:

@@ -74,7 +74,7 @@ events, which is worse. There's a unit test locking this in.
 
 ## Monitoring
 
-`wrangler tail effect-cmp-consent --format=json | grep '"status":429'`
+`wrangler tail tracewatch-consent --format=json | grep '"status":429'`
 streams 429s as they happen. For a stable signal, the JSON log lines
 emitted by the `/rum` endpoint can be aggregated via Cloudflare Logpush
 to your data warehouse.
