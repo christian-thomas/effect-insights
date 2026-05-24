@@ -18,6 +18,11 @@ import type { BannerConfig, ConsentCategories } from './types';
 
 const SCRIPT_TAG_ATTR = 'data-domain-id';
 const BASE_ATTR = 'data-cmp-base';
+// Override the POST /consent target separately from the config base. In prod
+// both URLs share `assets.effectcmp.com`; locally each wrangler-dev worker
+// listens on its own port so the two URLs diverge. Falls back to BASE_ATTR
+// when unset, so production embeds keep working unchanged.
+const CONSENT_BASE_ATTR = 'data-cmp-consent-base';
 const INLINE_CONFIG_ATTR = 'data-cmp-config';
 const PREVIEW_MODE_ATTR = 'data-cmp-preview';
 const DEFAULT_BASE = 'https://assets.effectcmp.com';
@@ -44,10 +49,10 @@ const recordConsent = async (params: {
   config: BannerConfig;
   country: string | null;
   categories: ConsentCategories;
-  baseUrl: string;
+  consentBaseUrl: string;
   eventType: ConsentPostBody['eventType'];
 }): Promise<void> => {
-  const { config, country, categories, baseUrl, eventType } = params;
+  const { config, country, categories, consentBaseUrl, eventType } = params;
 
   const stored = readStoredConsent();
   const anonymousId = stored?.anonymousId ?? generateAnonymousId();
@@ -67,7 +72,7 @@ const recordConsent = async (params: {
 
   try {
     await postConsentEvent(
-      baseUrl,
+      consentBaseUrl,
       buildConsentEvent({ anonymousId, config, categories, country, eventType }),
     );
   } catch {
@@ -85,6 +90,7 @@ const boot = async (): Promise<void> => {
     if (!domainId) return;
 
     const baseUrl = (tag.getAttribute(BASE_ATTR) ?? DEFAULT_BASE).replace(/\/$/, '');
+    const consentBaseUrl = (tag.getAttribute(CONSENT_BASE_ATTR) ?? baseUrl).replace(/\/$/, '');
     const previewMode = tag.hasAttribute(PREVIEW_MODE_ATTR);
 
     // Inline config — used by the admin preview iframe. Bypasses the edge
@@ -144,7 +150,7 @@ const boot = async (): Promise<void> => {
         // No POST + no cookie writes — preview is a no-side-effect render.
         return;
       }
-      await recordConsent({ config, country, categories, baseUrl, eventType });
+      await recordConsent({ config, country, categories, consentBaseUrl, eventType });
     };
 
     handles = renderBanner({

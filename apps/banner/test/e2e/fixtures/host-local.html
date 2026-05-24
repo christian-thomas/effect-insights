@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Banner local dev host</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 720px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        line-height: 1.5;
+      }
+      code {
+        background: #f3f4f6;
+        padding: 0 0.3em;
+        border-radius: 4px;
+      }
+      pre {
+        background: #f3f4f6;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+      }
+      h2 {
+        margin-top: 1.5rem;
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Effect CMP — local end-to-end host</h1>
+    <p>
+      This page embeds <code>cmp.js</code> exactly like a client site would, but points the config
+      fetch at the local <code>config</code> worker and the consent POST at the local
+      <code>consent</code> worker.
+    </p>
+
+    <h2>What needs to be running</h2>
+    <ul>
+      <li>Banner build watcher: <code>bun --filter @effect-cmp/banner run dev</code></li>
+      <li>
+        Local static server (this page):
+        <code>bun --filter @effect-cmp/banner run serve:local</code> →
+        <code>http://127.0.0.1:4173/test/e2e/fixtures/host-local.html</code>
+      </li>
+      <li>Config worker: <code>bun --filter @effect-cmp/edge run dev:config</code> → port 8787</li>
+      <li>Consent worker: <code>bun --filter @effect-cmp/edge run dev:consent</code> → port 8788</li>
+      <li>Laravel API (Herd or <code>php artisan serve</code>)</li>
+    </ul>
+
+    <h2>Replace the domain id</h2>
+    <p>
+      Set <code>data-domain-id</code> on the script tag below to a real domain's
+      <code>publicKey</code> from your local admin. The config worker reads from local KV, which
+      Laravel populates on banner-config publish.
+    </p>
+
+    <script
+      src="/dist/cmp.js"
+      data-domain-id="pk_test_LOCAL_REPLACE_ME"
+      data-cmp-base="http://127.0.0.1:8787"
+      data-cmp-consent-base="http://127.0.0.1:8788"
+      async
+    ></script>
+  </body>
+</html>

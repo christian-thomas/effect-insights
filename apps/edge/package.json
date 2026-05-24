@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:config": "wrangler dev --config wrangler.config.toml",
-    "dev:consent": "wrangler dev --config wrangler.consent.toml",
-    "dev:scanner": "wrangler dev --config wrangler.scanner.toml",
+    "dev:config": "wrangler dev --config wrangler.config.toml --port 8787",
+    "dev:consent": "wrangler dev --config wrangler.consent.toml --port 8788",
+    "dev:scanner": "wrangler dev --config wrangler.scanner.toml --port 8789",
     "deploy:config": "wrangler deploy --config wrangler.config.toml",
     "deploy:consent": "wrangler deploy --config wrangler.consent.toml",
     "deploy:scanner": "wrangler deploy --config wrangler.scanner.toml",

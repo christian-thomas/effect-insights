@@ -1,49 +1,59 @@
 # @effect-cmp/edge
 
-Two Cloudflare Workers behind `assets.effectcmp.com`:
+Three Cloudflare Workers behind `assets.effectcmp.com` (and `scanner.effectcmp.com` for the scanner):
 
-| Worker               | Path(s)                                                    | Backed by                     |
-| -------------------- | ---------------------------------------------------------- | ----------------------------- |
-| `effect-cmp-config`  | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | KV (configs), R2 (bundles)    |
-| `effect-cmp-consent` | `/consent` (POST)                                          | D1 (hot log) + Laravel mirror |
+| Worker                | Path(s)                                                    | Local port | Backed by                          |
+| --------------------- | ---------------------------------------------------------- | ---------- | ---------------------------------- |
+| `effect-cmp-config`   | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | 8787       | KV (configs), R2 (bundles)         |
+| `effect-cmp-consent`  | `/consent` (POST)                                          | 8788       | D1 (hot log) + Laravel mirror      |
+| `effect-cmp-scanner`  | `/scan` (POST)                                             | 8789       | Browser Rendering (paid plan only) |
 
 ## First-run
 
 ```bash
-# Auth
 wrangler login
 
-# Create the backing resources
+# Create the backing resources (one-time)
 wrangler kv namespace create BANNER_CONFIGS
 wrangler r2 bucket create effect-cmp-bundles
 wrangler d1 create effect-cmp-consent
 
 # Paste the IDs into wrangler.config.toml / wrangler.consent.toml
-# Then:
-pnpm run dev:config
-pnpm run dev:consent
+# Then apply the consent D1 migrations:
+bun run db:migrate:consent              # --remote (prod)
+bun run db:migrate:consent:local        # --local (wrangler dev)
 ```
+
+## Local dev
+
+Each worker runs in its own terminal on a dedicated port (the dev:* scripts
+set the port flags explicitly so they don't collide on 8787):
+
+```bash
+bun run dev:config       # http://127.0.0.1:8787
+bun run dev:consent      # http://127.0.0.1:8788
+bun run dev:scanner      # http://127.0.0.1:8789
+```
+
+cmp.js can target the local config worker via `data-cmp-base` and the local
+consent worker via `data-cmp-consent-base`. See
+`apps/banner/test/e2e/fixtures/host-local.html` for a ready-made test page.
 
 ## D1 schema
 
-The hot consent table — apply once with `wrangler d1 execute`:
+Versioned migrations live in `migrations/`. The first migration
+(`0001_consent_events.sql`) is idempotent — safe to apply against existing
+production data. See `bun run db:migrate:consent[:local]` above.
 
-```sql
-CREATE TABLE consent_events (
-  id TEXT PRIMARY KEY,
-  domain_public_key TEXT NOT NULL,
-  banner_config_version INTEGER NOT NULL,
-  anonymous_id TEXT NOT NULL,
-  categories_json TEXT NOT NULL,
-  gcm_signals_json TEXT NOT NULL,
-  country_code TEXT,
-  ua_hash TEXT NOT NULL,
-  ip_hash TEXT NOT NULL,
-  event_type TEXT NOT NULL,
-  occurred_at TEXT NOT NULL,
-  banner_text_hash TEXT NOT NULL
-);
+## Worker secrets
 
-CREATE INDEX idx_consent_domain_time ON consent_events (domain_public_key, occurred_at);
-CREATE INDEX idx_consent_anonymous_id ON consent_events (anonymous_id);
+Each worker has its own secret namespace:
+
+```bash
+wrangler secret put BANNER_CONFIG_SIGNING_KEY --config wrangler.config.toml
+wrangler secret put LARAVEL_INGEST_SECRET     --config wrangler.consent.toml
+wrangler secret put SCANNER_SECRET            --config wrangler.scanner.toml
 ```
+
+Generate matching values with `openssl rand -hex 32` and mirror them into
+the Laravel side (`apps/api/.env`).
