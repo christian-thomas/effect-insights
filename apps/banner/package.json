@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch",
+    "dev": "bun run scripts/dev-all.ts",
+    "dev:watch": "vite build --watch",
     "build": "vite build",
     "preview": "vite preview --port 4173",
     "serve:local": "bun run scripts/serve-fixtures.ts",

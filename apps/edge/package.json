@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "bun run scripts/dev-all.ts",
     "dev:config": "wrangler dev --config wrangler.config.toml --port 8787",
     "dev:consent": "wrangler dev --config wrangler.consent.toml --port 8788",
     "dev:scanner": "wrangler dev --config wrangler.scanner.toml --port 8789",

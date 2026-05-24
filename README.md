@@ -49,39 +49,56 @@ bun run test         # full test sweep
 
 ## Running the full stack locally
 
-Six processes for a true end-to-end loop. Each gets its own terminal so you
-can see its logs separately:
+Two terminals for the happy path. Laravel runs in Herd; everything else
+runs through turbo with prefixed logs so you can tell each process apart.
 
-| # | Terminal                                        | What it does                                                        |
-| - | ----------------------------------------------- | ------------------------------------------------------------------- |
-| 1 | Laravel (via Herd)                              | API at `http://api.cmp-project.test` (or `php artisan serve`)       |
-| 2 | `bun --filter @effect-cmp/admin run dev`        | Nuxt admin at `http://localhost:3001`                               |
-| 3 | `bun --filter @effect-cmp/banner run dev`       | `vite build --watch` → rebuilds `apps/banner/dist/cmp.js` on save   |
-| 4 | `bun --filter @effect-cmp/banner run serve:local` | Static host at `http://127.0.0.1:4173/test/e2e/fixtures/host-local.html` |
-| 5 | `bun --filter @effect-cmp/edge run dev:config`  | Config worker at `http://127.0.0.1:8787`                            |
-| 6 | `bun --filter @effect-cmp/edge run dev:consent` | Consent worker at `http://127.0.0.1:8788`                           |
+| # | Terminal                  | What it starts                                                                 |
+| - | ------------------------- | ------------------------------------------------------------------------------ |
+| 1 | Laravel (Herd)            | API at `http://api.cmp-project.test` (or `php artisan serve`)                  |
+| 2 | `bun run dev` (root)      | Admin (3001) + banner build watcher + fixture host (4173) + 3 edge workers (8787/8788/8789) |
 
-Optional 7th — scanner worker (`dev:scanner` → 8789). Skip it unless you're
-actively iterating on the scanner; it needs the paid Browser Rendering plan
-and can't run usefully against a local D1.
+`bun run dev` at the root fans out via Turborepo to:
+- `apps/admin` — `nuxt dev` on `http://localhost:3001`
+- `apps/banner` — `vite build --watch` + static fixture host at `http://127.0.0.1:4173/test/e2e/fixtures/host-local.html`
+- `apps/edge` — three `wrangler dev` workers (config 8787, consent 8788, scanner 8789) with prefixed `[config]` / `[consent]` / `[scanner]` log lines
+
+### Running services on their own
+
+When debugging a single piece (wrangler's output is noisy and prefix-merged
+output can be fiddly to read), invoke the per-workspace scripts directly:
+
+```bash
+bun --filter @effect-cmp/admin run dev
+bun --filter @effect-cmp/banner run dev:watch        # vite watcher only
+bun --filter @effect-cmp/banner run serve:local      # fixture host only
+bun --filter @effect-cmp/edge   run dev:config       # one worker only
+bun --filter @effect-cmp/edge   run dev:consent
+bun --filter @effect-cmp/edge   run dev:scanner
+```
+
+The scanner worker needs the paid Browser Rendering plan and can't run
+usefully against a local D1, so skip it unless you're actively iterating
+on the scanner.
 
 ### Walkthrough — first time
 
-1. Log into the admin (terminal 2) at `http://localhost:3001`. Create a
-   domain, publish a banner config. Laravel writes the payload to the local
-   wrangler KV via `CloudflareKvClient` so the local config worker can serve
-   it on the next request.
-2. Apply the consent D1 schema locally: `bun --filter @effect-cmp/edge run
-   db:migrate:consent:local`.
-3. Open `http://127.0.0.1:4173/test/e2e/fixtures/host-local.html` (terminal
-   4). Replace `data-domain-id="pk_test_LOCAL_REPLACE_ME"` in the file with
-   the `publicKey` from the domain you just created.
+With Laravel running in Herd and `bun run dev` going at the root:
+
+1. Log into the admin at `http://localhost:3001`. Create a domain, publish
+   a banner config. Laravel writes the payload to the local wrangler KV
+   via `CloudflareKvClient` so the local config worker can serve it on
+   the next request.
+2. Apply the consent D1 schema locally:
+   `bun --filter @effect-cmp/edge run db:migrate:consent:local`.
+3. Open `http://127.0.0.1:4173/test/e2e/fixtures/host-local.html`. Replace
+   `data-domain-id="pk_test_LOCAL_REPLACE_ME"` in the file with the
+   `publicKey` from the domain you just created.
 4. Hit reload. The banner fetches its config from the local config worker
    (8787), renders, and on accept/reject POSTs the consent event to the
    local consent worker (8788). The consent worker writes to local D1 and
    fires-and-forgets to Laravel's `/api/internal/consent-events`.
-5. Back in the admin, `Consent log` (`/consent`) shows the event. Click the
-   row, hit "Download receipt → JSON" to grab a signed regulator-ready
+5. Back in the admin, `Consent log` (`/consent`) shows the event. Click
+   the row, hit "Download receipt → JSON" to grab a signed regulator-ready
    artefact.
 
 ### Testing pieces in isolation
