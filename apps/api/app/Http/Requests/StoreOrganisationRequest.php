@@ -27,6 +27,9 @@ class StoreOrganisationRequest extends FormRequest
             // NULL = retain consent events indefinitely (the default).
             // Positive integer = nightly purge cuts anything older.
             'consent_retention_days' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:3650'],
+
+            // Comma-separated alert recipients. Slack-only when null.
+            'notification_email' => ['sometimes', 'nullable', 'string', 'max:320'],
         ];
     }
 

@@ -24,19 +24,33 @@ readonly class ScanFailureAlertService
      */
     public function alert(Scan $scan, Domain $domain, array $error): void
     {
+        $notification = new ScanFailed(
+            scan: $scan,
+            domain: $domain,
+            errorMessage: $error['message'] ?? 'unknown error',
+            errorClass: $error['class'] ?? 'Throwable',
+            detailUrl: $this->detailUrlFor($scan),
+        );
+
         $channel = (string) config('services.slack.notifications.channel', '');
-        if ($channel === '') {
-            return;
+        if ($channel !== '') {
+            Notification::route('slack', $channel)->notify($notification);
         }
 
-        Notification::route('slack', $channel)
-            ->notify(new ScanFailed(
-                scan: $scan,
-                domain: $domain,
-                errorMessage: $error['message'] ?? 'unknown error',
-                errorClass: $error['class'] ?? 'Throwable',
-                detailUrl: $this->detailUrlFor($scan),
-            ));
+        $emails = $this->emailsFor($domain);
+        if ($emails !== []) {
+            Notification::route('mail', $emails)->notify($notification);
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function emailsFor(Domain $domain): array
+    {
+        $organisation = $domain->organisation()->withoutGlobalScope('organisation')->first();
+
+        return $organisation?->notificationEmails() ?? [];
     }
 
     private function detailUrlFor(Scan $scan): string

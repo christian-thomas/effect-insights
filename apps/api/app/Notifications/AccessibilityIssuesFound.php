@@ -6,6 +6,8 @@ namespace App\Notifications;
 
 use App\Models\AccessibilityScan;
 use App\Models\Domain;
+use App\Notifications\Concerns\RoutesViaConfiguredChannels;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\ContextBlock;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\SectionBlock;
@@ -22,6 +24,8 @@ use Illuminate\Notifications\Slack\SlackMessage;
  */
 final class AccessibilityIssuesFound extends Notification
 {
+    use RoutesViaConfiguredChannels;
+
     /**
      * @param  array<string, int>  $byImpact  keyed by impact, total counts
      */
@@ -32,14 +36,6 @@ final class AccessibilityIssuesFound extends Notification
         public readonly int $total,
         public readonly string $detailUrl,
     ) {}
-
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return ['slack'];
-    }
 
     public function toSlack(object $notifiable): SlackMessage
     {
@@ -76,5 +72,33 @@ final class AccessibilityIssuesFound extends Notification
                 $block->text(sprintf('<%s|Open scan in admin →>', $this->detailUrl))->markdown();
             })
             ->dividerBlock();
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        $fqdn = (string) $this->domain->getAttribute('fqdn');
+
+        $message = (new MailMessage)
+            ->subject(sprintf(
+                '[Tracewatch] %d accessibility violation%s on %s',
+                $this->total,
+                $this->total === 1 ? '' : 's',
+                $fqdn,
+            ))
+            ->line(sprintf(
+                'An accessibility scan on %s completed with %d violation%s at or above your alert threshold.',
+                $fqdn,
+                $this->total,
+                $this->total === 1 ? '' : 's',
+            ));
+
+        foreach (['critical', 'serious', 'moderate', 'minor'] as $impact) {
+            $count = $this->byImpact[$impact] ?? 0;
+            if ($count > 0) {
+                $message->line(sprintf('• %s: %d', ucfirst($impact), $count));
+            }
+        }
+
+        return $message->action('Open scan in admin', $this->detailUrl);
     }
 }

@@ -9,10 +9,11 @@ use App\Models\AccessibilityScan;
 use App\Models\Domain;
 use App\Notifications\AccessibilityIssuesFound;
 use App\Notifications\AccessibilityScanFailed;
+use Illuminate\Notifications\Notification as BaseNotification;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * Dispatches Slack alerts for accessibility scans. Two firing paths:
+ * Dispatches alerts for accessibility scans. Two firing paths:
  *
  *   - {@see self::alertIfNeeded()} — after a completed scan, if any
  *     violation at-or-above the configured threshold exists. Default
@@ -24,6 +25,11 @@ use Illuminate\Support\Facades\Notification;
  *     the cookie scanner's failure-alert shape (so on-call gets a
  *     consistent reading experience between the two pipelines).
  *
+ * Both paths dispatch to whichever channels are configured: Slack via
+ * `services.slack.notifications.channel`, mail via the parent org's
+ * `notification_email`. Either can be set independently; both off =
+ * silent (intentional for local/CI).
+ *
  * Non-final + readonly so PHPUnit can swap in a stub that throws,
  * matching {@see ScanFailureAlertService}.
  */
@@ -31,11 +37,6 @@ readonly class AccessibilityAlertService
 {
     public function alertIfNeeded(AccessibilityScan $scan, Domain $domain): void
     {
-        $channel = (string) config('services.slack.notifications.channel', '');
-        if ($channel === '') {
-            return;
-        }
-
         $byImpact = (array) $scan->getAttribute('violations_by_impact');
         $total = (int) $scan->getAttribute('violations_total');
 
@@ -47,14 +48,16 @@ readonly class AccessibilityAlertService
             return;
         }
 
-        Notification::route('slack', $channel)
-            ->notify(new AccessibilityIssuesFound(
+        $this->dispatchToConfiguredChannels(
+            new AccessibilityIssuesFound(
                 scan: $scan,
                 domain: $domain,
                 byImpact: $byImpact,
                 total: $total,
                 detailUrl: $this->detailUrlFor($scan),
-            ));
+            ),
+            $domain,
+        );
     }
 
     /**
@@ -62,19 +65,30 @@ readonly class AccessibilityAlertService
      */
     public function alertOnFailure(AccessibilityScan $scan, Domain $domain, array $error): void
     {
-        $channel = (string) config('services.slack.notifications.channel', '');
-        if ($channel === '') {
-            return;
-        }
-
-        Notification::route('slack', $channel)
-            ->notify(new AccessibilityScanFailed(
+        $this->dispatchToConfiguredChannels(
+            new AccessibilityScanFailed(
                 scan: $scan,
                 domain: $domain,
                 errorMessage: $error['message'] ?? 'unknown error',
                 errorClass: $error['class'] ?? 'Throwable',
                 detailUrl: $this->detailUrlFor($scan),
-            ));
+            ),
+            $domain,
+        );
+    }
+
+    private function dispatchToConfiguredChannels(BaseNotification $notification, Domain $domain): void
+    {
+        $channel = (string) config('services.slack.notifications.channel', '');
+        if ($channel !== '') {
+            Notification::route('slack', $channel)->notify($notification);
+        }
+
+        $organisation = $domain->organisation()->withoutGlobalScope('organisation')->first();
+        $emails = $organisation?->notificationEmails() ?? [];
+        if ($emails !== []) {
+            Notification::route('mail', $emails)->notify($notification);
+        }
     }
 
     /**

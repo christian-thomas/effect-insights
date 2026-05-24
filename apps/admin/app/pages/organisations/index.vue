@@ -22,6 +22,7 @@ const schema = z.object({
     .max(64)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'lowercase letters, digits, single hyphens'),
   consent_retention_days: z.number().int().min(1).max(3650).nullable(),
+  notification_email: z.string().max(320).nullable(),
 });
 
 const slideoverOpen = ref(false);
@@ -38,6 +39,7 @@ const openCreate = (): void => {
   state.name = '';
   state.slug = '';
   state.consent_retention_days = null;
+  state.notification_email = null;
   retentionIndefinite.value = true;
   retentionDays.value = 365;
   slideoverOpen.value = true;
@@ -48,6 +50,7 @@ const openEdit = (organisation: Organisation): void => {
   state.name = organisation.name;
   state.slug = organisation.slug;
   state.consent_retention_days = organisation.consentRetentionDays;
+  state.notification_email = organisation.notificationEmail;
   retentionIndefinite.value = organisation.consentRetentionDays === null;
   retentionDays.value = organisation.consentRetentionDays ?? 365;
   slideoverOpen.value = true;
@@ -232,6 +235,26 @@ const columns: TableColumn<Organisation>[] = [
             title="Hard delete"
             description="The purge bypasses receipts and the archive — deleted events cannot be re-downloaded."
           />
+        </div>
+
+        <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
+          <div>
+            <p class="text-sm font-medium">Email alert recipients</p>
+            <p class="text-xs text-gray-500">
+              Comma-separated. Fires in addition to Slack for: unknown cookies, cookie scan
+              failures, accessibility violations (at/above the threshold), and accessibility scan
+              failures. Leave blank for Slack-only.
+            </p>
+          </div>
+          <UFormField label="Email(s)" name="notification_email">
+            <UInput
+              :model-value="state.notification_email ?? ''"
+              type="text"
+              placeholder="alerts@client.com, ops@client.com"
+              class="w-full"
+              @update:model-value="(value: string) => state.notification_email = value === '' ? null : String(value)"
+            />
+          </UFormField>
         </div>
 
         <div class="flex justify-end gap-2 pt-2">

@@ -32,6 +32,11 @@ class UpdateOrganisationRequest extends FormRequest
             // on its nightly run. Cap at 10 years — defensible upper
             // bound for the strictest regulators.
             'consent_retention_days' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:3650'],
+
+            // Comma-separated email recipients for alerts. NULL or empty
+            // = Slack only. Each address is light-validated (RFC checks
+            // happen on the model's notificationEmails() splitter).
+            'notification_email' => ['sometimes', 'nullable', 'string', 'max:320'],
         ];
     }
 

@@ -6,6 +6,8 @@ namespace App\Notifications;
 
 use App\Models\AccessibilityScan;
 use App\Models\Domain;
+use App\Notifications\Concerns\RoutesViaConfiguredChannels;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\ContextBlock;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\SectionBlock;
@@ -19,6 +21,8 @@ use Illuminate\Notifications\Slack\SlackMessage;
  */
 final class AccessibilityScanFailed extends Notification
 {
+    use RoutesViaConfiguredChannels;
+
     public function __construct(
         public readonly AccessibilityScan $scan,
         public readonly Domain $domain,
@@ -26,14 +30,6 @@ final class AccessibilityScanFailed extends Notification
         public readonly string $errorClass,
         public readonly string $detailUrl,
     ) {}
-
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return ['slack'];
-    }
 
     public function toSlack(object $notifiable): SlackMessage
     {
@@ -59,5 +55,16 @@ final class AccessibilityScanFailed extends Notification
                 $block->text(sprintf('<%s|Open scan in admin →>', $this->detailUrl))->markdown();
             })
             ->dividerBlock();
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        $fqdn = (string) $this->domain->getAttribute('fqdn');
+
+        return (new MailMessage)
+            ->subject(sprintf('[Tracewatch] Accessibility scan failed on %s', $fqdn))
+            ->line(sprintf('An accessibility scan on %s failed with the following error:', $fqdn))
+            ->line(sprintf('%s: %s', $this->errorClass, $this->errorMessage))
+            ->action('Open scan in admin', $this->detailUrl);
     }
 }

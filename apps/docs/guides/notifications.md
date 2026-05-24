@@ -68,6 +68,41 @@ alerts stop on their own once Browser Rendering recovers.
 
 See [Accessibility scans](./accessibility-scans) for the full setup.
 
+## Email recipients
+
+Each organisation has a `notification_email` field (comma-separated)
+that fires the same notifications to email alongside Slack. When set,
+every one of the four alert types (unknown cookies, cookie scan
+failures, accessibility violations, accessibility scan failures)
+delivers to:
+
+- The Slack channel from `services.slack.notifications.channel` (if
+  set), AND
+- Each address in `organisations.notification_email` (if set).
+
+Either channel can be configured independently — Slack-only, email-
+only, both, or neither (silent).
+
+Set via the admin's organisation slideover (superuser) or
+`PATCH /api/organisations/{id}` with a `notification_email` field:
+
+```bash
+curl -X PATCH https://api.tracewatch.io/api/organisations/<uuid> \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <sanctum-session>" \
+  -d '{ "notification_email": "alerts@client.com, ops@client.com" }'
+```
+
+Each address is validated server-side via PHP's
+`FILTER_VALIDATE_EMAIL`; malformed entries are silently dropped on
+read (the splitter in `Organisation::notificationEmails()`). Send
+yourself a test alert via `php artisan accessibility:dispatch-scheduled`
+on a domain with known violations to confirm delivery.
+
+Mail driver configuration (SES, Mailtrap for dev, etc.) lives in
+`apps/api/config/mail.php` and `apps/api/.env`. Tracewatch doesn't
+ship a mail-driver bias — pick whatever fits your hosting.
+
 ## Configuration
 
 Slack notifications are configured platform-wide via two environment

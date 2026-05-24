@@ -6,7 +6,9 @@ namespace App\Notifications;
 
 use App\Models\Domain;
 use App\Models\Scan;
+use App\Notifications\Concerns\RoutesViaConfiguredChannels;
 use App\Services\Notifications\UnknownCookieAlertService;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\ContextBlock;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\SectionBlock;
@@ -20,6 +22,8 @@ use Illuminate\Notifications\Slack\SlackMessage;
  */
 final class UnknownCookieFound extends Notification
 {
+    use RoutesViaConfiguredChannels;
+
     /**
      * @param  array<int, string>  $unknownCookieNames
      */
@@ -29,14 +33,6 @@ final class UnknownCookieFound extends Notification
         public readonly array $unknownCookieNames,
         public readonly string $reviewUrl,
     ) {}
-
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return ['slack'];
-    }
 
     public function toSlack(object $notifiable): SlackMessage
     {
@@ -68,6 +64,31 @@ final class UnknownCookieFound extends Notification
                 $block->text(sprintf('<%s|Open the review queue →>', $this->reviewUrl))->markdown();
             })
             ->dividerBlock();
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        $count = count($this->unknownCookieNames);
+        $fqdn = (string) $this->domain->getAttribute('fqdn');
+
+        $message = (new MailMessage)
+            ->subject(sprintf('[Tracewatch] %d unknown cookie%s on %s', $count, $count === 1 ? '' : 's', $fqdn))
+            ->line(sprintf(
+                'A completed scan on %s found %d cookie%s that the resolver couldn\'t categorise.',
+                $fqdn,
+                $count,
+                $count === 1 ? '' : 's',
+            ));
+
+        foreach (array_slice($this->unknownCookieNames, 0, 10) as $name) {
+            $message->line(sprintf('• %s', $name));
+        }
+        $rest = max(0, count($this->unknownCookieNames) - 10);
+        if ($rest > 0) {
+            $message->line(sprintf('…and %d more.', $rest));
+        }
+
+        return $message->action('Open the review queue', $this->reviewUrl);
     }
 
     private function formatCookieList(): string

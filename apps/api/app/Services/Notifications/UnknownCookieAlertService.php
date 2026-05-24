@@ -31,18 +31,32 @@ final readonly class UnknownCookieAlertService
             return;
         }
 
+        $notification = new UnknownCookieFound(
+            scan: $scan,
+            domain: $domain,
+            unknownCookieNames: $unknownNames,
+            reviewUrl: $this->reviewUrlFor($scan),
+        );
+
         $channel = (string) config('services.slack.notifications.channel', '');
-        if ($channel === '') {
-            return;
+        if ($channel !== '') {
+            Notification::route('slack', $channel)->notify($notification);
         }
 
-        Notification::route('slack', $channel)
-            ->notify(new UnknownCookieFound(
-                scan: $scan,
-                domain: $domain,
-                unknownCookieNames: $unknownNames,
-                reviewUrl: $this->reviewUrlFor($scan),
-            ));
+        $emails = $this->emailsFor($domain);
+        if ($emails !== []) {
+            Notification::route('mail', $emails)->notify($notification);
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function emailsFor(Domain $domain): array
+    {
+        $organisation = $domain->organisation()->withoutGlobalScope('organisation')->first();
+
+        return $organisation?->notificationEmails() ?? [];
     }
 
     /**
