@@ -8,6 +8,7 @@ const nav = computed(() => {
       { label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' },
       { label: 'Domains', icon: 'i-lucide-globe', to: '/domains' },
       { label: 'Scans', icon: 'i-lucide-radar', to: '/scans' },
+      { label: 'Accessibility', icon: 'i-lucide-accessibility', to: '/accessibility-scans' },
       { label: 'Consent log', icon: 'i-lucide-file-check', to: '/consent' },
       { label: 'Cookie database', icon: 'i-lucide-database', to: '/cookies' },
     ],

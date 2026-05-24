@@ -16,8 +16,10 @@ export const domainInputSchema = z.object({
     .regex(fqdnRegex, 'Enter a valid fully-qualified domain name'),
   status: domainStatusSchema.optional(),
   // snake_case matches the Laravel FormRequest field name. Output Domain
-  // type exposes the camelCase `scanCadence` for read-side ergonomics.
+  // type exposes the camelCase `scanCadence` / `a11yScanCadence` for
+  // read-side ergonomics.
   scan_cadence: scanCadenceSchema.optional(),
+  a11y_scan_cadence: scanCadenceSchema.optional(),
 });
 
 export type DomainInput = z.infer<typeof domainInputSchema>;
@@ -29,6 +31,8 @@ export interface Domain {
   readonly status: DomainStatus;
   readonly scanCadence: ScanCadence;
   readonly lastScannedAt: string | null;
+  readonly a11yScanCadence: ScanCadence;
+  readonly lastA11yScannedAt: string | null;
   readonly publicKey: string;
   readonly settings: Record<string, unknown> | null;
   readonly createdAt: string;

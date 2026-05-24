@@ -9,6 +9,7 @@ const domainId = route.params.id as string;
 const domain = ref<Domain | null>(null);
 const loading = ref(true);
 const savingCadence = ref(false);
+const savingA11yCadence = ref(false);
 const error = ref<Error | null>(null);
 
 try {
@@ -55,6 +56,30 @@ const onCadenceChange = async (next: ScanCadence): Promise<void> => {
   }
 };
 
+const onA11yCadenceChange = async (next: ScanCadence): Promise<void> => {
+  if (!domain.value) return;
+  if (domain.value.a11yScanCadence === next) return;
+  savingA11yCadence.value = true;
+  try {
+    const updated = await domainsStore.update(domainId, { a11y_scan_cadence: next });
+    domain.value = updated;
+    toast.add({
+      title: `Accessibility cadence set to ${next}`,
+      color: 'success',
+      icon: 'i-lucide-check',
+    });
+  } catch (caught) {
+    toast.add({
+      title: 'Failed to update accessibility cadence',
+      description: caught instanceof Error ? caught.message : String(caught),
+      color: 'error',
+      icon: 'i-lucide-triangle-alert',
+    });
+  } finally {
+    savingA11yCadence.value = false;
+  }
+};
+
 const embedSnippet = computed(() => {
   if (!domain.value) return '';
   // The escape on the closing tag is required: Vue SFC parsers close the
@@ -84,6 +109,14 @@ const copyEmbed = async (): Promise<void> => {
         variant="soft"
         icon="i-lucide-radar"
         label="Scans"
+      />
+      <UButton
+        v-if="domain"
+        :to="`/domains/${domain.id}/accessibility-scans`"
+        color="neutral"
+        variant="soft"
+        icon="i-lucide-accessibility"
+        label="A11y"
       />
       <UButton
         v-if="domain"
@@ -145,25 +178,52 @@ const copyEmbed = async (): Promise<void> => {
         <template #header>
           <h3 class="font-semibold">Scheduled scans</h3>
         </template>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-          <div>
-            <label class="text-gray-500 text-sm block mb-1">Cadence</label>
-            <USelectMenu
-              :model-value="domain.scanCadence"
-              :items="cadenceOptions"
-              value-key="value"
-              :loading="savingCadence"
-              @update:model-value="onCadenceChange"
-            />
-            <p class="text-xs text-gray-500 mt-1">
-              The nightly scheduler dispatches a scan when the interval elapses. Scans stagger
-              across the cadence window so the scanner worker isn't hammered.
-            </p>
+
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+            <div>
+              <label class="text-gray-500 text-sm block mb-1">Cookie scan cadence</label>
+              <USelectMenu
+                :model-value="domain.scanCadence"
+                :items="cadenceOptions"
+                value-key="value"
+                :loading="savingCadence"
+                @update:model-value="onCadenceChange"
+              />
+              <p class="text-xs text-gray-500 mt-1">
+                Cookie/script discovery via the scanner worker. Runs at 04:00 UTC; scans stagger
+                across the cadence window so the worker isn't hammered.
+              </p>
+            </div>
+            <div>
+              <label class="text-gray-500 text-sm block mb-1">Last cookie scan</label>
+              <div class="text-sm font-mono" :title="domain.lastScannedAt ?? ''">
+                {{ formatLastScanned(domain.lastScannedAt) }}
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="text-gray-500 text-sm block mb-1">Last scanned</label>
-            <div class="text-sm font-mono" :title="domain.lastScannedAt ?? ''">
-              {{ formatLastScanned(domain.lastScannedAt) }}
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end pt-4 border-t border-gray-200 dark:border-gray-800">
+            <div>
+              <label class="text-gray-500 text-sm block mb-1">Accessibility scan cadence</label>
+              <USelectMenu
+                :model-value="domain.a11yScanCadence"
+                :items="cadenceOptions"
+                value-key="value"
+                :loading="savingA11yCadence"
+                @update:model-value="onA11yCadenceChange"
+              />
+              <p class="text-xs text-gray-500 mt-1">
+                axe-core WCAG audit. Runs at 05:00 UTC (1h offset from the cookie scanner so the
+                two don't fight for browser-rendering quota). Default
+                <code>never</code> — opt-in per domain.
+              </p>
+            </div>
+            <div>
+              <label class="text-gray-500 text-sm block mb-1">Last accessibility scan</label>
+              <div class="text-sm font-mono" :title="domain.lastA11yScannedAt ?? ''">
+                {{ formatLastScanned(domain.lastA11yScannedAt) }}
+              </div>
             </div>
           </div>
         </div>
