@@ -24,6 +24,7 @@ const schema = z.object({
   consent_retention_days: z.number().int().min(1).max(3650).nullable(),
   notification_email: z.string().max(320).nullable(),
   a11y_alert_threshold: z.enum(['critical', 'serious', 'moderate', 'minor']).nullable(),
+  a11y_alert_scope: z.enum(['all', 'wcag_only']),
 });
 
 const slideoverOpen = ref(false);
@@ -42,6 +43,7 @@ const openCreate = (): void => {
   state.consent_retention_days = null;
   state.notification_email = null;
   state.a11y_alert_threshold = null;
+  state.a11y_alert_scope = 'all';
   retentionIndefinite.value = true;
   retentionDays.value = 365;
   slideoverOpen.value = true;
@@ -54,6 +56,7 @@ const openEdit = (organisation: Organisation): void => {
   state.consent_retention_days = organisation.consentRetentionDays;
   state.notification_email = organisation.notificationEmail;
   state.a11y_alert_threshold = organisation.a11yAlertThreshold;
+  state.a11y_alert_scope = organisation.a11yAlertScope;
   retentionIndefinite.value = organisation.consentRetentionDays === null;
   retentionDays.value = organisation.consentRetentionDays ?? 365;
   slideoverOpen.value = true;
@@ -281,6 +284,22 @@ const columns: TableColumn<Organisation>[] = [
               ]"
               class="w-full"
               @update:model-value="(value: string) => state.a11y_alert_threshold = value === '' ? null : (value as 'critical' | 'serious' | 'moderate' | 'minor')"
+            />
+          </UFormField>
+
+          <UFormField
+            label="Scope"
+            name="a11y_alert_scope"
+            help="WCAG-only drops axe's best-practice (advisory) findings before counting toward the threshold. Findings tagged both WCAG and best-practice count as WCAG."
+          >
+            <USelect
+              :model-value="state.a11y_alert_scope ?? 'all'"
+              :items="[
+                { label: 'All findings (default)', value: 'all' },
+                { label: 'WCAG conformance only', value: 'wcag_only' },
+              ]"
+              class="w-full"
+              @update:model-value="(value: string) => state.a11y_alert_scope = value as 'all' | 'wcag_only'"
             />
           </UFormField>
         </div>

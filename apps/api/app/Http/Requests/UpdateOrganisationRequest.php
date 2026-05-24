@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\A11yAlertScope;
 use App\Enums\A11yImpact;
 use App\Models\Organisation;
 use Illuminate\Foundation\Http\FormRequest;
@@ -46,6 +47,14 @@ class UpdateOrganisationRequest extends FormRequest
                 A11yImpact::Serious->value,
                 A11yImpact::Moderate->value,
                 A11yImpact::Minor->value,
+            ])],
+
+            // Which findings count toward the threshold:
+            //   - 'all'       = every finding (default; preserves pre-feature behaviour)
+            //   - 'wcag_only' = best-practice findings dropped before counting
+            'a11y_alert_scope' => ['sometimes', Rule::in([
+                A11yAlertScope::All->value,
+                A11yAlertScope::WcagOnly->value,
             ])],
         ];
     }

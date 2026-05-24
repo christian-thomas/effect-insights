@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Notifications;
 
+use App\Enums\A11yAlertScope;
 use App\Enums\A11yImpact;
 use App\Models\AccessibilityFinding;
 use App\Models\AccessibilityScan;
@@ -75,16 +76,23 @@ readonly class AccessibilityAlertService
 
     /**
      * Build a fresh by-impact map from findings rows minus anything an
-     * active override mutes. Doesn't touch the stored `violations_by_impact`
-     * column — that stays the audit-time aggregate of what axe found.
+     * active override mutes and (when the org is on `wcag_only` scope)
+     * any best-practice findings. Doesn't touch the stored
+     * `violations_by_impact` column — that stays the audit-time
+     * aggregate of what axe found.
      *
      * @return array<string, int>
      */
     private function effectiveByImpact(AccessibilityScan $scan, Domain $domain): array
     {
+        $organisation = $domain->organisation()->withoutGlobalScope('organisation')->first();
         $resolver = AccessibilityRuleMuteResolver::forOrganisation(
             (string) $domain->getAttribute('organisation_id'),
         );
+        $scope = $organisation?->getAttribute('a11y_alert_scope') ?? A11yAlertScope::All;
+        if (! $scope instanceof A11yAlertScope) {
+            $scope = A11yAlertScope::tryFrom((string) $scope) ?? A11yAlertScope::All;
+        }
 
         $byImpact = [
             A11yImpact::Critical->value => 0,
@@ -93,14 +101,25 @@ readonly class AccessibilityAlertService
             A11yImpact::Minor->value => 0,
         ];
 
+        // We need `tags` only when the org is filtering by tag. Slight
+        // optimisation to skip the JSON column when not needed.
+        $columns = $scope === A11yAlertScope::WcagOnly
+            ? ['rule_id', 'impact', 'tags']
+            : ['rule_id', 'impact'];
+
         AccessibilityFinding::query()
             ->withoutGlobalScope('organisation')
             ->where('accessibility_scan_id', $scan->getKey())
-            ->get(['rule_id', 'impact'])
-            ->each(function ($finding) use ($resolver, $domain, &$byImpact): void {
+            ->get($columns)
+            ->each(function ($finding) use ($resolver, $domain, $scope, &$byImpact): void {
                 if ($resolver->isMutedForDomain((string) $finding->getAttribute('rule_id'), $domain)) {
                     return;
                 }
+
+                if ($scope === A11yAlertScope::WcagOnly && $this->isBestPracticeOnly($finding)) {
+                    return;
+                }
+
                 $impact = $finding->getAttribute('impact');
                 $impactValue = $impact instanceof A11yImpact ? $impact->value : (string) $impact;
                 if (isset($byImpact[$impactValue])) {
@@ -109,6 +128,34 @@ readonly class AccessibilityAlertService
             });
 
         return $byImpact;
+    }
+
+    /**
+     * Mirror of the admin UI's predicate (apps/admin/app/pages/
+     * accessibility-scans/[id].vue). A finding is "best-practice only"
+     * when it carries the `best-practice` tag AND has no WCAG tag — if
+     * a rule is tagged both, the WCAG side wins so legally-required
+     * findings never get suppressed by accident.
+     */
+    private function isBestPracticeOnly(AccessibilityFinding $finding): bool
+    {
+        $tags = $finding->getAttribute('tags');
+        if (! is_array($tags)) {
+            return false;
+        }
+
+        $hasWcag = false;
+        $hasBestPractice = false;
+        foreach ($tags as $tag) {
+            $string = (string) $tag;
+            if (str_starts_with($string, 'wcag')) {
+                $hasWcag = true;
+            } elseif ($string === 'best-practice') {
+                $hasBestPractice = true;
+            }
+        }
+
+        return $hasBestPractice && ! $hasWcag;
     }
 
     /**

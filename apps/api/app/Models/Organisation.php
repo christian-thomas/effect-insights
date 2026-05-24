@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\A11yAlertScope;
 use Database\Factories\OrganisationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'consent_retention_days',
     'notification_email',
     'a11y_alert_threshold',
+    'a11y_alert_scope',
 ])]
 class Organisation extends Model
 {
@@ -51,6 +53,7 @@ class Organisation extends Model
         return [
             'settings' => 'array',
             'consent_retention_days' => 'integer',
+            'a11y_alert_scope' => A11yAlertScope::class,
         ];
     }
 

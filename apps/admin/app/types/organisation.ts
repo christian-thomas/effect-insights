@@ -1,5 +1,7 @@
 export type A11yAlertThreshold = 'critical' | 'serious' | 'moderate' | 'minor';
 
+export type A11yAlertScope = 'all' | 'wcag_only';
+
 export interface Organisation {
   readonly id: string;
   readonly name: string;
@@ -14,6 +16,10 @@ export interface Organisation {
   // NULL = inherit the global `services.accessibility.alert_threshold`
   // env default. Override per-org for tenant-specific alert policies.
   readonly a11yAlertThreshold: A11yAlertThreshold | null;
+  // Which findings count toward the threshold. 'all' = every finding
+  // (default); 'wcag_only' = best-practice findings dropped before
+  // counting.
+  readonly a11yAlertScope: A11yAlertScope;
 }
 
 export interface OrganisationInput {
@@ -22,4 +28,5 @@ export interface OrganisationInput {
   consent_retention_days?: number | null;
   notification_email?: string | null;
   a11y_alert_threshold?: A11yAlertThreshold | null;
+  a11y_alert_scope?: A11yAlertScope;
 }

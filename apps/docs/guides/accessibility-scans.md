@@ -257,12 +257,39 @@ which is the right reference for "is this getting better or worse".
 Failed scans are excluded; only `completed` ones contribute data
 points.
 
-## Limitations
+## Alert scope (WCAG vs best-practice)
 
-- **No tag-aware alert filtering.** Best-practice + WCAG rules at the
-  same impact level trip the same threshold. Filter visually in the
-  admin via the WCAG/Best-practice tab on the scan detail page; or
-  mute the noisy rules.
+Companion to [Alert threshold](#alert-threshold). The threshold
+controls *severity*; the scope controls *which kinds of rules* count.
+
+Two values, set per-org via `organisations.a11y_alert_scope`:
+
+- **`all`** (default) — every finding above the impact threshold
+  counts.
+- **`wcag_only`** — best-practice findings drop out of the threshold
+  count. A scan that finds only best-practice issues stays silent
+  regardless of impact level.
+
+A finding counts as best-practice when it carries the
+`best-practice` axe tag AND has no `wcag*` tag. Rules tagged with
+both (rare but real) count as WCAG, so legally-required findings are
+never accidentally suppressed.
+
+Set via the admin's organisation slideover or
+`PATCH /api/organisations/{id}`:
+
+```bash
+curl -X PATCH https://api.tracewatch.io/api/organisations/<uuid> \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <sanctum-session>" \
+  -d '{ "a11y_alert_scope": "wcag_only" }'
+```
+
+The scope filter applies only to *alert dispatching*. The scan
+detail UI still shows every finding (with WCAG / Best-practice /
+All tabs to filter visually) and the historical trend chart still
+includes everything axe found — only the Slack/email notification
+decision is affected.
 
 ## Related
 
