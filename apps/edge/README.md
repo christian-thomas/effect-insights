@@ -39,6 +39,18 @@ cmp.js can target the local config worker via `data-cmp-base` and the local
 consent worker via `data-cmp-consent-base`. See
 `apps/banner/test/e2e/fixtures/host-local.html` for a ready-made test page.
 
+## Tests
+
+```bash
+bun run test                  # vitest-pool-workers — in-process miniflare
+bun run test:e2e:wrangler     # spawns wrangler dev and hits it over HTTP
+```
+
+The in-process tests cover behaviour; the wrangler-dev smoke runner
+catches misconfigurations in the toml itself (typos, missing imports,
+binding declarations that won't load in the real runtime). Keep both —
+they cover different failure modes.
+
 ## D1 schema
 
 Versioned migrations live in `migrations/`. The first migration

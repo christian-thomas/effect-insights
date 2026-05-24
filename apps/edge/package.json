@@ -17,6 +17,7 @@
     "build": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e:wrangler": "bun run scripts/test-wrangler-dev-consent.ts",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "format": "oxfmt .",
