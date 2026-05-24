@@ -82,20 +82,27 @@ visitors with cookies still work normally.
 1. CF status. There's nothing to do at the application layer.
 2. Update internal status; tell account managers.
 
-### Browser Rendering is down (scanner only)
+### Browser Rendering is down (both scanners)
 
-**Symptom**: `effect-cmp-scanner` returns 500 on `/scan`. Scheduled scans
-fail; the daily `scans:dispatch-scheduled` command re-dispatches them
-tomorrow per cadence + stagger.
+**Symptom**: `effect-cmp-scanner` returns 500 on `/scan` and `/scan-a11y`.
+Both scheduled pipelines fail; the daily dispatch commands
+(`scans:dispatch-scheduled` at 04:00 and
+`accessibility:dispatch-scheduled` at 05:00) re-dispatch tomorrow per
+cadence + stagger.
 
-**Visitor impact**: None. Scanner only powers the cookie discovery feature
-in the admin.
+**Visitor impact**: None. Both scanners only power the discovery
+features in the admin — cookie crawl results + axe-core findings.
+Neither runs in the visitor request path.
 
-**Slack noise**: Every failed scan fires a `ScanFailed` Slack alert via
-`App\Services\Notifications\ScanFailureAlertService`. During a sustained
-Browser Rendering outage with N domains on the scheduler this is N alerts
-in a row — **expected, ignore**. Don't mute the channel permanently;
-once Browser Rendering recovers the alerts stop on their own at the next
+**Slack noise**: Every failed scan fires its respective notification:
+- Cookie scanner failures → `ScanFailed` via `ScanFailureAlertService`
+- Accessibility scanner failures → `AccessibilityScanFailed` via
+  `AccessibilityAlertService::alertOnFailure()`
+
+During a sustained Browser Rendering outage with N cookie-scheduled
+domains + M a11y-scheduled domains this is N+M alerts in a row —
+**expected, ignore**. Don't mute the channel permanently; once
+Browser Rendering recovers the alerts stop on their own at the next
 scheduler run.
 
 **Action**:

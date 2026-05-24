@@ -39,6 +39,7 @@ export default defineConfig({
           text: 'Working with the data',
           items: [
             { text: 'Cookie policy generation', link: '/guides/cookie-policy-generation' },
+            { text: 'Accessibility scans', link: '/guides/accessibility-scans' },
             { text: 'Consent records + receipts', link: '/guides/consent-records' },
             { text: 'JavaScript API surface', link: '/guides/javascript-api' },
           ],

@@ -43,6 +43,31 @@ scheduled, or API). The scan row stays at `failed` with the original
 exception in `error_log` even if the alerter itself errors — alert
 delivery is best-effort and never overwrites the canonical record.
 
+## Accessibility violations
+
+When an accessibility scan completes with violations at or above the
+configured impact threshold, a Slack message lands in your channel:
+
+> _2 accessibility violations on `app.example.com` (Acme Ltd)_:
+>
+> Critical 1 · Serious 1 · Moderate 0 · Minor 0
+>
+> [Open scan in admin →](https://admin.effectcmp.com/accessibility-scans/uuid-here)
+
+The default threshold is **`serious`** — Critical or Serious violations
+alert; Moderate or Minor stay quiet. Override per-deploy via
+`ACCESSIBILITY_ALERT_THRESHOLD` (one of `critical | serious | moderate
+| minor`) in `apps/api/.env`.
+
+Failed accessibility scans also alert separately via the
+`AccessibilityScanFailed` notification — same block-kit shape as the
+cookie scanner's `ScanFailed`, just with a link to the accessibility
+scan detail page. During a Cloudflare Browser Rendering outage you'll
+see one Slack message per failed scan; **expected, ignore** — the
+alerts stop on their own once Browser Rendering recovers.
+
+See [Accessibility scans](./accessibility-scans) for the full setup.
+
 ## Configuration
 
 Slack notifications are configured platform-wide via two environment

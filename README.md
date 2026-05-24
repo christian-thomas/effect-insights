@@ -173,10 +173,15 @@ Scheduled commands fire daily under Horizon (see `apps/api/routes/console.php`):
   org's `consent_retention_days` window. NULL = retain forever.
 - **03:00** `archive-consent-events` — drains D1 → MySQL.
 - **04:00** `scans:dispatch-scheduled` — dispatches `RunScanJob` for
-  every domain whose cadence is due.
+  every domain whose cookie scan cadence is due.
+- **05:00** `accessibility:dispatch-scheduled` — dispatches
+  `RunAccessibilityScanJob` for every domain whose a11y scan cadence
+  is due. 1h offset so the two scanners don't fight for Browser
+  Rendering quota.
 
-Slack alerts fire on unknown-cookie discoveries and scan failures —
-see `apps/docs/guides/notifications.md`.
+Slack alerts fire on unknown-cookie discoveries, cookie scan failures,
+accessibility violations (Critical/Serious by default), and a11y
+scan failures — see `apps/docs/guides/notifications.md`.
 
 ## Reference
 

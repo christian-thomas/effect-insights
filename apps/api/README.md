@@ -35,13 +35,14 @@ php artisan serve   # http://localhost:8000
 
 ## Scheduler
 
-Three jobs fire daily off `routes/console.php`:
+Four jobs fire daily off `routes/console.php`:
 
-| Time (UTC) | Command                       | What it does                                              |
-| ---------- | ----------------------------- | --------------------------------------------------------- |
-| 02:00      | `consent-events:purge`        | Hard-deletes MySQL consent events past each org's `consent_retention_days` window. NULL = retain forever. |
-| 03:00      | `archive-consent-events`      | Drains D1 → MySQL `consent_events`, idempotent on UUID.   |
-| 04:00      | `scans:dispatch-scheduled`    | Dispatches `RunScanJob` for every domain whose cadence is due, staggered to avoid hammering the scanner. |
+| Time (UTC) | Command                              | What it does                                              |
+| ---------- | ------------------------------------ | --------------------------------------------------------- |
+| 02:00      | `consent-events:purge`               | Hard-deletes MySQL consent events past each org's `consent_retention_days` window. NULL = retain forever. |
+| 03:00      | `archive-consent-events`             | Drains D1 → MySQL `consent_events`, idempotent on UUID.   |
+| 04:00      | `scans:dispatch-scheduled`           | Dispatches `RunScanJob` for every domain whose cookie scan cadence is due, staggered to avoid hammering the scanner. |
+| 05:00      | `accessibility:dispatch-scheduled`   | Dispatches `RunAccessibilityScanJob` for every domain whose a11y scan cadence is due. 1h offset from cookie scans so they don't fight for Browser Rendering quota. |
 
 Each is `->onOneServer()->withoutOverlapping()` so multi-server
 deploys can't double-fire. Make sure `php artisan schedule:work` (dev)
@@ -51,10 +52,11 @@ wired up.
 Ad-hoc commands:
 
 ```bash
-php artisan banner-configs:re-sign    # re-publish every active banner config to KV
-php artisan consent-events:archive    # force a D1 → MySQL drain outside the 03:00 slot
-php artisan consent-events:purge      # force a retention-window purge outside the 02:00 slot
-php artisan scans:dispatch-scheduled  # force the scan-dispatch sweep
+php artisan banner-configs:re-sign            # re-publish every active banner config to KV
+php artisan consent-events:archive            # force a D1 → MySQL drain outside the 03:00 slot
+php artisan consent-events:purge              # force a retention-window purge outside the 02:00 slot
+php artisan scans:dispatch-scheduled          # force the cookie scan-dispatch sweep
+php artisan accessibility:dispatch-scheduled  # force the a11y scan-dispatch sweep
 ```
 
 ## Queues + Horizon

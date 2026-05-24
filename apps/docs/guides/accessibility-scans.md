@@ -1,0 +1,168 @@
+# Accessibility scans
+
+Effect runs scheduled [axe-core](https://github.com/dequelabs/axe-core)
+accessibility audits against client websites — same Domain registry as
+the cookie scanner, separate cadence, separate findings, separate
+Slack alerts. Designed to sit alongside the CMP without forcing every
+client to opt in.
+
+## Quick start
+
+1. Open a domain detail page in admin.
+2. Under **Scheduled scans** set **Accessibility scan cadence** to
+   `Weekly` or `Monthly`. Default is `Never` (opt-in).
+3. Either wait for the next 05:00 UTC scheduler run, or click
+   **Run scan now** on the per-domain Accessibility tab.
+4. The scan runs in the background (Horizon queue:
+   `accessibility-scans`). Refresh the page after a few minutes to
+   see the result — completed scans show violations grouped by
+   impact (Critical / Serious / Moderate / Minor).
+
+## How it works
+
+The pipeline shares infrastructure with the cookie scanner but
+maintains its own data shape:
+
+1. **URL discovery.** Same `SitemapDiscoveryService` as the cookie
+   scanner — fetches `/sitemap.xml`, falls back to `/robots.txt`
+   `Sitemap:` directives, falls back to apex-only. Same 150-URL
+   cap per scan.
+2. **Browser run.** `apps/edge/src/scanner-worker.ts` exposes a
+   `/scan-a11y` route. For each URL it:
+   - Navigates via `@cloudflare/puppeteer` (`waitUntil:
+     networkidle0`, 30s timeout).
+   - Injects `axe-core` from jsDelivr via `page.addScriptTag`.
+   - Runs `axe.run()` in the page context.
+   - Collects `violations[]` and returns them.
+3. **Persistence.** `App\Services\Accessibility\AccessibilityScanRunner`
+   stores one row per violation in `accessibility_findings`, with
+   aggregate counters denormalised onto the parent
+   `accessibility_scans` row (`violations_total`,
+   `violations_by_impact`).
+4. **Alerting.** When a scan completes, `AccessibilityAlertService`
+   checks the impact threshold (default `serious`) and fires a Slack
+   notification if any violation at or above that level exists. Same
+   channel as the unknown-cookie + scan-failure alerts.
+
+## Cadence
+
+Per-domain. Three options, same as the cookie scanner's cadence:
+
+| Cadence   | Interval | Stagger window |
+| --------- | -------- | -------------- |
+| `weekly`  | 7 days   | 7 days         |
+| `monthly` | 30 days  | 28 days        |
+| `never`   | —        | —              |
+
+The 05:00 UTC `accessibility:dispatch-scheduled` command walks every
+domain whose cadence isn't `never` and dispatches a queued scan when
+the interval has elapsed since the last one. Never-scanned domains
+land on a deterministic day inside the cadence window (CRC32 of the
+domain UUID mod `staggerWindow`) so a fleet of weekly domains
+spreads across 7 days rather than all hammering Monday morning.
+
+## API
+
+All endpoints sit behind Sanctum SPA auth + the `org.current`
+middleware, same as the cookie scanner. Tenant-scoped.
+
+```
+GET    /api/accessibility-scans                          List, paginated
+GET    /api/accessibility-scans/{accessibilityScan}      Detail + findings
+POST   /api/domains/{domain}/accessibility-scans         Manual trigger (202)
+```
+
+The list endpoint accepts `?domain_id=…` to filter to a specific
+domain. The detail endpoint returns findings already ordered by
+impact severity (Critical first) so the admin renders without
+re-sorting.
+
+`PATCH /api/domains/{domain}` accepts `a11y_scan_cadence` so
+operators can flip cadence from the same form as the cookie cadence.
+
+## Finding shape
+
+```json
+{
+  "id": "uuid",
+  "accessibilityScanId": "uuid",
+  "ruleId": "color-contrast",
+  "impact": "serious",
+  "description": "Elements must have sufficient color contrast",
+  "helpText": "How to fix...",
+  "helpUrl": "https://dequeuniversity.com/rules/axe/4.x/color-contrast",
+  "url": "https://example.com/about",
+  "tags": ["wcag2aa", "wcag143"],
+  "nodes": [
+    {
+      "target": ["#main > p.subhead"],
+      "html": "<p class=\"subhead\" style=\"color: #ccc\">…</p>",
+      "failureSummary": "Fix any of the following: Element has insufficient color contrast..."
+    }
+  ]
+}
+```
+
+`impact` is one of `critical | serious | moderate | minor` —
+axe-core's own taxonomy.
+
+## Alert threshold
+
+The Slack alert fires when any violation at or above the configured
+impact threshold exists in a completed scan. Default is `serious`,
+meaning Critical or Serious findings trigger an alert and Moderate or
+Minor stay quiet.
+
+Override via env var:
+
+```bash
+ACCESSIBILITY_ALERT_THRESHOLD=critical   # only Critical alerts
+ACCESSIBILITY_ALERT_THRESHOLD=serious    # default
+ACCESSIBILITY_ALERT_THRESHOLD=moderate   # Moderate and worse
+ACCESSIBILITY_ALERT_THRESHOLD=minor      # every violation
+```
+
+Setting it to a value below `serious` is noisy — most axe runs find
+at least a handful of `minor` issues even on well-built sites.
+
+## Cost / quota considerations
+
+axe-core takes 2–5s per page versus &lt;2s for the cookie scanner.
+A 50-URL crawl is a ~3-minute job, comfortably inside the 600s
+Horizon timeout. The 05:00 UTC cron is offset 1h from the cookie
+scanner's 04:00 so the two don't fight for Cloudflare Browser
+Rendering quota.
+
+If client adoption grows and a11y scans start starving cookie scans,
+the next step is a dedicated `effect-cmp-accessibility-scanner`
+worker on a separate Browser Rendering plan. Until then, the shared
+worker is the simpler operationally.
+
+## Limitations
+
+- **CDN-loaded axe-core.** The worker pulls `axe.min.js` from
+  jsDelivr per scanned page rather than bundling 500KB into the
+  worker image. If jsDelivr is unavailable the scan fails (the
+  runner records the error, fires the failure alert, moves on).
+  Acceptable for v1; we can switch to a Wrangler text-bundle import
+  later for offline guarantees.
+- **No rule muting.** Every violation is reported every time. Per-org
+  or per-domain rule muting (the equivalent of `cookie_overrides`)
+  is on the wishlist.
+- **No historical trend dashboard.** The violations_by_impact counts
+  are stored per scan but there's no chart of "Critical violations
+  on example.com over the last 90 days" yet.
+- **No best-practice rule filtering.** axe-core emits both WCAG
+  violations and "best practice" advisories; the current
+  implementation returns both undifferentiated. Filter in the UI
+  using the `tags` array if needed.
+- **Email channel not wired.** Notifications go to Slack only.
+  `services.php` already has SES config but no notification class
+  targets `mail` anywhere yet.
+
+## Related
+
+- [Notifications](./notifications) — Slack channel setup.
+- [Triggering scans](./triggering-scans) — cookie scanner's
+  equivalent doc (most of the operational shape is the same).
+- [Troubleshooting](./troubleshooting) — common scan failure modes.
