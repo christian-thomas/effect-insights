@@ -158,8 +158,10 @@ test('customise lets the user toggle individual categories before saving', async
   await page.getByRole('button', { name: 'Customise' }).click();
   await expect(page.locator('.effectcmp-categories')).toBeVisible();
 
-  // Toggle statistics on
-  await page.getByRole('switch', { name: 'statistics cookies' }).click();
+  // Toggle statistics on. The switch's accessible name is sourced from the
+  // category label element (aria-labelledby), which the host-page copy
+  // renders as the bare category word.
+  await page.getByRole('switch', { name: 'statistics' }).click();
 
   await page.getByRole('button', { name: 'Save preferences' }).click();
 

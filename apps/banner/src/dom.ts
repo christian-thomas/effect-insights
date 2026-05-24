@@ -1,6 +1,7 @@
 import { applyNonce } from './csp';
-import type { BannerCopy, ConsentCategories, CookieCategory } from './types';
+import { captureFocusRestorer, createFocusTrap } from './focus';
 import { cls } from './styles';
+import type { BannerCopy, ConsentCategories, CookieCategory } from './types';
 
 const CATEGORIES: CookieCategory[] = ['necessary', 'preferences', 'statistics', 'marketing'];
 
@@ -26,6 +27,16 @@ interface RenderHandles {
  * (typically `document.body.appendChild`). Returns a destroy() callback
  * that pulls the element out of the DOM after consent is recorded.
  *
+ * A11y notes:
+ *  - root has role=dialog + aria-modal + aria-labelledby + aria-describedby
+ *  - focus is trapped inside the dialog until destroy()
+ *  - initial focus lands on the reject button so screen-reader users hear
+ *    a refusal action first (refusal as easy as acceptance, WCAG-friendly)
+ *  - on destroy() focus returns to whatever the host page had focused
+ *  - each category toggle is a <button role="switch"> with aria-checked,
+ *    so native Enter/Space + screen-reader announcements work for free
+ *  - Esc inside the customise pane returns to the simple view
+ *
  * Modal layout only in iteration 4. Bar / corner variants land in v5.
  */
 export const renderBanner = (options: RenderOptions): RenderHandles => {
@@ -33,10 +44,13 @@ export const renderBanner = (options: RenderOptions): RenderHandles => {
   const categories: ConsentCategories = { ...options.initial };
   let customising = false;
 
+  const restoreFocus = captureFocusRestorer();
+
   const root = document.createElement('div');
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-modal', 'true');
-  root.setAttribute('aria-labelledby', `${cls('title')}`);
+  root.setAttribute('aria-labelledby', cls('title'));
+  root.setAttribute('aria-describedby', cls('body'));
 
   const style = document.createElement('style');
   style.textContent = options.styleText;
@@ -57,13 +71,19 @@ export const renderBanner = (options: RenderOptions): RenderHandles => {
   card.appendChild(title);
 
   const body = document.createElement('p');
+  body.id = cls('body');
   body.className = cls('body');
   body.textContent = copy.body;
   card.appendChild(body);
 
   const categoriesContainer = document.createElement('div');
+  categoriesContainer.id = cls('categories');
   categoriesContainer.className = cls('categories');
   categoriesContainer.hidden = true;
+  // role=group with a label means screen readers announce "Cookie categories,
+  // group" when focus enters and group items together coherently.
+  categoriesContainer.setAttribute('role', 'group');
+  categoriesContainer.setAttribute('aria-label', 'Cookie categories');
   card.appendChild(categoriesContainer);
 
   CATEGORIES.forEach((category) => {
@@ -73,37 +93,42 @@ export const renderBanner = (options: RenderOptions): RenderHandles => {
     const meta = document.createElement('div');
     meta.className = cls('category-meta');
 
+    const labelId = cls(`category-label-${category}`);
+    const descId = cls(`category-desc-${category}`);
+
     const label = document.createElement('p');
+    label.id = labelId;
     label.className = cls('category-label');
     label.textContent = category;
     meta.appendChild(label);
 
     const desc = document.createElement('p');
+    desc.id = descId;
     desc.className = cls('category-desc');
     desc.textContent = copy.categoryDescriptions[category];
     meta.appendChild(desc);
 
-    const toggle = document.createElement('div');
+    // Native <button role="switch"> gives us Enter/Space, focus ring,
+    // disabled handling, and screen-reader semantics for free.
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
     toggle.className = cls('switch');
     toggle.setAttribute('role', 'switch');
-    toggle.setAttribute('aria-label', `${category} cookies`);
+    toggle.setAttribute('aria-checked', String(categories[category]));
+    toggle.setAttribute('aria-labelledby', labelId);
+    toggle.setAttribute('aria-describedby', descId);
     toggle.dataset['on'] = String(categories[category]);
+
     if (category === 'necessary') {
-      toggle.dataset['disabled'] = 'true';
+      toggle.disabled = true;
       toggle.setAttribute('aria-disabled', 'true');
     } else {
       toggle.addEventListener('click', () => {
-        categories[category] = !categories[category];
-        toggle.dataset['on'] = String(categories[category]);
+        const next = !categories[category];
+        categories[category] = next;
+        toggle.dataset['on'] = String(next);
+        toggle.setAttribute('aria-checked', String(next));
       });
-      toggle.addEventListener('keydown', (event: KeyboardEvent) => {
-        if (event.key === ' ' || event.key === 'Enter') {
-          event.preventDefault();
-          categories[category] = !categories[category];
-          toggle.dataset['on'] = String(categories[category]);
-        }
-      });
-      toggle.tabIndex = 0;
     }
 
     row.appendChild(meta);
@@ -128,6 +153,10 @@ export const renderBanner = (options: RenderOptions): RenderHandles => {
   customiseButton.type = 'button';
   customiseButton.className = `${cls('btn')} ${cls('btn-link')}`;
   customiseButton.textContent = copy.customiseLabel;
+  // aria-expanded reflects whether the customise pane is open so screen
+  // readers can announce the toggle state.
+  customiseButton.setAttribute('aria-expanded', 'false');
+  customiseButton.setAttribute('aria-controls', categoriesContainer.id);
   actions.appendChild(customiseButton);
 
   const acceptButton = document.createElement('button');
@@ -153,24 +182,46 @@ export const renderBanner = (options: RenderOptions): RenderHandles => {
     customising = !customising;
     categoriesContainer.hidden = !customising;
     saveButton.hidden = !customising;
-    acceptButton.textContent = customising ? copy.acceptAllLabel : copy.acceptAllLabel;
+    customiseButton.setAttribute('aria-expanded', String(customising));
   });
 
   const onKey = (event: KeyboardEvent): void => {
     if (event.key === 'Escape' && customising) {
+      // Collapse the customise pane back to the simple Accept/Reject view
+      // rather than closing the whole banner. Closing the modal without an
+      // explicit consent choice would be a GDPR foot-gun (implicit denial
+      // / dismissal) so we deliberately don't expose Escape-to-dismiss.
       customising = false;
       categoriesContainer.hidden = true;
       saveButton.hidden = true;
+      customiseButton.setAttribute('aria-expanded', 'false');
+      customiseButton.focus();
+      // Don't bubble — host page Esc handlers (modals on top of us) shouldn't
+      // see it.
+      event.stopPropagation();
     }
   };
-  document.addEventListener('keydown', onKey);
+  root.addEventListener('keydown', onKey);
 
   root.appendChild(shell);
 
+  const releaseFocusTrap = createFocusTrap(root);
+
   const destroy = (): void => {
-    document.removeEventListener('keydown', onKey);
+    releaseFocusTrap();
+    root.removeEventListener('keydown', onKey);
     root.remove();
+    restoreFocus();
   };
+
+  // Move focus into the dialog. Reject-first sets a refusal-friendly
+  // default, but we use queueMicrotask so the caller can append the root
+  // to the DOM before we try to focus an element inside it.
+  queueMicrotask((): void => {
+    if (root.isConnected) {
+      rejectButton.focus();
+    }
+  });
 
   return { root, destroy };
 };
