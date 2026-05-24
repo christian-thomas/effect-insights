@@ -218,3 +218,24 @@ exactly which fields you've changed since the last publish and tags
 each as material or cosmetic. The button label changes to **Publish
 (re-prompts visitors)** when any material change is staged so you
 can't miss it.
+
+## Version history + rollback
+
+Every publish writes a new row to `banner_configs` rather than
+overwriting the previous one, so the full chronology is preserved.
+Two endpoints expose it:
+
+- `GET /api/domains/{domain}/banner-config/history` — JSON list of
+  every published version for the domain, newest first.
+- `POST /api/domains/{domain}/banner-config/rollback` with
+  `{ "version": N }` — copies a historic version's content back into
+  the current draft.
+
+The rollback **does not publish**. It leaves the historic content in
+the draft so the same pending-changes panel + material-classification
+flow kicks in before anything goes live. Click Publish to commit.
+
+That gives reversibility without surprise: someone clicks "Roll back
+to v3" → draft swaps to v3's content → admin sees the diff highlighted
++ a yellow "Publish (re-prompts visitors)" warning if applicable →
+they Publish to make it real.
