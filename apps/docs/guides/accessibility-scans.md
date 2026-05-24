@@ -220,6 +220,42 @@ for the current org with rule id, scope, reason, and a delete button.
 Removing an override un-mutes immediately — the next scan + alert run
 treats the rule as active again.
 
+## Historical trend
+
+Each domain detail page in the admin shows an **Accessibility trend**
+card with a stacked-bar chart of violations per completed scan in the
+selected window (7 / 30 / 90 / 365 days). Stack order from bottom to
+top: Critical → Serious → Moderate → Minor. Hover any bar to see the
+exact counts.
+
+Backed by `GET /api/domains/{domain}/accessibility-trend?days=N` which
+returns:
+
+```json
+{
+  "data": {
+    "domainId": "uuid",
+    "days": 90,
+    "points": [
+      {
+        "scanId": "uuid",
+        "finishedAt": "2026-04-12T...",
+        "total": 4,
+        "byImpact": { "critical": 1, "serious": 2, "moderate": 1, "minor": 0 }
+      }
+    ]
+  }
+}
+```
+
+Reads the stored `violations_by_impact` per scan rather than
+recomputing from findings, so mute changes don't retroactively rewrite
+history — the trend reflects what axe actually found at each scan,
+which is the right reference for "is this getting better or worse".
+
+Failed scans are excluded; only `completed` ones contribute data
+points.
+
 ## Limitations
 
 - **CDN-loaded axe-core.** The worker pulls `axe.min.js` from
@@ -228,9 +264,6 @@ treats the rule as active again.
   runner records the error, fires the failure alert, moves on).
   Acceptable for v1; we can switch to a Wrangler text-bundle import
   later for offline guarantees.
-- **No historical trend dashboard.** The violations_by_impact counts
-  are stored per scan but there's no chart of "Critical violations
-  on example.com over the last 90 days" yet.
 - **No tag-aware alert filtering.** Best-practice + WCAG rules at the
   same impact level trip the same threshold. Filter visually in the
   admin via the WCAG/Best-practice tab on the scan detail page; or

@@ -251,6 +251,8 @@ const copyEmbed = async (): Promise<void> => {
         :public-key="domain.publicKey"
         :fqdn="domain.fqdn"
       />
+
+      <AccessibilityTrendCard :domain-id="domain.id" />
     </template>
 
     <USkeleton v-else-if="loading" class="h-48 w-full" />

@@ -85,6 +85,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/accessibility-scans', Api\AccessibilityScans\ListAccessibilityScans::class);
         Route::get('/accessibility-scans/{accessibilityScan}', Api\AccessibilityScans\ShowAccessibilityScan::class);
         Route::post('/domains/{domain}/accessibility-scans', Api\AccessibilityScans\TriggerAccessibilityScan::class);
+        // Per-domain time series of completed-scan violation counts.
+        // ?days=N (7-365, default 90) for the window. One data point
+        // per completed scan, oldest-first.
+        Route::get('/domains/{domain}/accessibility-trend', Api\AccessibilityScans\ShowAccessibilityTrend::class);
 
         // Per-org / per-domain mute list for axe-core rule IDs. Sibling
         // of cookie-overrides; suppresses a rule from alert thresholds
