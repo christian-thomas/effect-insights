@@ -16,12 +16,16 @@ interface Worker {
   readonly name: string;
   readonly config: string;
   readonly port: number;
+  // wrangler dev attaches a V8 inspector to debug.port 9229 by default —
+  // running three instances on the same machine collides, so each worker
+  // gets its own inspector port too.
+  readonly inspectorPort: number;
 }
 
 const WORKERS: readonly Worker[] = [
-  { name: 'config', config: 'wrangler.config.toml', port: 8787 },
-  { name: 'consent', config: 'wrangler.consent.toml', port: 8788 },
-  { name: 'scanner', config: 'wrangler.scanner.toml', port: 8789 },
+  { name: 'config', config: 'wrangler.config.toml', port: 8787, inspectorPort: 9229 },
+  { name: 'consent', config: 'wrangler.consent.toml', port: 8788, inspectorPort: 9230 },
+  { name: 'scanner', config: 'wrangler.scanner.toml', port: 8789, inspectorPort: 9231 },
 ];
 
 const COLORS: Record<string, string> = {
@@ -74,7 +78,16 @@ process.on('SIGTERM', (): void => {
 
 for (const worker of WORKERS) {
   const child = spawn({
-    cmd: ['wrangler', 'dev', '--config', worker.config, '--port', String(worker.port)],
+    cmd: [
+      'wrangler',
+      'dev',
+      '--config',
+      worker.config,
+      '--port',
+      String(worker.port),
+      '--inspector-port',
+      String(worker.inspectorPort),
+    ],
     stdout: 'pipe',
     stderr: 'pipe',
     stdin: 'inherit',

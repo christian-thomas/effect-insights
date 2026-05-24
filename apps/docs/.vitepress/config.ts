@@ -20,6 +20,8 @@ export default defineConfig({
           text: 'Getting started',
           items: [
             { text: 'Implementing the banner', link: '/guides/implementing-the-banner' },
+            { text: 'Installing on a website', link: '/guides/installing-on-a-website' },
+            { text: 'Installing via Google Tag Manager', link: '/guides/installing-via-gtm' },
             { text: 'Triggering scans', link: '/guides/triggering-scans' },
           ],
         },
