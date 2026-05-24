@@ -9,6 +9,7 @@ use App\Services\Cloudflare\CloudflareKvClientContract;
 use App\Services\Cloudflare\ConsentEventsD1RepositoryContract;
 use App\Services\Cloudflare\HttpCloudflareKvClient;
 use App\Services\Cloudflare\HttpConsentEventsD1Repository;
+use App\Services\ConsentEvents\ConsentReceiptSigner;
 use App\Services\Scanner\HttpCfBrowserRenderingScanner;
 use App\Services\Scanner\ScannerClientContract;
 use App\Support\CurrentOrganisation;
@@ -41,6 +42,15 @@ class AppServiceProvider extends ServiceProvider
             $config = config('services.banner_config', []);
 
             return new BannerConfigSigner(
+                key: (string) ($config['signing_key'] ?? ''),
+            );
+        });
+
+        $this->app->singleton(ConsentReceiptSigner::class, function (): ConsentReceiptSigner {
+            /** @var array<string, mixed> $config */
+            $config = config('services.consent_receipt', []);
+
+            return new ConsentReceiptSigner(
                 key: (string) ($config['signing_key'] ?? ''),
             );
         });

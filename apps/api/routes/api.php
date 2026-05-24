@@ -54,6 +54,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/domains/{domain}/banner-preview', Api\BannerPreview\ShowBannerPreview::class);
 
         Route::get('/consent-events', Api\ConsentEvents\ListConsentEvents::class);
+        // Visitor-level (anonymous_id + domain_id) bundle must be declared
+        // BEFORE the {event} binding below so /receipts/by-anonymous-id isn't
+        // mis-resolved as an event UUID.
+        Route::get('/consent-events/receipts/by-anonymous-id', Api\ConsentEvents\ExportVisitorReceipt::class);
+        Route::get('/consent-events/{event}/receipt', Api\ConsentEvents\ExportEventReceipt::class);
 
         Route::get('/scans', Api\Scans\ListScans::class);
         Route::get('/scans/{scan}', Api\Scans\ShowScan::class);

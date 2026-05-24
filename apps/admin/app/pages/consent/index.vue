@@ -1,10 +1,31 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui';
+import type { TableColumn, DropdownMenuItem } from '@nuxt/ui';
 import type { ConsentEvent, ConsentEventType } from '~/types/consent';
 
 const consentStore = useConsentEventsStore();
 const domainsStore = useDomainsStore();
 const { items: events, pagination, loading, error } = storeToRefs(consentStore);
+const runtimeConfig = useRuntimeConfig();
+
+const downloadReceipt = async (path: string, fallbackName: string): Promise<void> => {
+  const url = `${runtimeConfig.public.apiBase}${path}`;
+  const response = await fetch(url, { credentials: 'include', headers: { Accept: '*/*' } });
+  if (!response.ok) {
+    throw new Error(`Receipt download failed (${response.status})`);
+  }
+  const blob = await response.blob();
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const filenameMatch = disposition.match(/filename="?([^";]+)"?/);
+  const filename = filenameMatch?.[1] ?? fallbackName;
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(objectUrl);
+};
 
 await domainsStore.list();
 
@@ -79,6 +100,62 @@ const openDetail = (event: ConsentEvent): void => {
   detailOpen.value = true;
 };
 
+const eventReceiptMenu = (event: ConsentEvent): DropdownMenuItem[] => [
+  {
+    label: 'JSON (signed)',
+    icon: 'i-lucide-braces',
+    onSelect: (): void => {
+      void downloadReceipt(
+        `/api/consent-events/${event.id}/receipt?format=json`,
+        `consent-receipt-${event.id}.json`,
+      );
+    },
+  },
+  {
+    label: 'PDF',
+    icon: 'i-lucide-file-text',
+    onSelect: (): void => {
+      void downloadReceipt(
+        `/api/consent-events/${event.id}/receipt?format=pdf`,
+        `consent-receipt-${event.id}.pdf`,
+      );
+    },
+  },
+];
+
+const canBundleByVisitor = computed<boolean>(
+  (): boolean => Boolean(filters.anonymousId) && Boolean(filters.domainId),
+);
+
+const visitorReceiptMenu = computed<DropdownMenuItem[]>((): DropdownMenuItem[] => {
+  const anonymousId = filters.anonymousId;
+  const domainId = filters.domainId;
+  if (!anonymousId || !domainId) return [];
+  const baseQuery = `anonymous_id=${encodeURIComponent(anonymousId)}&domain_id=${encodeURIComponent(domainId)}`;
+  return [
+    {
+      label: 'JSON (signed)',
+      icon: 'i-lucide-braces',
+      onSelect: (): void => {
+        void downloadReceipt(
+          `/api/consent-events/receipts/by-anonymous-id?${baseQuery}&format=json`,
+          `consent-receipt-visitor-${anonymousId}.json`,
+        );
+      },
+    },
+    {
+      label: 'PDF',
+      icon: 'i-lucide-file-text',
+      onSelect: (): void => {
+        void downloadReceipt(
+          `/api/consent-events/receipts/by-anonymous-id?${baseQuery}&format=pdf`,
+          `consent-receipt-visitor-${anonymousId}.pdf`,
+        );
+      },
+    },
+  ];
+});
+
 const columns: TableColumn<ConsentEvent>[] = [
   { accessorKey: 'occurredAt', header: 'When' },
   { accessorKey: 'domainId', header: 'Domain' },
@@ -129,6 +206,14 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
         <UInput v-model="filters.to" type="date" placeholder="To" />
       </div>
       <div class="flex justify-end gap-2 mt-3">
+        <UDropdownMenu v-if="canBundleByVisitor" :items="visitorReceiptMenu">
+          <UButton
+            icon="i-lucide-download"
+            color="neutral"
+            variant="soft"
+            label="Download visitor receipt"
+          />
+        </UDropdownMenu>
         <UButton color="neutral" variant="ghost" label="Clear" @click="clearFilters" />
         <UButton icon="i-lucide-filter" label="Apply" :loading="loading" @click="applyFilters" />
       </div>
@@ -201,6 +286,17 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
     >
       <template #body>
         <div v-if="selected" class="space-y-4 text-sm">
+          <div class="flex justify-end">
+            <UDropdownMenu :items="eventReceiptMenu(selected)">
+              <UButton
+                icon="i-lucide-download"
+                color="neutral"
+                variant="soft"
+                label="Download receipt"
+              />
+            </UDropdownMenu>
+          </div>
+
           <section>
             <h3 class="font-semibold mb-2">Event</h3>
             <dl class="grid grid-cols-3 gap-2">

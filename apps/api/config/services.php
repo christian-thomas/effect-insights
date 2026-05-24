@@ -72,6 +72,15 @@ return [
         'signing_key' => env('BANNER_CONFIG_SIGNING_KEY'),
     ],
 
+    'consent_receipt' => [
+        // HMAC-SHA-256 key used to sign consent receipts exported via
+        // /api/consent-events/{event}/receipt. Receipts are self-contained
+        // JSON so regulators can verify integrity offline. Separate from
+        // BANNER_CONFIG_SIGNING_KEY so rotation has a bounded blast radius.
+        // Generate with `openssl rand -hex 32`.
+        'signing_key' => env('CONSENT_RECEIPT_SIGNING_KEY'),
+    ],
+
     'banner' => [
         // Base URL the admin preview iframe loads cmp.js from. Defaults to
         // the production CDN; in dev, point at the local Vite/Bun banner
