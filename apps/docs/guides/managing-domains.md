@@ -23,13 +23,13 @@ Three states, with different operational effects:
 
 | Status    | What's true                                                                                                                                                                                                                                                                                                                                                                 |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pending` | Domain exists but no banner is live. The banner editor can be used (draft + publish), but cmp.js calling `/config/{publicKey}` returns 404 — embed sites won't see a banner. Scans can be triggered manually but are most usefully run after publish. Use this state while you're configuring before the embed snippet goes on the client site.                             |
-| `active`  | Banner is live. cmp.js fetches the published config. Scheduled scans run on cadence. Consent events flow in. This is the normal state.                                                                                                                                                                                                                                      |
-| `paused`  | Banner stops serving — cmp.js' config fetch returns the published config marked `paused` and the loader **does not render**. Scheduled scans skip the domain. Existing consent cookies stay valid (visitors who already consented aren't disturbed); only new visitors and re-prompts are affected. Use this to temporarily disable the banner without deleting the config. |
+| `pending` | Domain exists but no banner is live. The banner editor can be used (draft + publish), and rows are written to `banner_configs`, but the published payload is **not** exposed to Cloudflare KV. cmp.js' `/config/{publicKey}` returns 404 and silently no-ops. Use this state while you're configuring before the embed snippet goes on the client site.                            |
+| `active`  | Banner is live. The currently-published config is mirrored into Cloudflare KV; cmp.js fetches it. Scheduled scans run on cadence. Consent events flow in. This is the normal state.                                                                                                                                                                                          |
+| `paused`  | Banner stops serving. Flipping to `paused` **deletes the KV record** so cmp.js' config fetch starts returning 404 immediately (no edge cache; CF KV writes are global within seconds). The Laravel-side rows stay intact — flipping back to `active` re-publishes the current config to KV unchanged. Existing consent cookies stay valid (visitors who already consented aren't disturbed); new visitors and re-prompts see no banner until you un-pause. |
 
-Currently the admin doesn't expose an explicit "publish" → status change
-— publishing the first banner config flips the domain to `active`
-implicitly. To pause, edit the domain and set status manually.
+To pause, edit the domain and set status manually. Flipping back to
+`active` is the inverse — the current published config is restored to
+KV automatically; you don't need to re-publish.
 
 ## Deleting a domain
 

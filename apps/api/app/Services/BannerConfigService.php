@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\BannerLayout;
+use App\Enums\DomainStatus;
 use App\Models\BannerConfig;
 use App\Models\Domain;
 use App\Models\User;
@@ -261,9 +262,10 @@ class BannerConfigService
                 'behaviour' => $draft->getAttribute('behaviour'),
             ]);
 
-            $this->pushToEdge($draft->refresh());
+            $refreshedDraft = $draft->refresh();
+            $this->syncEdge($lockedDomain, $refreshedDraft);
 
-            return $draft;
+            return $refreshedDraft;
         });
     }
 
@@ -286,5 +288,42 @@ class BannerConfigService
         $payload = $this->payloadBuilder->build($bannerConfig, $domain);
 
         $this->kv->putValue($domain->getAttribute('public_key'), $payload);
+    }
+
+    /**
+     * Reconciles the Cloudflare KV state with the domain's lifecycle status:
+     *
+     *   - Active  → push the current published config (if any)
+     *   - Pending → delete the KV entry (config not yet visitor-facing)
+     *   - Paused  → delete the KV entry (admin has taken the banner offline)
+     *
+     * Idempotent — safe to invoke from publish flows, status transitions
+     * (Pending↔Active↔Paused), and the deploy-time re-sign command. Idiom
+     * is that any code path that could change "what visitors see" funnels
+     * through here so KV can never drift from the admin's intent.
+     */
+    public function syncEdgeForDomain(Domain $domain): void
+    {
+        $published = BannerConfig::query()
+            ->where('domain_id', $domain->getKey())
+            ->where('is_published', true)
+            ->first();
+
+        $this->syncEdge($domain, $published);
+    }
+
+    private function syncEdge(Domain $domain, ?BannerConfig $published): void
+    {
+        $status = $domain->getAttribute('status');
+
+        if ($status === DomainStatus::Active && $published !== null) {
+            $this->pushToEdge($published);
+
+            return;
+        }
+
+        // Pending / Paused / Active-without-config — make sure no stale
+        // KV record can serve an old banner to visitors.
+        $this->kv->deleteValue($domain->getAttribute('public_key'));
     }
 }

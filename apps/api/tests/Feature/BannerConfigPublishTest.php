@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\BannerLayout;
+use App\Enums\DomainStatus;
 use App\Models\Domain;
 use App\Services\BannerConfigService;
 use App\Services\Cloudflare\CloudflareKvClientContract;
@@ -22,7 +23,10 @@ class BannerConfigPublishTest extends TenantTestCase
         parent::setUp();
         $this->domain = Domain::factory()
             ->for($this->org)
-            ->create(['public_key' => 'pk_test_published_abc']);
+            ->create([
+                'public_key' => 'pk_test_published_abc',
+                'status' => DomainStatus::Active,
+            ]);
     }
 
     /**

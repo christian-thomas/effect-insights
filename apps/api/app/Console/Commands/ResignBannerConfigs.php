@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Enums\DomainStatus;
 use App\Models\BannerConfig;
+use App\Models\Domain;
 use App\Services\BannerConfigService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -32,6 +34,7 @@ class ResignBannerConfigs extends Command
     public function handle(BannerConfigService $service): int
     {
         $count = 0;
+        $skipped = 0;
         $failed = 0;
 
         $configs = BannerConfig::query()
@@ -40,7 +43,26 @@ class ResignBannerConfigs extends Command
             ->lazy();
 
         foreach ($configs as $config) {
+            $domain = Domain::query()
+                ->withoutGlobalScope('organisation')
+                ->whereKey($config->getAttribute('domain_id'))
+                ->first();
+
+            if ($domain === null) {
+                continue;
+            }
+
             try {
+                // Only Active domains expose their banner. Paused / Pending
+                // domains have already had their KV record cleared by the
+                // status-transition path; skipping here avoids resurrecting
+                // them on a re-sign run.
+                if ($domain->getAttribute('status') !== DomainStatus::Active) {
+                    $skipped++;
+
+                    continue;
+                }
+
                 $service->pushToEdge($config);
                 $count++;
             } catch (Throwable $exception) {
@@ -53,7 +75,12 @@ class ResignBannerConfigs extends Command
             }
         }
 
-        $this->info(sprintf('Re-signed %d banner config(s). %d failed.', $count, $failed));
+        $this->info(sprintf(
+            'Re-signed %d banner config(s). %d skipped (non-active). %d failed.',
+            $count,
+            $skipped,
+            $failed,
+        ));
 
         return $failed > 0 ? SymfonyCommand::FAILURE : SymfonyCommand::SUCCESS;
     }
