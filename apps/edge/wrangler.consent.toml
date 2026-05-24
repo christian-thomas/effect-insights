@@ -19,6 +19,16 @@ enabled = true
 ENVIRONMENT = "production"
 LARAVEL_INGEST_URL = "https://api.effectcmp.com/api/internal/consent-events"
 
+# CF native rate limiter for /consent and /rum. Keys are the visitor IP
+# (cf-connecting-ip). 60 requests per 60 seconds per IP is loose enough
+# for legitimate clicks (a visitor produces ~1-2 events per session) and
+# tight enough to block a script hammering the endpoint.
+[[unsafe.bindings]]
+name = "CONSENT_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1100"
+simple = { limit = 60, period = 60 }
+
 # LARAVEL_INGEST_SECRET is set via `wrangler secret put LARAVEL_INGEST_SECRET`
 # rather than [vars] — it must match the CONSENT_INGEST_SECRET env var on the
 # Laravel side. Generate with `openssl rand -hex 32`.

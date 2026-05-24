@@ -4,11 +4,16 @@ import worker from '../src/consent-worker';
 import migration0001 from '../migrations/0001_consent_events.sql?raw';
 import type { ConsentEventInput } from '@effect-cmp/types/schemas/consent';
 
+interface RateLimitBindingMock {
+  limit(opts: { key: string }): Promise<{ success: boolean }>;
+}
+
 interface ConsentEnv {
   readonly CONSENT_DB: D1Database;
   readonly LARAVEL_INGEST_URL: string;
   readonly LARAVEL_INGEST_SECRET: string;
   readonly ENVIRONMENT: string;
+  CONSENT_RATE_LIMITER?: RateLimitBindingMock;
 }
 
 const typedEnv = env as unknown as ConsentEnv;
@@ -153,5 +158,68 @@ describe('consent worker', () => {
       'http://edge.test/rum',
     );
     expect(response.status).toBe(400);
+  });
+
+  describe('rate limiting', () => {
+    it('returns 429 on /consent when the limiter denies the request', async () => {
+      typedEnv.CONSENT_RATE_LIMITER = {
+        limit: async (): Promise<{ success: boolean }> => ({ success: false }),
+      };
+      try {
+        const response = await fetchWorker({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sampleEvent),
+        });
+        expect(response.status).toBe(429);
+        expect(response.headers.get('Retry-After')).toBe('60');
+      } finally {
+        delete typedEnv.CONSENT_RATE_LIMITER;
+      }
+    });
+
+    it('returns 429 on /rum when the limiter denies the request', async () => {
+      typedEnv.CONSENT_RATE_LIMITER = {
+        limit: async (): Promise<{ success: boolean }> => ({ success: false }),
+      };
+      try {
+        const response = await fetchWorker(
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              domainPublicKey: 'pk_test',
+              paintMs: 1,
+              hadStoredConsent: false,
+            }),
+          },
+          'http://edge.test/rum',
+        );
+        expect(response.status).toBe(429);
+      } finally {
+        delete typedEnv.CONSENT_RATE_LIMITER;
+      }
+    });
+
+    it('treats a failing limiter as fail-open (accepts the event)', async () => {
+      typedEnv.CONSENT_RATE_LIMITER = {
+        limit: async (): Promise<{ success: boolean }> => {
+          throw new Error('limiter unavailable');
+        },
+      };
+      try {
+        const response = await fetchWorker({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...sampleEvent,
+            id: '22222222-2222-4222-a222-222222222222',
+          }),
+        });
+        expect(response.status).toBe(202);
+      } finally {
+        delete typedEnv.CONSENT_RATE_LIMITER;
+      }
+    });
   });
 });

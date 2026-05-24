@@ -16,11 +16,18 @@ const rumBeaconSchema = z.object({
   deviceMemoryGb: z.number().optional(),
 });
 
+interface RateLimitBinding {
+  limit(opts: { key: string }): Promise<{ success: boolean }>;
+}
+
 type Bindings = {
   readonly CONSENT_DB: D1Database;
   readonly LARAVEL_INGEST_URL: string;
   readonly LARAVEL_INGEST_SECRET: string;
   readonly ENVIRONMENT: string;
+  // Optional so the test harness (vitest-pool-workers) can run without
+  // emulating CF's native rate-limit binding. In prod it's always bound.
+  readonly CONSENT_RATE_LIMITER?: RateLimitBinding;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -33,6 +40,20 @@ app.use(
     allowHeaders: ['Content-Type'],
   }),
 );
+
+const isAllowed = async (limiter: RateLimitBinding | undefined, key: string): Promise<boolean> => {
+  if (!limiter) return true;
+  try {
+    const result = await limiter.limit({ key });
+    return result.success;
+  } catch {
+    // Fail-open: if the limiter itself errors we'd rather accept a valid
+    // event than drop it. The blast radius of a broken limiter is a
+    // brief abuse window; the blast radius of fail-closed is real
+    // consent events going missing.
+    return true;
+  }
+};
 
 const persistToD1 = async (db: D1Database, event: ConsentEventInput): Promise<void> => {
   // INSERT OR IGNORE so the cmp.js outbox can retry a POST without 500ing on
@@ -84,6 +105,11 @@ const mirrorToLaravel = async (
 };
 
 app.post('/consent', zValidator('json', consentEventSchema), async (c) => {
+  const ip = c.req.header('cf-connecting-ip') ?? 'unknown';
+  if (!(await isAllowed(c.env.CONSENT_RATE_LIMITER, `consent:${ip}`))) {
+    return c.json({ error: 'rate_limited' }, 429, { 'Retry-After': '60' });
+  }
+
   const event = c.req.valid('json');
 
   try {
@@ -104,6 +130,11 @@ app.post('/consent', zValidator('json', consentEventSchema), async (c) => {
 // yet — server-side aggregation is a separate piece. Always 204 even
 // on malformed beacons so cmp.js never retries the call.
 app.post('/rum', zValidator('json', rumBeaconSchema), async (c) => {
+  const ip = c.req.header('cf-connecting-ip') ?? 'unknown';
+  if (!(await isAllowed(c.env.CONSENT_RATE_LIMITER, `rum:${ip}`))) {
+    return new Response(null, { status: 429 });
+  }
+
   const beacon = c.req.valid('json');
   // Structured-log shape that's easy to grep / aggregate downstream.
   // console.log is the intended sink here — `wrangler tail --format=json`
