@@ -2,11 +2,11 @@
 
 Three Cloudflare Workers behind `assets.effectcmp.com` (and `scanner.effectcmp.com` for the scanner):
 
-| Worker                | Path(s)                                                    | Local port | Backed by                          |
-| --------------------- | ---------------------------------------------------------- | ---------- | ---------------------------------- |
-| `effect-cmp-config`   | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | 8787       | KV (configs), R2 (bundles)         |
-| `effect-cmp-consent`  | `/consent` (POST)                                          | 8788       | D1 (hot log) + Laravel mirror      |
-| `effect-cmp-scanner`  | `/scan` (POST)                                             | 8789       | Browser Rendering (paid plan only) |
+| Worker               | Path(s)                                                    | Local port | Backed by                          |
+| -------------------- | ---------------------------------------------------------- | ---------- | ---------------------------------- |
+| `effect-cmp-config`  | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | 8787       | KV (configs), R2 (bundles)         |
+| `effect-cmp-consent` | `/consent` (POST)                                          | 8788       | D1 (hot log) + Laravel mirror      |
+| `effect-cmp-scanner` | `/scan` (POST)                                             | 8789       | Browser Rendering (paid plan only) |
 
 ## First-run
 
@@ -26,7 +26,7 @@ bun run db:migrate:consent:local        # --local (wrangler dev)
 
 ## Local dev
 
-Each worker runs in its own terminal on a dedicated port (the dev:* scripts
+Each worker runs in its own terminal on a dedicated port (the dev:\* scripts
 set the port flags explicitly so they don't collide on 8787):
 
 ```bash

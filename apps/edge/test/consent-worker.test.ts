@@ -95,6 +95,31 @@ describe('consent worker', () => {
     expect(response.status).toBe(400);
   });
 
+  it('idempotently accepts a duplicate POST of the same event', async () => {
+    const first = await fetchWorker({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sampleEvent),
+    });
+    expect(first.status).toBe(202);
+
+    // Same event UUID — outbox retry on a previously-persisted event.
+    // INSERT OR IGNORE should treat it as a silent success, not a 500.
+    const second = await fetchWorker({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sampleEvent),
+    });
+    expect(second.status).toBe(202);
+
+    const countRow = await typedEnv.CONSENT_DB.prepare(
+      'SELECT COUNT(*) AS count FROM consent_events WHERE id = ?',
+    )
+      .bind(sampleEvent.id)
+      .first<{ count: number }>();
+    expect(countRow?.count).toBe(1);
+  });
+
   it('returns 404 for unknown routes', async () => {
     const response = await fetchWorker({ method: 'POST' }, 'http://edge.test/nope');
     expect(response.status).toBe(404);

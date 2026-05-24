@@ -23,9 +23,13 @@ app.use(
 );
 
 const persistToD1 = async (db: D1Database, event: ConsentEventInput): Promise<void> => {
+  // INSERT OR IGNORE so the cmp.js outbox can retry a POST without 500ing on
+  // the second attempt: the row was already written, treat it as success.
+  // The client-generated UUID is what makes this safe — repeated submissions
+  // of the same event are byte-identical.
   await db
     .prepare(
-      `INSERT INTO consent_events (
+      `INSERT OR IGNORE INTO consent_events (
         id, domain_public_key, banner_config_version, anonymous_id,
         categories_json, gcm_signals_json, country_code, ua_hash,
         ip_hash, event_type, occurred_at, banner_text_hash

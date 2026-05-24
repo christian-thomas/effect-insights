@@ -133,10 +133,15 @@ export const buildConsentEvent = (params: {
 };
 
 export const postConsentEvent = async (baseUrl: string, body: ConsentPostBody): Promise<void> => {
-  await fetch(`${baseUrl}/consent`, {
+  const response = await fetch(`${baseUrl}/consent`, {
     method: 'POST',
     credentials: 'omit',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+  // 4xx is a permanent shape/auth failure — retrying won't help, drop it.
+  // 5xx is server-side, transient — let the caller decide (outbox queue).
+  if (response.status >= 500) {
+    throw new Error(`consent POST failed with ${response.status}`);
+  }
 };

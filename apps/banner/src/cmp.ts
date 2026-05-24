@@ -13,6 +13,7 @@ import {
 import { detectCspNonce } from './csp';
 import { renderBanner } from './dom';
 import { installDefaults, sendUpdate } from './gcm';
+import { flushOutbox, queueOutboxEntry } from './outbox';
 import { unblockScripts, watchForBlockedScripts } from './scripts';
 import { generateStyles } from './styles';
 import type { BannerConfig, ConsentCategories } from './types';
@@ -72,14 +73,14 @@ const recordConsent = async (params: {
   sendUpdate(categories);
   unblockScripts(categories, cspNonce);
 
+  const event = buildConsentEvent({ anonymousId, config, categories, country, eventType });
   try {
-    await postConsentEvent(
-      consentBaseUrl,
-      buildConsentEvent({ anonymousId, config, categories, country, eventType }),
-    );
+    await postConsentEvent(consentBaseUrl, event);
   } catch {
-    // Edge already has the canonical write; mirror is best-effort.
-    // A follow-up iteration will queue retries via a localStorage outbox.
+    // Network error or 5xx — queue for the next page load. The edge
+    // worker's INSERT OR IGNORE makes a re-send safe even if a previous
+    // attempt did land but the response came back as an error.
+    queueOutboxEntry(event, consentBaseUrl);
   }
 };
 
@@ -95,6 +96,12 @@ const boot = async (): Promise<void> => {
     const consentBaseUrl = (tag.getAttribute(CONSENT_BASE_ATTR) ?? baseUrl).replace(/\/$/, '');
     const previewMode = tag.hasAttribute(PREVIEW_MODE_ATTR);
     const cspNonce = detectCspNonce(tag);
+
+    // Drain any consent events that failed to POST on previous page loads.
+    // Fire-and-forget so the banner paint isn't blocked on it.
+    if (!previewMode) {
+      void flushOutbox();
+    }
 
     // Inline config — used by the admin preview iframe. Bypasses the edge
     // fetch entirely; the host page passes the draft config as a JSON
