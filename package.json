@@ -12,6 +12,7 @@
     "apps/admin",
     "apps/api",
     "apps/banner",
+    "apps/docs",
     "apps/edge",
     "packages/*"
   ],

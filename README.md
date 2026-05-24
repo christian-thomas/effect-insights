@@ -9,6 +9,7 @@ apps/
   api/             Laravel 13 (PHP 8.3+) — admin API, scan dispatch, cookie DB
   admin/           Nuxt 4 + Tailwind 4 — admin dashboard
   banner/          Vanilla TS (Vite) — embeddable consent banner script
+  docs/            VitePress — user-facing documentation site
   edge/            Cloudflare Workers — config delivery + consent ingest
 
 packages/
@@ -130,7 +131,15 @@ See each app's own README:
 - `apps/api/README.md`
 - `apps/admin/README.md`
 - `apps/banner/README.md`
+- `apps/docs/README.md`
 - `apps/edge/README.md`
+
+## User-facing documentation
+
+End-user docs (banner implementation, CSP setup, troubleshooting,
+operations) are written in VitePress under `apps/docs/`. Run locally with
+`bun --filter @effect-cmp/docs run dev`, or visit the deployed site at
+[docs.effectcmp.com](https://docs.effectcmp.com).
 
 ## Reference
 
