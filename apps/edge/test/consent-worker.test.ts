@@ -1,6 +1,7 @@
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { describe, it, expect, beforeEach } from 'vitest';
 import worker from '../src/consent-worker';
+import migration0001 from '../migrations/0001_consent_events.sql?raw';
 import type { ConsentEventInput } from '@effect-cmp/types/schemas/consent';
 
 interface ConsentEnv {
@@ -35,22 +36,15 @@ const sampleEvent: ConsentEventInput = {
   bannerTextHash: 'btxt_hash',
 };
 
-const createSchema = `
-  CREATE TABLE IF NOT EXISTS consent_events (
-    id TEXT PRIMARY KEY,
-    domain_public_key TEXT NOT NULL,
-    banner_config_version INTEGER NOT NULL,
-    anonymous_id TEXT NOT NULL,
-    categories_json TEXT NOT NULL,
-    gcm_signals_json TEXT NOT NULL,
-    country_code TEXT,
-    ua_hash TEXT NOT NULL,
-    ip_hash TEXT NOT NULL,
-    event_type TEXT NOT NULL,
-    occurred_at TEXT NOT NULL,
-    banner_text_hash TEXT NOT NULL
+const migrationStatements: readonly string[] = migration0001
+  .split(';')
+  .map((statement: string): string =>
+    statement
+      .replace(/--[^\n]*/g, '')
+      .replace(/\s+/g, ' ')
+      .trim(),
   )
-`;
+  .filter((statement: string): boolean => statement.length > 0);
 
 const fetchWorker = async (
   init: RequestInit,
@@ -64,7 +58,10 @@ const fetchWorker = async (
 
 describe('consent worker', () => {
   beforeEach(async () => {
-    await typedEnv.CONSENT_DB.exec(createSchema.replace(/\n\s*/g, ' ').trim());
+    for (const statement of migrationStatements) {
+      // eslint-disable-next-line no-await-in-loop -- DDL must run sequentially: CREATE TABLE before CREATE INDEX
+      await typedEnv.CONSENT_DB.exec(statement);
+    }
   });
 
   it('accepts a valid consent event and writes it to D1', async () => {

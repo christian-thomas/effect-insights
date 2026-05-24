@@ -2,11 +2,14 @@ name = "effect-cmp-consent"
 main = "src/consent-worker.ts"
 compatibility_date = "2026-05-01"
 compatibility_flags = ["nodejs_compat"]
+migrations_dir = "migrations"
 
 [observability]
 enabled = true
 
-# D1 binding for hot consent log (last ~90 days)
+# D1 binding for hot consent log (last ~90 days).
+# Schema is managed by versioned migrations under `migrations/` and applied via
+# `bun run db:migrate:consent` (or `db:migrate:consent:local` against `wrangler dev`).
 # [[d1_databases]]
 # binding = "CONSENT_DB"
 # database_name = "effect-cmp-consent"

@@ -10,6 +10,8 @@
     "deploy:config": "wrangler deploy --config wrangler.config.toml",
     "deploy:consent": "wrangler deploy --config wrangler.consent.toml",
     "deploy:scanner": "wrangler deploy --config wrangler.scanner.toml",
+    "db:migrate:consent": "wrangler d1 migrations apply effect-cmp-consent --remote --config wrangler.consent.toml",
+    "db:migrate:consent:local": "wrangler d1 migrations apply effect-cmp-consent --local --config wrangler.consent.toml",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
     "test": "vitest run",
