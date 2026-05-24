@@ -154,6 +154,22 @@ the next step is a dedicated `tracewatch-accessibility-scanner`
 worker on a separate Browser Rendering plan. Until then, the shared
 worker is the simpler operationally.
 
+## WCAG vs best-practice findings
+
+axe-core emits two categories of rule. **WCAG rules** (tagged
+`wcag2a`, `wcag2aa`, `wcag21aa`, `wcag143` etc.) are the legally-
+required conformance checks — what a regulator or accessibility
+auditor would flag. **Best-practice rules** (tagged `best-practice`)
+are advisory — useful, but not strictly required for WCAG
+conformance.
+
+The scan persists both. The scan detail page has a filter strip
+(All / WCAG / Best practice) so you can focus on legally-required
+findings at a glance. The Slack/email alert pipeline doesn't yet
+distinguish — a `serious` best-practice rule trips the same
+threshold as a `serious` WCAG rule. Tag-aware alert filtering is on
+the roadmap if that gets noisy.
+
 ## Limitations
 
 - **CDN-loaded axe-core.** The worker pulls `axe.min.js` from
@@ -168,13 +184,10 @@ worker is the simpler operationally.
 - **No historical trend dashboard.** The violations_by_impact counts
   are stored per scan but there's no chart of "Critical violations
   on example.com over the last 90 days" yet.
-- **No best-practice rule filtering.** axe-core emits both WCAG
-  violations and "best practice" advisories; the current
-  implementation returns both undifferentiated. Filter in the UI
-  using the `tags` array if needed.
-- **Email channel not wired.** Notifications go to Slack only.
-  `services.php` already has SES config but no notification class
-  targets `mail` anywhere yet.
+- **No tag-aware alert filtering.** Best-practice + WCAG rules at the
+  same impact level trip the same threshold. Filter visually in the
+  admin via the WCAG/Best-practice tab on the scan detail page; or
+  raise the global threshold to suppress.
 
 ## Related
 

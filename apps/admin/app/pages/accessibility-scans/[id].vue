@@ -12,12 +12,40 @@ const scanId = computed((): string => String(route.params.id));
 
 await scansStore.show(scanId.value);
 
-// Group findings by impact for the rendered sections. Backend already
-// orders Critical → Serious → Moderate → Minor → unknown, so iterating
-// in insertion order keeps the section ordering correct.
+type FindingFilter = 'all' | 'wcag' | 'best-practice';
+
+const filter = ref<FindingFilter>('all');
+
+// axe-core tags every violation. WCAG rules carry tags like wcag2a /
+// wcag2aa / wcag21aa / wcag143; best-practice rules carry the literal
+// "best-practice" tag. A single rule can be both — when in doubt we
+// treat WCAG as the stronger classification.
+const isWcag = (finding: AccessibilityFinding): boolean =>
+  finding.tags.some((tag) => tag.startsWith('wcag'));
+
+const isBestPractice = (finding: AccessibilityFinding): boolean =>
+  finding.tags.includes('best-practice') && !isWcag(finding);
+
+const filteredFindings = computed((): AccessibilityFinding[] => {
+  switch (filter.value) {
+    case 'wcag':
+      return findings.value.filter(isWcag);
+    case 'best-practice':
+      return findings.value.filter(isBestPractice);
+    default:
+      return [...findings.value];
+  }
+});
+
+const wcagCount = computed((): number => findings.value.filter(isWcag).length);
+const bestPracticeCount = computed((): number => findings.value.filter(isBestPractice).length);
+
+// Group filtered findings by impact for the rendered sections. Backend
+// already orders Critical → Serious → Moderate → Minor → unknown, so
+// iterating in insertion order keeps the section ordering correct.
 const findingsByImpact = computed((): Record<string, AccessibilityFinding[]> => {
   const groups: Record<string, AccessibilityFinding[]> = {};
-  for (const finding of findings.value) {
+  for (const finding of filteredFindings.value) {
     const key = finding.impact;
     if (!groups[key]) groups[key] = [];
     groups[key].push(finding);
@@ -97,6 +125,47 @@ const toggleRule = (ruleId: string): void => {
           </div>
         </div>
       </UCard>
+
+      <div v-if="findings.length > 0" class="mt-6 flex items-center gap-2 flex-wrap">
+        <span class="text-sm text-gray-500 mr-1">Show:</span>
+        <UButton
+          :variant="filter === 'all' ? 'solid' : 'soft'"
+          color="neutral"
+          size="xs"
+          @click="filter = 'all'"
+        >
+          All ({{ findings.length }})
+        </UButton>
+        <UButton
+          :variant="filter === 'wcag' ? 'solid' : 'soft'"
+          color="neutral"
+          size="xs"
+          @click="filter = 'wcag'"
+        >
+          WCAG ({{ wcagCount }})
+        </UButton>
+        <UButton
+          :variant="filter === 'best-practice' ? 'solid' : 'soft'"
+          color="neutral"
+          size="xs"
+          @click="filter = 'best-practice'"
+        >
+          Best practice ({{ bestPracticeCount }})
+        </UButton>
+        <span class="text-xs text-gray-400 ml-2">
+          WCAG = legally-required conformance rules (alert-worthy). Best practice = advisory.
+        </span>
+      </div>
+
+      <div v-if="filteredFindings.length === 0 && findings.length > 0" class="mt-6">
+        <UAlert
+          color="info"
+          variant="soft"
+          icon="i-lucide-filter"
+          title="No findings under this filter"
+          description="Switch back to All or pick a different tag scope to see violations from this scan."
+        />
+      </div>
 
       <div v-if="findings.length === 0 && !loading" class="mt-6">
         <UAlert
