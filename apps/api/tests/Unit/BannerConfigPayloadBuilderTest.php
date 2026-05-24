@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Enums\BannerGranularity;
 use App\Enums\BannerLayout;
 use App\Enums\DomainStatus;
 use App\Models\BannerConfig;
@@ -48,6 +49,7 @@ class BannerConfigPayloadBuilderTest extends TestCase
             'is_draft' => false,
             'is_published' => true,
             'layout' => BannerLayout::Modal,
+            'granularity' => BannerGranularity::Categorised,
             'locale_default' => 'en',
             'locales_enabled' => ['en'],
             'colors' => BannerConfigService::defaultColors(),

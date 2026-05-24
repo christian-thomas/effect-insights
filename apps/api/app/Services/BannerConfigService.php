@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\BannerGranularity;
 use App\Enums\BannerLayout;
 use App\Enums\DomainStatus;
 use App\Models\BannerConfig;
@@ -153,6 +154,7 @@ class BannerConfigService
                     'is_draft' => true,
                     'is_published' => false,
                     'layout' => $publishedSource->getAttribute('layout'),
+                    'granularity' => $publishedSource->getAttribute('granularity'),
                     'locale_default' => $publishedSource->getAttribute('locale_default'),
                     'locales_enabled' => $publishedSource->getAttribute('locales_enabled'),
                     'colors' => $publishedSource->getAttribute('colors'),
@@ -169,6 +171,7 @@ class BannerConfigService
                 'is_draft' => true,
                 'is_published' => false,
                 'layout' => BannerLayout::Modal,
+                'granularity' => BannerGranularity::Categorised,
                 'locale_default' => self::DEFAULT_LOCALE,
                 'locales_enabled' => [self::DEFAULT_LOCALE],
                 'colors' => self::defaultColors(),
@@ -253,6 +256,7 @@ class BannerConfigService
                 'is_draft' => true,
                 'is_published' => false,
                 'layout' => $draft->getAttribute('layout'),
+                'granularity' => $draft->getAttribute('granularity'),
                 'locale_default' => $draft->getAttribute('locale_default'),
                 'locales_enabled' => $draft->getAttribute('locales_enabled'),
                 'colors' => $draft->getAttribute('colors'),

@@ -1,7 +1,7 @@
 import { applyNonce } from './csp';
 import { captureFocusRestorer, createFocusTrap } from './focus';
 import { cls } from './styles';
-import type { BannerCopy, ConsentCategories, CookieCategory } from './types';
+import type { BannerCopy, BannerGranularity, ConsentCategories, CookieCategory } from './types';
 
 const CATEGORIES: CookieCategory[] = ['necessary', 'preferences', 'statistics', 'marketing'];
 
@@ -9,6 +9,10 @@ interface RenderOptions {
   copy: BannerCopy;
   initial: ConsentCategories;
   styleText: string;
+  // 'basic' collapses the UI to Accept-all / Reject-all — no Customise
+  // button, no per-category toggles, no Save-preferences. Operator
+  // setting; defaults to 'categorised' to preserve existing behaviour.
+  granularity?: BannerGranularity;
   // Host page's CSP nonce (read once at boot). Stamped on the <style>
   // element so strict-CSP sites don't block our banner styles.
   cspNonce: string | null;
@@ -48,6 +52,7 @@ interface RenderHandles {
  */
 export const renderBanner = (options: RenderOptions): RenderHandles => {
   const { copy } = options;
+  const granularity: BannerGranularity = options.granularity ?? 'categorised';
   const categories: ConsentCategories = { ...options.initial };
   let customising = false;
 
@@ -164,7 +169,12 @@ export const renderBanner = (options: RenderOptions): RenderHandles => {
   // readers can announce the toggle state.
   customiseButton.setAttribute('aria-expanded', 'false');
   customiseButton.setAttribute('aria-controls', categoriesContainer.id);
-  actions.appendChild(customiseButton);
+  if (granularity === 'basic') {
+    // Basic mode = binary Accept/Reject; no customise affordance.
+    customiseButton.hidden = true;
+  } else {
+    actions.appendChild(customiseButton);
+  }
 
   const acceptButton = document.createElement('button');
   acceptButton.type = 'button';

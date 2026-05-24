@@ -3,6 +3,9 @@ import { z } from 'zod';
 export const layoutSchema = z.enum(['modal', 'bar-top', 'bar-bottom', 'corner']);
 export type BannerLayout = z.infer<typeof layoutSchema>;
 
+export const granularitySchema = z.enum(['basic', 'categorised']);
+export type BannerGranularity = z.infer<typeof granularitySchema>;
+
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a 6-digit hex colour, e.g. #2563eb');
 
 const localeCode = z
@@ -69,6 +72,7 @@ export type BannerBehaviour = z.infer<typeof behaviourSchema>;
 export const bannerDraftSchema = z
   .object({
     layout: layoutSchema,
+    granularity: granularitySchema.default('categorised'),
     locale_default: localeCode,
     locales_enabled: z.array(localeCode).min(1),
     colors: bannerColorsSchema,

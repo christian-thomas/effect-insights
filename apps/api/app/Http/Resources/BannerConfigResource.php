@@ -27,6 +27,7 @@ class BannerConfigResource extends JsonResource
             'isDraft' => $this->getAttribute('is_draft'),
             'isPublished' => $this->getAttribute('is_published'),
             'layout' => $this->getAttribute('layout'),
+            'granularity' => $this->getAttribute('granularity'),
             'localeDefault' => $this->getAttribute('locale_default'),
             'localesEnabled' => $this->getAttribute('locales_enabled'),
             'colors' => $this->getAttribute('colors'),

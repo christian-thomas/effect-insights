@@ -10,6 +10,7 @@ export interface BannerConfig {
   isDraft: boolean;
   isPublished: boolean;
   layout: BannerDraftInput['layout'];
+  granularity: BannerDraftInput['granularity'];
   localeDefault: string;
   localesEnabled: string[];
   colors: BannerDraftInput['colors'];

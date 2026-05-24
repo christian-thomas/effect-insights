@@ -187,6 +187,7 @@ final class BannerConfigDiffer
     {
         $classifications = [
             'layout' => 'Changes the banner shape',
+            'granularity' => 'Switches between basic accept/reject and per-category toggles',
             'locale_default' => 'Changes the default language',
         ];
 

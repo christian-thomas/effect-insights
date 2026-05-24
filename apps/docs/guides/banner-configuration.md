@@ -149,12 +149,29 @@ mechanics + the public-suffix-list caveat.
 
 Changing this is **material**.
 
+### `granularity`
+
+`categorised` (default) or `basic`. Categorised is the four-category
+flow: Accept-all + Reject-all + Customise button that opens a per-
+category pane (necessary / preferences / statistics / marketing) +
+Save-preferences. Basic collapses to a binary Accept-all / Reject-all
+with no customise affordance.
+
+Pick basic when the site has only essential cookies + one analytics
+tool — the per-category UI is friction for a meaningful choice the
+visitor isn't really making. Pick categorised for anything more complex
+(or when uncertain) — it matches GDPR Article 7's "as specific as
+informed consent" bar.
+
+Changing this is **cosmetic**. The stored consent cookie shape is
+identical between the two modes (it's always four booleans), so
+flipping doesn't invalidate existing consent. A visitor who accepted
+all categories under categorised mode still has the same stored
+consent under basic; they just won't see a customise UI on the next
+re-prompt window.
+
 ## Coming soon
 
-- **Banner granularity** (`basic` vs `categorised`) — the schema has a
-  `granularity` field but the banner currently always renders the
-  four-category customise pane. A basic mode (just accept/reject, no
-  per-category toggles) is on the roadmap.
 - **Locale negotiation** — pick the visitor's preferred locale from
   `Accept-Language` rather than always falling back to `localeDefault`.
   Today, `localeDefault` is what every visitor sees regardless of
@@ -177,6 +194,7 @@ regularly.
 **Cosmetic** — visitors keep their existing consent:
 
 - `layout`
+- `granularity` — switching between `basic` and `categorised`
 - `locale_default` (picking a different default among the enabled set)
 - `colors.*`
 - `copy.*` (wording changes — title, body, button labels, category

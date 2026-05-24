@@ -7,6 +7,8 @@ export type CookieCategory = 'necessary' | 'preferences' | 'statistics' | 'marke
 
 export type BannerLayout = 'modal' | 'bar-top' | 'bar-bottom' | 'corner';
 
+export type BannerGranularity = 'basic' | 'categorised';
+
 export type GcmSignal = 'granted' | 'denied';
 
 export interface BannerColors {
@@ -66,7 +68,7 @@ export interface BannerConfig {
   localeDefault: string;
   localesEnabled: string[];
   layout: BannerLayout;
-  granularity: 'basic' | 'categorised';
+  granularity: BannerGranularity;
   colors: BannerColors;
   copy: Record<string, BannerCopy>;
   geoRules: GeoRules;

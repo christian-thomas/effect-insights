@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\BannerGranularity;
 use App\Enums\BannerLayout;
 use App\Models\Concerns\BelongsToOrganisation;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,7 +16,7 @@ use RuntimeException;
 #[Fillable([
     'domain_id', 'organisation_id', 'version', 'material_version',
     'is_draft', 'is_published',
-    'layout', 'locale_default', 'locales_enabled', 'colors', 'copy',
+    'layout', 'granularity', 'locale_default', 'locales_enabled', 'colors', 'copy',
     'gcm_defaults', 'geo_rules', 'behaviour',
     'created_by_user_id', 'published_at',
 ])]
@@ -31,6 +32,7 @@ class BannerConfig extends Model
     {
         return [
             'layout' => BannerLayout::class,
+            'granularity' => BannerGranularity::class,
             'locales_enabled' => 'array',
             'colors' => 'array',
             'copy' => 'array',

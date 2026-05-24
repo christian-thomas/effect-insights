@@ -72,7 +72,7 @@ final readonly class BannerConfigPayloadBuilder
             'localeDefault' => (string) $bannerConfig->getAttribute('locale_default'),
             'localesEnabled' => (array) $bannerConfig->getAttribute('locales_enabled'),
             'layout' => $bannerConfig->getAttribute('layout')->value,
-            'granularity' => 'categorised',
+            'granularity' => $bannerConfig->getAttribute('granularity')->value,
             'colors' => (array) $bannerConfig->getAttribute('colors'),
             'copy' => (array) $bannerConfig->getAttribute('copy'),
             'geoRules' => (array) $bannerConfig->getAttribute('geo_rules'),

@@ -169,6 +169,7 @@ const boot = async (): Promise<void> => {
         copy,
         initial,
         styleText,
+        granularity: config.granularity,
         cspNonce,
         // Dismiss-as-denial only when the operator has opted in. Otherwise
         // the visitor must make an explicit choice (no Esc-to-dismiss, no

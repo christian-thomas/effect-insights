@@ -25,6 +25,7 @@ const error = computed(() => slot.value.error);
 
 const state = reactive<BannerDraftInput>({
   layout: 'modal',
+  granularity: 'categorised',
   locale_default: 'en',
   locales_enabled: ['en'],
   colors: {
@@ -59,6 +60,7 @@ const activeLocale = ref<string>('en');
 const hydrateFromDraft = (): void => {
   if (!draft.value) return;
   state.layout = draft.value.layout;
+  state.granularity = draft.value.granularity ?? 'categorised';
   state.locale_default = draft.value.localeDefault;
   state.locales_enabled = [...draft.value.localesEnabled];
   state.colors = { ...draft.value.colors };
@@ -254,6 +256,32 @@ const gcmSignals = [
             <h3 class="font-semibold">Layout</h3>
           </template>
           <BannerLayoutPicker v-model="state.layout" />
+
+          <div class="pt-6 mt-6 border-t border-gray-200 dark:border-gray-800 space-y-2">
+            <p class="text-sm font-medium">Granularity</p>
+            <p class="text-xs text-gray-500">
+              Categorised gives the visitor per-category toggles (necessary / preferences /
+              statistics / marketing). Basic collapses to a binary Accept / Reject and omits the
+              customise button — useful when you only run one analytics tool and don't want to
+              add UI friction for a meaningful choice.
+            </p>
+            <URadioGroup
+              v-model="state.granularity"
+              :items="[
+                {
+                  value: 'categorised',
+                  label: 'Categorised (default)',
+                  description:
+                    'Per-category toggles with Accept-all, Reject-all, and Save-preferences.',
+                },
+                {
+                  value: 'basic',
+                  label: 'Basic',
+                  description: 'Just Accept-all and Reject-all — no customise pane.',
+                },
+              ]"
+            />
+          </div>
         </UCard>
 
         <UCard>

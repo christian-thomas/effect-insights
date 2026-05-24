@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Enums\BannerGranularity;
 use App\Enums\BannerLayout;
 use App\Models\BannerConfig;
 use App\Models\Domain;
@@ -36,6 +37,7 @@ class BannerConfigDifferTest extends TestCase
             'is_draft' => false,
             'is_published' => true,
             'layout' => BannerLayout::Modal,
+            'granularity' => BannerGranularity::Categorised,
             'locale_default' => 'en',
             'locales_enabled' => ['en'],
             'colors' => BannerConfigService::defaultColors(),
@@ -162,6 +164,25 @@ class BannerConfigDifferTest extends TestCase
         $diff = BannerConfigDiffer::diff($published, $draft);
 
         $this->assertFalse($diff['hasChanges']);
+    }
+
+    #[Test]
+    public function granularity_change_is_cosmetic(): void
+    {
+        $published = $this->baseConfig();
+        $draft = $this->draftFrom($published, static function (BannerConfig $config): void {
+            $config->setAttribute('granularity', BannerGranularity::Basic);
+        });
+
+        $diff = BannerConfigDiffer::diff($published, $draft);
+
+        $this->assertTrue($diff['hasChanges']);
+        $this->assertFalse($diff['isMaterial']);
+        $change = collect($diff['changes'])->firstWhere('field', 'granularity');
+        $this->assertNotNull($change);
+        $this->assertSame('cosmetic', $change['category']);
+        $this->assertSame('categorised', $change['previous']);
+        $this->assertSame('basic', $change['next']);
     }
 
     #[Test]

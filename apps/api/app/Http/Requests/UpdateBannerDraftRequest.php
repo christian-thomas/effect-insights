@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\BannerGranularity;
 use App\Enums\BannerLayout;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -26,6 +27,10 @@ class UpdateBannerDraftRequest extends FormRequest
                 BannerLayout::BarTop,
                 BannerLayout::BarBottom,
                 BannerLayout::Corner,
+            ])],
+            'granularity' => ['sometimes', Rule::in([
+                BannerGranularity::Basic,
+                BannerGranularity::Categorised,
             ])],
 
             'locale_default' => ['required', 'string', ...$localeCode],
