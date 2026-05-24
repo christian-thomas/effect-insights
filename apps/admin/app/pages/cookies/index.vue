@@ -13,18 +13,25 @@ type BadgeColor = NonNullable<BadgeProps['color']>;
 
 const cookiesStore = useCookiesStore();
 const domainsStore = useDomainsStore();
-const { cookies, imports, overrides, loading } = storeToRefs(cookiesStore);
+const { cookies, imports, overrides, reviewQueue, loading } = storeToRefs(cookiesStore);
 const auth = useAuthStore();
 const toast = useToast();
+const route = useRoute();
 
-type Tab = 'canonical' | 'imports' | 'overrides';
-const tab = ref<Tab>('canonical');
+type Tab = 'canonical' | 'imports' | 'overrides' | 'review';
+const initialTab = (route.query.tab as Tab | undefined) ?? 'canonical';
+const tab = ref<Tab>(
+  (['canonical', 'imports', 'overrides', 'review'] as const).includes(initialTab as Tab)
+    ? initialTab
+    : 'canonical',
+);
 const search = ref('');
 
 onMounted(async () => {
   await Promise.all([
     cookiesStore.listCookies(),
     cookiesStore.listOverrides(),
+    cookiesStore.listReviewQueue(),
     domainsStore.list(),
     auth.user?.isSuperuser ? cookiesStore.listImports() : Promise.resolve(),
   ]);
@@ -112,14 +119,23 @@ const overrideForm = reactive<OverrideFormState>({
   justification: '',
 });
 
-const openCreate = (): void => {
+const openCreate = (prefillName?: string): void => {
   editingOverride.value = null;
-  overrideForm.name_pattern = '';
+  overrideForm.name_pattern = prefillName ?? '';
   overrideForm.category = 'statistics';
   overrideForm.domain_id = null;
   overrideForm.purpose = '';
   overrideForm.justification = '';
   slideoverOpen.value = true;
+};
+
+const triageFromReview = (item: { name: string }): void => {
+  openCreate(item.name);
+};
+
+const formatRelative = (iso: string | null): string => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString();
 };
 
 const openEdit = (row: CookieOverride): void => {
@@ -152,6 +168,8 @@ const submitOverride = async (): Promise<void> => {
       await cookiesStore.createOverride(payload);
       toast.add({ title: 'Override created', color: 'success' });
     }
+    // Either path may have removed a name from the review queue, refresh it.
+    await cookiesStore.listReviewQueue();
     slideoverOpen.value = false;
   } catch (caught) {
     toast.add({
@@ -193,6 +211,13 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
         Overrides ({{ overrides.length }})
       </UButton>
       <UButton
+        :variant="tab === 'review' ? 'solid' : 'soft'"
+        :color="reviewQueue.length > 0 ? 'warning' : 'neutral'"
+        @click="tab = 'review'"
+      >
+        Review queue ({{ reviewQueue.length }})
+      </UButton>
+      <UButton
         v-if="auth.user?.isSuperuser"
         :variant="tab === 'imports' ? 'solid' : 'soft'"
         @click="tab = 'imports'"
@@ -226,7 +251,7 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
           Override the canonical categorisation for your organisation. Domain-scoped overrides win
           over org-wide ones; both win over canonical.
         </p>
-        <UButton icon="i-lucide-plus" @click="openCreate">Add override</UButton>
+        <UButton icon="i-lucide-plus" @click="openCreate()">Add override</UButton>
       </div>
 
       <UTable :data="overrides" :columns="overrideColumns" :loading="loading">
@@ -267,6 +292,63 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
               @click="removeOverride(row.original)"
             />
           </div>
+        </template>
+      </UTable>
+    </div>
+
+    <div v-else-if="tab === 'review'" class="mt-6">
+      <p class="text-sm text-gray-500 mb-4">
+        Cookies the scanner observed that aren't in the canonical DB or any of your overrides.
+        Triage by creating an override — the queue shrinks as soon as the new override would match
+        this name.
+      </p>
+
+      <UCard v-if="reviewQueue.length === 0">
+        <div class="flex flex-col items-center gap-2 py-12 text-center">
+          <UIcon name="i-lucide-shield-check" class="text-4xl text-success-500" />
+          <h2 class="text-lg font-semibold">No unknown cookies</h2>
+          <p class="text-sm text-gray-500 max-w-md">
+            Every cookie the scanner has seen for your organisation is matched by the canonical DB
+            or an existing override.
+          </p>
+        </div>
+      </UCard>
+
+      <UTable
+        v-else
+        :data="reviewQueue"
+        :columns="[
+          { accessorKey: 'name', header: 'Cookie name' },
+          { accessorKey: 'occurrences', header: 'Observed' },
+          { accessorKey: 'firstSeenUrl', header: 'First seen on' },
+          { accessorKey: 'lastSeenAt', header: 'Last seen' },
+          { id: 'actions', header: '' },
+        ]"
+        :loading="loading"
+      >
+        <template #name-cell="{ row }">
+          <code class="text-sm">{{ row.original.name }}</code>
+        </template>
+        <template #occurrences-cell="{ row }">
+          {{ row.original.occurrences }}× across {{ row.original.scanCount }} scan{{
+            row.original.scanCount === 1 ? '' : 's'
+          }}
+        </template>
+        <template #firstSeenUrl-cell="{ row }">
+          <span class="text-xs text-gray-500 break-all">
+            {{ row.original.firstSeenUrl ?? '—' }}
+          </span>
+        </template>
+        <template #lastSeenAt-cell="{ row }">
+          <span class="text-xs">{{ formatRelative(row.original.lastSeenAt) }}</span>
+        </template>
+        <template #actions-cell="{ row }">
+          <UButton
+            size="xs"
+            icon="i-lucide-plus"
+            label="Create override"
+            @click="triageFromReview(row.original)"
+          />
         </template>
       </UTable>
     </div>

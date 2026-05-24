@@ -65,6 +65,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/scans/{scan}', Api\Scans\ShowScan::class);
         Route::post('/domains/{domain}/scans', Api\Scans\TriggerScan::class);
 
+        // Manual review queue: cookies the scanner saw but the resolver
+        // couldn't categorise, grouped by name. The /cookies admin page
+        // surfaces this as the "Review queue" tab.
+        Route::get('/scan-findings/review', Api\ScanFindings\ListReviewQueue::class);
+
         // Per-organisation (and optionally per-domain) cookie categorisation
         // overrides. Resolution precedence is enforced server-side by
         // CookieCategoryResolver; these endpoints just CRUD the rows.

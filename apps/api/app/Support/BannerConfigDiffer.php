@@ -38,7 +38,7 @@ final class BannerConfigDiffer
      */
     public static function diff(?BannerConfig $previous, BannerConfig $next): array
     {
-        if ($previous === null) {
+        if (! $previous instanceof BannerConfig) {
             return [
                 'hasChanges' => true,
                 'isMaterial' => true,

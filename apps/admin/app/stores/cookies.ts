@@ -15,10 +15,20 @@ interface ItemResponse<T> {
   data: T;
 }
 
+export interface ReviewQueueItem {
+  name: string;
+  occurrences: number;
+  scanCount: number;
+  firstSeenUrl: string | null;
+  firstSeenAt: string | null;
+  lastSeenAt: string | null;
+}
+
 interface CookiesState {
   cookies: Cookie[];
   imports: CookieImport[];
   overrides: CookieOverride[];
+  reviewQueue: ReviewQueueItem[];
   loading: boolean;
   error: Error | null;
 }
@@ -28,6 +38,7 @@ export const useCookiesStore = defineStore('cookies', {
     cookies: [],
     imports: [],
     overrides: [],
+    reviewQueue: [],
     loading: false,
     error: null,
   }),
@@ -76,6 +87,19 @@ export const useCookiesStore = defineStore('cookies', {
       try {
         const response = await $api<PaginatedResponse<CookieOverride>>('/api/cookie-overrides');
         this.overrides = response.data;
+      } catch (caught) {
+        this.error = caught instanceof Error ? caught : new Error(String(caught));
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async listReviewQueue(): Promise<void> {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await $api<{ data: ReviewQueueItem[] }>('/api/scan-findings/review');
+        this.reviewQueue = response.data;
       } catch (caught) {
         this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
