@@ -97,37 +97,121 @@ document.querySelectorAll('script[type="text/plain"][data-category]').forEach((t
 
 This is sometimes useful for debugging your own embed list.
 
-## What's NOT there
+### `window.cmp`
 
-cmp.js doesn't currently expose a public `window.cmp` API. The
-following all sit in the wishlist:
-
-- `window.cmp.getConsent()` — programmatic read of the current
-  consent state (without parsing the cookie yourself).
-- `window.cmp.openBanner()` — re-open the banner so the visitor can
-  change their mind. Today they have to clear cookies + reload.
-- `window.cmp.withdraw()` — revoke consent without re-opening the
-  banner.
-- `window.cmp.onConsentChange((state) => …)` — subscribe to consent
-  events.
-
-::: tip Need any of these?
-If you're an Effect Digital client who needs one of these for an
-integration, [get in touch](mailto:support@effectdigital.com). The
-absence is "we haven't prioritised it", not "we don't think it
-should exist".
-:::
-
-## Listening for the consent moment
-
-Until we ship a proper subscription API, the cleanest hook is
-listening for `dataLayer` pushes:
+cmp.js installs a public API at `window.cmp` as soon as the script
+runs — before the config has loaded. Methods that need the config
+(everything except `getConsent`, `isReady`, `ready`, and
+`onConsentChange`) queue any pre-ready calls and replay them once
+boot finishes.
 
 ```ts
-// Get the current dataLayer or create one
-window.dataLayer = window.dataLayer || [];
+interface CmpApi {
+  // Current stored consent or null if visitor never consented. Reads
+  // straight from the cookie — no internal cache.
+  getConsent(): ConsentCategories | null;
 
-// Wrap dataLayer.push to react to consent events
+  // True once cmp.js has loaded the config (whether that ended in a
+  // banner render, a short-circuit on stored consent, a GPC auto-
+  // deny, or a 404 from the edge).
+  isReady(): boolean;
+
+  // Fires once isReady() is true. Invoked on the next microtask if
+  // already ready.
+  ready(callback: () => void): void;
+
+  // Re-opens the banner UI even for visitors with existing consent.
+  // Wire this to a "Cookie preferences" footer link.
+  openBanner(): void;
+
+  // Records a `withdrawn` event with everything denied + re-opens the
+  // banner so the visitor can re-decide. GDPR Article 7(3) requires
+  // the act of withdrawing to be as easy as the act of giving.
+  withdraw(): void;
+
+  // Shortcuts. acceptAll() and rejectAll() don't render the banner —
+  // they record the choice and notify subscribers, no UI.
+  acceptAll(): void;
+  rejectAll(): void;
+
+  // Arbitrary category mix. `necessary` is always coerced to true.
+  setConsent(categories: Partial<ConsentCategories>): void;
+
+  // Subscribe to consent changes. Returns an unsubscribe fn.
+  onConsentChange(
+    listener: (event: {
+      type: 'granted' | 'denied' | 'changed' | 'withdrawn';
+      categories: ConsentCategories;
+      consent: StoredConsent | null;
+    }) => void,
+  ): () => void;
+}
+```
+
+#### "Withdraw consent" footer link
+
+```html
+<a href="#" onclick="window.cmp?.withdraw(); return false;">
+  Cookie preferences
+</a>
+```
+
+If a visitor clicks this they get a `withdrawn` consent event recorded
+in the audit log AND the banner re-opens so they can re-decide.
+
+#### Just re-opening the banner without withdrawing
+
+```html
+<a href="#" onclick="window.cmp?.openBanner(); return false;">
+  Cookie preferences
+</a>
+```
+
+Use this when you want the visitor to be able to fine-tune their
+choices without first revoking everything.
+
+#### Reacting to consent changes
+
+```ts
+// Wait until cmp.js is loaded — onConsentChange itself is available
+// pre-ready but listeners only fire on actual consent events.
+window.cmp?.ready(() => {
+  window.cmp?.onConsentChange((event) => {
+    if (event.type === 'granted' || event.categories.statistics) {
+      // load your analytics tool
+    }
+  });
+
+  // First-paint check — the visitor may already have consented on a
+  // previous page load before our subscriber ran.
+  const current = window.cmp?.getConsent();
+  if (current?.statistics) {
+    // load your analytics tool
+  }
+});
+```
+
+#### DOM event for non-JS-API integrations
+
+The same notification also fires as a CustomEvent on `document`:
+
+```ts
+document.addEventListener('cmp:consent-change', (event: CustomEvent) => {
+  console.log(event.detail.type, event.detail.categories);
+});
+```
+
+This is the path for Tag Manager–style integrations that prefer DOM
+events over module imports.
+
+## Listening for the consent moment via dataLayer
+
+If you'd rather not depend on `window.cmp` (for example, your tag is
+already running as part of GTM and just wants the GCM signal), the
+`dataLayer` push pattern still works:
+
+```ts
+window.dataLayer = window.dataLayer || [];
 const originalPush = window.dataLayer.push.bind(window.dataLayer);
 window.dataLayer.push = (...args) => {
   for (const arg of args) {

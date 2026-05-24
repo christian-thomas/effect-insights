@@ -1,3 +1,4 @@
+import { installPublicApi } from './api';
 import { fetchConfig } from './config';
 import {
   allDenied,
@@ -30,6 +31,8 @@ const INLINE_CONFIG_ATTR = 'data-cmp-config';
 const PREVIEW_MODE_ATTR = 'data-cmp-preview';
 const DEFAULT_BASE = 'https://assets.effectcmp.com';
 
+const apiHost = installPublicApi();
+
 const findScriptTag = (): HTMLScriptElement | null => {
   const scripts = document.querySelectorAll<HTMLScriptElement>(`script[${SCRIPT_TAG_ATTR}]`);
   // Last match wins — pages with multiple embeds (re-embedded subdomain
@@ -59,42 +62,10 @@ const readInlineConfig = (tag: HTMLScriptElement): BannerConfig | null => {
   }
 };
 
-const recordConsent = async (params: {
-  config: BannerConfig;
-  country: string | null;
-  categories: ConsentCategories;
-  consentBaseUrl: string;
-  cspNonce: string | null;
-  eventType: ConsentPostBody['eventType'];
-}): Promise<void> => {
-  const { config, country, categories, consentBaseUrl, cspNonce, eventType } = params;
-
-  const stored = readStoredConsent();
-  const anonymousId = stored?.anonymousId ?? generateAnonymousId();
-
-  writeStoredConsent(
-    {
-      anonymousId,
-      materialVersion: config.materialVersion,
-      categories,
-      consentedAt: new Date().toISOString(),
-    },
-    config,
-  );
-
-  sendUpdate(categories);
-  unblockScripts(categories, cspNonce);
-
-  const event = buildConsentEvent({ anonymousId, config, categories, country, eventType });
-  try {
-    await postConsentEvent(consentBaseUrl, event);
-  } catch {
-    // Network error or 5xx — queue for the next page load. The edge
-    // worker's INSERT OR IGNORE makes a re-send safe even if a previous
-    // attempt did land but the response came back as an error.
-    queueOutboxEntry(event, consentBaseUrl);
-  }
-};
+interface BannerHandles {
+  root: HTMLElement;
+  destroy: () => void;
+}
 
 const boot = async (): Promise<void> => {
   const paintTimer = startPaintTimer();
@@ -116,9 +87,6 @@ const boot = async (): Promise<void> => {
       void flushOutbox();
     }
 
-    // Inline config — used by the admin preview iframe. Bypasses the edge
-    // fetch entirely; the host page passes the draft config as a JSON
-    // string in data-cmp-config so reviewers can see unpublished changes.
     const inlineConfig = readInlineConfig(tag);
     let config: BannerConfig;
     let country: string | null;
@@ -136,6 +104,120 @@ const boot = async (): Promise<void> => {
     // GCM defaults FIRST — must reach the dataLayer before any GA/Ads script
     // on the host page. Synchronous push, no awaits between fetchConfig and here.
     installDefaults(config.gcmDefaults);
+
+    let mountedHandles: BannerHandles | null = null;
+
+    const recordConsent = async (params: {
+      categories: ConsentCategories;
+      eventType: ConsentPostBody['eventType'];
+    }): Promise<void> => {
+      const { categories, eventType } = params;
+
+      const stored = readStoredConsent();
+      const anonymousId = stored?.anonymousId ?? generateAnonymousId();
+
+      writeStoredConsent(
+        {
+          anonymousId,
+          materialVersion: config.materialVersion,
+          categories,
+          consentedAt: new Date().toISOString(),
+        },
+        config,
+      );
+
+      sendUpdate(categories);
+      unblockScripts(categories, cspNonce);
+
+      const event = buildConsentEvent({ anonymousId, config, categories, country, eventType });
+      try {
+        await postConsentEvent(consentBaseUrl, event);
+      } catch {
+        // Network error or 5xx — queue for the next page load. The edge
+        // worker's INSERT OR IGNORE makes a re-send safe even if a previous
+        // attempt did land but the response came back as an error.
+        queueOutboxEntry(event, consentBaseUrl);
+      }
+
+      apiHost.notifyConsentChange({
+        type: eventType,
+        categories,
+        consent: readStoredConsent(),
+      });
+    };
+
+    const buildBannerHandles = (initial: ConsentCategories): BannerHandles | null => {
+      const copy = config.copy[config.localeDefault] ?? Object.values(config.copy)[0];
+      if (!copy) return null;
+
+      const styleText = generateStyles(config.colors, config.layout);
+
+      const finish = async (
+        categories: ConsentCategories,
+        eventType: ConsentPostBody['eventType'],
+      ): Promise<void> => {
+        mountedHandles?.destroy();
+        mountedHandles = null;
+        if (previewMode) {
+          // No POST + no cookie writes — preview is a no-side-effect render.
+          return;
+        }
+        await recordConsent({ categories, eventType });
+      };
+
+      return renderBanner({
+        copy,
+        initial,
+        styleText,
+        cspNonce,
+        // Dismiss-as-denial only when the operator has opted in. Otherwise
+        // the visitor must make an explicit choice (no Esc-to-dismiss, no
+        // backdrop click). See behaviour.autoDenyOnDismiss in the banner
+        // config.
+        ...(config.behaviour.autoDenyOnDismiss
+          ? {
+              onDismiss: (): void => {
+                void finish(allDenied(), 'denied');
+              },
+            }
+          : {}),
+        onAcceptAll: () => {
+          void finish(allGranted(), 'granted');
+        },
+        onRejectAll: () => {
+          void finish(allDenied(), 'denied');
+        },
+        onSavePreferences: (categories) => {
+          void finish(categories, 'changed');
+        },
+      });
+    };
+
+    const mountBanner = (initial: ConsentCategories): void => {
+      if (mountedHandles !== null) {
+        // Already mounted — re-focus rather than stacking dialogs.
+        const focusTarget = mountedHandles.root.querySelector<HTMLElement>('button');
+        focusTarget?.focus();
+        return;
+      }
+      const handles = buildBannerHandles(initial);
+      if (!handles) return;
+      document.body.appendChild(handles.root);
+      mountedHandles = handles;
+    };
+
+    // Expose the public API now that we know the config + have a mount
+    // helper. Pre-ready queued calls (openBanner / withdraw / setConsent
+    // invoked before this point by an inline host script) drain here.
+    apiHost.attachBindings({
+      config,
+      readStoredConsent,
+      openBanner: () => {
+        const stored = readStoredConsent();
+        mountBanner(stored?.categories ?? allDenied());
+      },
+      recordConsent,
+    });
 
     // In preview mode the admin needs to see the banner every refresh, so
     // we skip the cookie-based short-circuit and don't watch / unblock
@@ -175,11 +257,7 @@ const boot = async (): Promise<void> => {
       // visitor's explicit prior choice always wins.
       if (config.behaviour.honourGpc && isGpcActive()) {
         await recordConsent({
-          config,
-          country,
           categories: allDenied(),
-          consentBaseUrl,
-          cspNonce,
           eventType: 'denied',
         });
         sendRumBeacon(consentBaseUrl, {
@@ -192,52 +270,7 @@ const boot = async (): Promise<void> => {
       }
     }
 
-    const copy = config.copy[config.localeDefault] ?? Object.values(config.copy)[0];
-    if (!copy) return;
-
-    const styleText = generateStyles(config.colors, config.layout);
-    let handles: { root: HTMLElement; destroy: () => void } | null = null;
-
-    const finish = async (
-      categories: ConsentCategories,
-      eventType: ConsentPostBody['eventType'],
-    ): Promise<void> => {
-      handles?.destroy();
-      if (previewMode) {
-        // No POST + no cookie writes — preview is a no-side-effect render.
-        return;
-      }
-      await recordConsent({ config, country, categories, consentBaseUrl, cspNonce, eventType });
-    };
-
-    handles = renderBanner({
-      copy,
-      initial: allDenied(),
-      styleText,
-      cspNonce,
-      // Dismiss-as-denial only when the operator has opted in. Otherwise
-      // the visitor must make an explicit choice (no Esc-to-dismiss, no
-      // backdrop click). See behaviour.autoDenyOnDismiss in the banner
-      // config.
-      ...(config.behaviour.autoDenyOnDismiss
-        ? {
-            onDismiss: (): void => {
-              void finish(allDenied(), 'denied');
-            },
-          }
-        : {}),
-      onAcceptAll: () => {
-        void finish(allGranted(), 'granted');
-      },
-      onRejectAll: () => {
-        void finish(allDenied(), 'denied');
-      },
-      onSavePreferences: (categories) => {
-        void finish(categories, 'changed');
-      },
-    });
-
-    document.body.appendChild(handles.root);
+    mountBanner(allDenied());
 
     // Self-monitoring beacon. Fire-and-forget; never blocks the banner.
     if (!previewMode) {
