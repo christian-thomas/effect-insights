@@ -1,5 +1,5 @@
 {
-  "name": "@tracewatch/edge",
+  "name": "@effectinsight/edge",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,8 +11,8 @@
     "deploy:config": "wrangler deploy --config wrangler.config.toml",
     "deploy:consent": "wrangler deploy --config wrangler.consent.toml",
     "deploy:scanner": "wrangler deploy --config wrangler.scanner.toml",
-    "db:migrate:consent": "wrangler d1 migrations apply tracewatch-consent --remote --config wrangler.consent.toml",
-    "db:migrate:consent:local": "wrangler d1 migrations apply tracewatch-consent --local --config wrangler.consent.toml",
+    "db:migrate:consent": "wrangler d1 migrations apply effectinsight-consent --remote --config wrangler.consent.toml",
+    "db:migrate:consent:local": "wrangler d1 migrations apply effectinsight-consent --local --config wrangler.consent.toml",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
     "test": "vitest run",
@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@cloudflare/puppeteer": "^1.1.0",
-    "@tracewatch/types": "workspace:*",
+    "@effectinsight/types": "workspace:*",
     "@hono/zod-validator": "latest",
     "axe-core": "^4.11.4",
     "hono": "latest",

@@ -1,4 +1,4 @@
-# @tracewatch/admin
+# @effectinsight/admin
 
 The operator-facing SPA — Nuxt 4 + Pinia + Nuxt UI v4. Sanctum SPA
 auth against the Laravel API, white-label organisation switching, and
@@ -29,7 +29,7 @@ the Laravel API via Herd).
 bun run dev
 
 # Or just admin in isolation
-bun --filter @tracewatch/admin run dev
+bun --filter @effectinsight/admin run dev
 ```
 
 The admin needs the Laravel API running too. From the repo root:

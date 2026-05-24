@@ -24,7 +24,7 @@ theme's `functions.php`:
 ```php
 <?php
 add_action('wp_head', function (): void {
-    echo '<script src="https://assets.tracewatch.io/loader.js" '
+    echo '<script src="https://assets.effectinsight.com/loader.js" '
        . 'data-domain-id="pk_REPLACE_ME" async></script>';
 }, 1); // priority 1 — fire as early as possible in <head>
 ```
@@ -64,7 +64,7 @@ GTM" mode (most have this option) and use
 
    ```liquid
    <script
-     src="https://assets.tracewatch.io/loader.js"
+     src="https://assets.effectinsight.com/loader.js"
      data-domain-id="pk_REPLACE_ME"
      async
    ></script>
@@ -97,7 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <Script
-          src="https://assets.tracewatch.io/loader.js"
+          src="https://assets.effectinsight.com/loader.js"
           data-domain-id="pk_REPLACE_ME"
           strategy="beforeInteractive"
           async
@@ -131,7 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <meta name="csp-nonce" content={nonce} />
         <Script
-          src="https://assets.tracewatch.io/loader.js"
+          src="https://assets.effectinsight.com/loader.js"
           data-domain-id="pk_REPLACE_ME"
           strategy="beforeInteractive"
           nonce={nonce}
@@ -160,7 +160,7 @@ export default class MyDocument extends Document {
       <Html lang="en">
         <Head>
           <script
-            src="https://assets.tracewatch.io/loader.js"
+            src="https://assets.effectinsight.com/loader.js"
             data-domain-id="pk_REPLACE_ME"
             async
           />
@@ -187,7 +187,7 @@ export default defineNuxtConfig({
     head: {
       script: [
         {
-          src: 'https://assets.tracewatch.io/loader.js',
+          src: 'https://assets.effectinsight.com/loader.js',
           'data-domain-id': 'pk_REPLACE_ME',
           async: true,
           // tagPosition: 'head' is the default for app.head.script
@@ -222,7 +222,7 @@ possible:
   <head>
     <meta charset="utf-8" />
     <script
-      src="https://assets.tracewatch.io/loader.js"
+      src="https://assets.effectinsight.com/loader.js"
       data-domain-id="pk_REPLACE_ME"
       async
     ></script>
@@ -244,7 +244,7 @@ possible:
 Same as React-Vite — paste in `index.html`:
 
 ```html
-<script src="https://assets.tracewatch.io/loader.js" data-domain-id="pk_REPLACE_ME" async></script>
+<script src="https://assets.effectinsight.com/loader.js" data-domain-id="pk_REPLACE_ME" async></script>
 ```
 
 ---
@@ -259,7 +259,7 @@ In `src/app.html`:
   <head>
     <meta charset="utf-8" />
     <script
-      src="https://assets.tracewatch.io/loader.js"
+      src="https://assets.effectinsight.com/loader.js"
       data-domain-id="pk_REPLACE_ME"
       async
     ></script>
@@ -285,7 +285,7 @@ In `src/layouts/Base.astro` (or whatever your root layout is):
 <html lang="en">
   <head>
     <script
-      src="https://assets.tracewatch.io/loader.js"
+      src="https://assets.effectinsight.com/loader.js"
       data-domain-id="pk_REPLACE_ME"
       async
       is:inline
@@ -310,7 +310,7 @@ In your base layout / template / `_layouts/default.html` — paste
 into `<head>`:
 
 ```html
-<script src="https://assets.tracewatch.io/loader.js" data-domain-id="pk_REPLACE_ME" async></script>
+<script src="https://assets.effectinsight.com/loader.js" data-domain-id="pk_REPLACE_ME" async></script>
 ```
 
 ---
@@ -324,7 +324,7 @@ Drupal 9+ uses libraries. Create
 cmp:
   header: true
   js:
-    https://assets.tracewatch.io/loader.js:
+    https://assets.effectinsight.com/loader.js:
       type: external
       attributes:
         async: true
@@ -348,7 +348,7 @@ function THEMENAME_preprocess_html(&$variables) {
 
    ```html
    <script
-     src="https://assets.tracewatch.io/loader.js"
+     src="https://assets.effectinsight.com/loader.js"
      data-domain-id="pk_REPLACE_ME"
      async
    ></script>

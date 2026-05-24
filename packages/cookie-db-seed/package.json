@@ -1,5 +1,5 @@
 {
-  "name": "@tracewatch/cookie-db-seed",
+  "name": "@effectinsight/cookie-db-seed",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "build": "echo 'source-only' && exit 0"
   },
   "dependencies": {
-    "@tracewatch/types": "workspace:*"
+    "@effectinsight/types": "workspace:*"
   },
   "devDependencies": {
     "tsx": "latest",

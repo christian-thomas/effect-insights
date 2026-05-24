@@ -72,7 +72,7 @@ final class UnknownCookieFound extends Notification
         $fqdn = (string) $this->domain->getAttribute('fqdn');
 
         $message = (new MailMessage)
-            ->subject(sprintf('[Tracewatch] %d unknown cookie%s on %s', $count, $count === 1 ? '' : 's', $fqdn))
+            ->subject(sprintf('[Effect Insight] %d unknown cookie%s on %s', $count, $count === 1 ? '' : 's', $fqdn))
             ->line(sprintf(
                 'A completed scan on %s found %d cookie%s that the resolver couldn\'t categorise.',
                 $fqdn,

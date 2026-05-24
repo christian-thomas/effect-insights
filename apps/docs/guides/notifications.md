@@ -1,6 +1,6 @@
 # Notifications
 
-Tracewatch can ping Slack when something needs an operator's attention.
+Effect Insight can ping Slack when something needs an operator's attention.
 Today there's one notification; more land here as we add them.
 
 ## Unknown cookies found
@@ -15,7 +15,7 @@ single Slack message lands in your configured channel:
 > • `_fb_xyz`
 > • `foo_bar`
 >
-> [Open the review queue →](https://admin.tracewatch.io/cookies?tab=review)
+> [Open the review queue →](https://admin.effectinsight.com/cookies?tab=review)
 
 Clicking the link drops you on the Cookie database admin page with the
 **Review queue** tab pre-selected — see [Troubleshooting →
@@ -36,7 +36,7 @@ configured channel:
 > Browser binding timeout
 > ```
 >
-> [Open scan in admin →](https://admin.tracewatch.io/scans/uuid-here)
+> [Open scan in admin →](https://admin.effectinsight.com/scans/uuid-here)
 
 The alert fires regardless of how the scan was triggered (manual,
 scheduled, or API). The scan row stays at `failed` with the original
@@ -52,7 +52,7 @@ configured impact threshold, a Slack message lands in your channel:
 >
 > Critical 1 · Serious 1 · Moderate 0 · Minor 0
 >
-> [Open scan in admin →](https://admin.tracewatch.io/accessibility-scans/uuid-here)
+> [Open scan in admin →](https://admin.effectinsight.com/accessibility-scans/uuid-here)
 
 The default threshold is **`serious`** — Critical or Serious violations
 alert; Moderate or Minor stay quiet. Override per-deploy via
@@ -87,7 +87,7 @@ Set via the admin's organisation slideover (superuser) or
 `PATCH /api/organisations/{id}` with a `notification_email` field:
 
 ```bash
-curl -X PATCH https://api.tracewatch.io/api/organisations/<uuid> \
+curl -X PATCH https://api.effectinsight.com/api/organisations/<uuid> \
   -H "Content-Type: application/json" \
   -H "Cookie: <sanctum-session>" \
   -d '{ "notification_email": "alerts@client.com, ops@client.com" }'
@@ -100,7 +100,7 @@ yourself a test alert via `php artisan accessibility:dispatch-scheduled`
 on a domain with known violations to confirm delivery.
 
 Mail driver configuration (SES, Mailtrap for dev, etc.) lives in
-`apps/api/config/mail.php` and `apps/api/.env`. Tracewatch doesn't
+`apps/api/config/mail.php` and `apps/api/.env`. Effect Insight doesn't
 ship a mail-driver bias — pick whatever fits your hosting.
 
 ## Configuration
@@ -140,7 +140,7 @@ endpoint on every render with paint-time + browser context. This is
 becomes a single structured JSON log line emitted by the consent
 worker, which can be queried via:
 
-- `wrangler tail tracewatch-consent --format=json | grep cmp_rum` for
+- `wrangler tail effectinsight-consent --format=json | grep cmp_rum` for
   live tailing during incidents.
 - Cloudflare Logpush → your data warehouse for aggregated analysis.
 

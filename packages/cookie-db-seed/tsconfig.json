@@ -3,8 +3,8 @@
   "compilerOptions": {
     "noEmit": true,
     "paths": {
-      "@tracewatch/types": ["../types/src/index.ts"],
-      "@tracewatch/types/*": ["../types/src/*"]
+      "@effectinsight/types": ["../types/src/index.ts"],
+      "@effectinsight/types/*": ["../types/src/*"]
     }
   },
   "include": ["src/**/*"]

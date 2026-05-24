@@ -24,13 +24,13 @@ import type { BannerConfig, ConsentCategories } from './types';
 const SCRIPT_TAG_ATTR = 'data-domain-id';
 const BASE_ATTR = 'data-cmp-base';
 // Override the POST /consent target separately from the config base. In prod
-// both URLs share `assets.tracewatch.io`; locally each wrangler-dev worker
+// both URLs share `assets.effectinsight.com`; locally each wrangler-dev worker
 // listens on its own port so the two URLs diverge. Falls back to BASE_ATTR
 // when unset, so production embeds keep working unchanged.
 const CONSENT_BASE_ATTR = 'data-cmp-consent-base';
 const INLINE_CONFIG_ATTR = 'data-cmp-config';
 const PREVIEW_MODE_ATTR = 'data-cmp-preview';
-const DEFAULT_BASE = 'https://assets.tracewatch.io';
+const DEFAULT_BASE = 'https://assets.effectinsight.com';
 
 const apiHost = installPublicApi();
 

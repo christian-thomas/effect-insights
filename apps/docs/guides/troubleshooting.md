@@ -9,15 +9,15 @@ A `<script>` tag is there but the banner never appears.
 
 | Symptom                                             | Cause                                                               | Fix                                                                                                |
 | --------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Console shows `Refused to load the script…`         | Strict CSP without the cmp.js origin in `script-src`                | Add `https://assets.tracewatch.io` to `script-src` and a nonce on the embed tag. See [CSP](./csp). |
+| Console shows `Refused to load the script…`         | Strict CSP without the cmp.js origin in `script-src`                | Add `https://assets.effectinsight.com` to `script-src` and a nonce on the embed tag. See [CSP](./csp). |
 | Console shows `Refused to apply inline style…`      | Strict CSP without nonce propagated to dynamically-injected styles  | Add `<meta name="csp-nonce" content="…">` so cmp.js can pick it up. See [CSP](./csp).              |
-| Console shows `connect-src…` violation              | `connect-src 'self'` blocks the config fetch                        | Allow `https://assets.tracewatch.io` in `connect-src`.                                             |
-| No console errors, no banner                        | Visitor already has a valid `_tracewatch` cookie                     | This is correct behaviour. Clear the cookie in dev tools, hard-reload.                             |
+| Console shows `connect-src…` violation              | `connect-src 'self'` blocks the config fetch                        | Allow `https://assets.effectinsight.com` in `connect-src`.                                             |
+| No console errors, no banner                        | Visitor already has a valid `_effectinsight` cookie                     | This is correct behaviour. Clear the cookie in dev tools, hard-reload.                             |
 | `data-domain-id` value is missing or wrong          | Worker returns 404 from `/config/:publicKey`; cmp.js silently bails | Copy the **Public key** from the domain detail page in admin — it's a `pk_` prefixed string.       |
 | Banner is published but draft hasn't been published | Worker returns 404 because no published config exists in KV         | Go to the banner editor and hit **Publish**.                                                       |
 
 The fastest way to bisect: in dev tools → Network, filter to `cmp` or
-`tracewatch` and inspect the requests:
+`effectinsight` and inspect the requests:
 
 - **`loader.js`** should be `200`.
 - **`cmp.<hash>.js`** should be `200`.
@@ -35,7 +35,7 @@ Visitor clicks accept all, but the analytics / ads tags don't fire.
 | Scripts have no `type="text/plain"` attribute          | They aren't blocked in the first place — they ran before consent                               | Wrap them in `<script type="text/plain" data-category="…">`. See [Blocking third-party scripts](./blocking-scripts).                     |
 | Scripts have `data-category="analytics"` (wrong key)   | cmp.js only recognises four categories — `necessary`, `preferences`, `statistics`, `marketing` | Use the spelling above exactly.                                                                                                          |
 | Strict CSP blocks the re-injected script               | The original blocked script had no nonce, cmp.js can't fabricate one                           | Either add the nonce to the _original_ `<script type="text/plain">` tag, or rely on the host-page meta-nonce fallback. See [CSP](./csp). |
-| The visitor previously rejected statistics + marketing | Their stored consent says denied; cmp.js correctly skips unblocking                            | Either clear the `_tracewatch` cookie and reload, or publish a material change to force re-prompt.                                        |
+| The visitor previously rejected statistics + marketing | Their stored consent says denied; cmp.js correctly skips unblocking                            | Either clear the `_effectinsight` cookie and reload, or publish a material change to force re-prompt.                                        |
 
 ## Cross-subdomain consent isn't sticky
 
@@ -106,7 +106,7 @@ You hit **Download receipt → JSON/PDF** on a consent event and get an error.
 
 ## Where to get more help
 
-- Check the [admin app](https://admin.tracewatch.io) for the latest status
+- Check the [admin app](https://admin.effectinsight.com) for the latest status
   of your domain.
 - For Cloudflare-side incidents (worker down, KV degraded), see the
   [Cloudflare outage runbook](https://github.com/effect-digital/cmp-project/blob/main/docs/runbooks/cloudflare-outage.md).

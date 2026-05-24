@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { consentEventSchema } from '@tracewatch/types/schemas/consent';
-import type { ConsentEventInput } from '@tracewatch/types/schemas/consent';
+import { consentEventSchema } from '@effectinsight/types/schemas/consent';
+import type { ConsentEventInput } from '@effectinsight/types/schemas/consent';
 
 // Minimal RUM payload — cmp.js posts one per banner render so we can
 // track paint-time p95 against the <50ms budget. Schema is intentionally

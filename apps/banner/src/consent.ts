@@ -1,6 +1,6 @@
 import type { BannerConfig, ConsentCategories, StoredConsent } from './types';
 
-const COOKIE_NAME = '_tracewatch';
+const COOKIE_NAME = '_effectinsight';
 const SECONDS_PER_DAY = 86_400;
 
 const isBrowser = (): boolean => typeof document !== 'undefined';

@@ -27,7 +27,7 @@ cmp.js looks for the nonce in three places, in order:
   <meta name="csp-nonce" content="<your-per-request-nonce>" />
 
   <script
-    src="https://assets.tracewatch.io/loader.js"
+    src="https://assets.effectinsight.com/loader.js"
     data-domain-id="pk_…"
     nonce="<your-per-request-nonce>"
     async
@@ -51,7 +51,7 @@ So this is also enough:
 
 ```html
 <script
-  src="https://assets.tracewatch.io/loader.js"
+  src="https://assets.effectinsight.com/loader.js"
   data-domain-id="pk_…"
   nonce="<your-per-request-nonce>"
   async
@@ -71,9 +71,9 @@ For a typical site running cmp.js:
 ```http
 Content-Security-Policy:
   default-src 'self';
-  script-src 'self' 'nonce-{generated-per-request}' https://assets.tracewatch.io;
+  script-src 'self' 'nonce-{generated-per-request}' https://assets.effectinsight.com;
   style-src 'self' 'nonce-{generated-per-request}';
-  connect-src 'self' https://assets.tracewatch.io;
+  connect-src 'self' https://assets.effectinsight.com;
   img-src 'self' data: https:;
 ```
 
@@ -84,7 +84,7 @@ Adjust to taste — most clients also add their analytics origins to
 ## Common gotchas
 
 - **`connect-src 'self'` blocks the config fetch.** cmp.js fetches its
-  config from `assets.tracewatch.io`. You must explicitly allow that origin
+  config from `assets.effectinsight.com`. You must explicitly allow that origin
   in `connect-src` or the banner will silently fail to load.
 - **Missing nonce on cmp.js itself.** Without (1) above, the browser
   refuses to execute cmp.js, so nothing else matters. Check `view-source:`
@@ -105,7 +105,7 @@ Open dev tools → Console on a production page where the banner _should_
 show but doesn't. If CSP is the cause you'll see one of:
 
 ```
-Refused to load the script 'https://assets.tracewatch.io/loader.js'
+Refused to load the script 'https://assets.effectinsight.com/loader.js'
 because it violates the following Content Security Policy directive…
 
 Refused to apply inline style because it violates the following CSP directive…

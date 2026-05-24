@@ -1,5 +1,5 @@
 {
-  "name": "@tracewatch/admin",
+  "name": "@effectinsight/admin",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
     "fix": "bun run format && bun run lint:fix"
   },
   "dependencies": {
-    "@tracewatch/types": "workspace:*",
+    "@effectinsight/types": "workspace:*",
     "@nuxt/ui": "latest",
     "@pinia/nuxt": "latest",
     "nuxt": "latest",

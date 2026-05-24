@@ -1,5 +1,5 @@
 {
-  "name": "@tracewatch/banner",
+  "name": "@effectinsight/banner",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -22,7 +22,7 @@
     "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
-    "@tracewatch/types": "workspace:*"
+    "@effectinsight/types": "workspace:*"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",

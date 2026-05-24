@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Context } from 'hono';
-import type { BannerConfig } from '@tracewatch/types/banner';
+import type { BannerConfig } from '@effectinsight/types/banner';
 import { verifyBannerConfigSignature } from './banner-config-signing';
 
 type Bindings = {

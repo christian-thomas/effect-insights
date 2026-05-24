@@ -1,4 +1,4 @@
-name = "tracewatch-config"
+name = "effectinsight-config"
 main = "src/config-worker.ts"
 compatibility_date = "2026-05-01"
 compatibility_flags = ["nodejs_compat"]
@@ -16,7 +16,7 @@ enabled = true
 
 # [[r2_buckets]]
 # binding = "BUNDLES"
-# bucket_name = "tracewatch-bundles"
+# bucket_name = "effectinsight-bundles"
 
 [vars]
 ENVIRONMENT = "production"
@@ -26,9 +26,9 @@ ENVIRONMENT = "production"
 # and must match the BANNER_CONFIG_SIGNING_KEY env var Laravel signs with.
 # Generate via `openssl rand -hex 32`.
 
-# Map your zone to assets.tracewatch.io once DNS is set up:
+# Map your zone to assets.effectinsight.com once DNS is set up:
 # routes = [
-#   { pattern = "assets.tracewatch.io/config/*", custom_domain = true },
-#   { pattern = "assets.tracewatch.io/loader.js", custom_domain = true },
-#   { pattern = "assets.tracewatch.io/cmp.*.js", custom_domain = true }
+#   { pattern = "assets.effectinsight.com/config/*", custom_domain = true },
+#   { pattern = "assets.effectinsight.com/loader.js", custom_domain = true },
+#   { pattern = "assets.effectinsight.com/cmp.*.js", custom_domain = true }
 # ]

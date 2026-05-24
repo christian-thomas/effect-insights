@@ -6,8 +6,8 @@
     "noEmit": true,
     "types": ["node"],
     "paths": {
-      "@tracewatch/types": ["../../packages/types/src/index.ts"],
-      "@tracewatch/types/*": ["../../packages/types/src/*"]
+      "@effectinsight/types": ["../../packages/types/src/index.ts"],
+      "@effectinsight/types/*": ["../../packages/types/src/*"]
     }
   },
   "include": ["src/**/*", "vite.config.ts"]

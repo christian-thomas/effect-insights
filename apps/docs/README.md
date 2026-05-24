@@ -1,6 +1,6 @@
-# @tracewatch/docs
+# @effectinsight/docs
 
-User-facing documentation for Tracewatch, built with [VitePress](https://vitepress.dev/).
+User-facing documentation for Effect Insight, built with [VitePress](https://vitepress.dev/).
 
 Covers:
 
@@ -14,7 +14,7 @@ Covers:
 ## Local dev
 
 ```bash
-bun --filter @tracewatch/docs run dev
+bun --filter @effectinsight/docs run dev
 ```
 
 Serves at `http://localhost:5173` by default. Picked up automatically by
@@ -23,11 +23,11 @@ Serves at `http://localhost:5173` by default. Picked up automatically by
 ## Build
 
 ```bash
-bun --filter @tracewatch/docs run build
+bun --filter @effectinsight/docs run build
 ```
 
 Outputs to `apps/docs/.vitepress/dist`. Deploy via Cloudflare Pages
-(target: `apps/docs/.vitepress/dist`) at `docs.tracewatch.io`.
+(target: `apps/docs/.vitepress/dist`) at `docs.effectinsight.com`.
 
 ## Editing
 

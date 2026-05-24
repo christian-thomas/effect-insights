@@ -1,6 +1,6 @@
-# @tracewatch/api
+# @effectinsight/api
 
-Laravel 13 backend for the Tracewatch. Provides:
+Laravel 13 backend for the Effect Insight. Provides:
 
 - Admin REST API (Sanctum) consumed by `apps/admin`
 - Public cookie-policy embed endpoint (`/api/cookie-policy/{publicKey}.html`)
@@ -93,7 +93,7 @@ asks the running master to drain + exit so the new code is picked up.
 Forge / GitHub Actions / whatever runs after `git pull` on the box:
 
 ```bash
-cd /home/forge/tracewatch/apps/api && ./deploy.sh
+cd /home/forge/effectinsight/apps/api && ./deploy.sh
 ```
 
 The script:

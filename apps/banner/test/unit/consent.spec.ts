@@ -93,7 +93,7 @@ describe('consent', () => {
   });
 
   it('returns null for garbled cookie values', () => {
-    document.cookie = '_tracewatch=not-json; Path=/';
+    document.cookie = '_effectinsight=not-json; Path=/';
     expect(readStoredConsent()).toBeNull();
   });
 

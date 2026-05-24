@@ -1,6 +1,6 @@
 # Organisations
 
-Tracewatch is a multi-tenant platform. Every Domain, banner config,
+Effect Insight is a multi-tenant platform. Every Domain, banner config,
 consent event, scan, and accessibility scan belongs to an
 Organisation (the tenant boundary). Operators belong to one or more
 organisations and switch between them via the org-switcher in the
@@ -57,7 +57,7 @@ every page subtree re-mounts on switch.
 ### Creating a tenant
 
 ```bash
-curl -X POST https://api.tracewatch.io/api/organisations \
+curl -X POST https://api.effectinsight.com/api/organisations \
   -H "Content-Type: application/json" \
   -H "Cookie: <superuser sanctum session>" \
   -d '{
@@ -82,7 +82,7 @@ Returns the created `Organisation` resource. From there:
 `PATCH` accepts any subset of the fillable columns:
 
 ```bash
-curl -X PATCH https://api.tracewatch.io/api/organisations/<uuid> \
+curl -X PATCH https://api.effectinsight.com/api/organisations/<uuid> \
   -H "Content-Type: application/json" \
   -H "Cookie: <sanctum session>" \
   -d '{ "consent_retention_days": 90, "a11y_alert_scope": "wcag_only" }'
@@ -119,7 +119,7 @@ first if you need to retain it.
 :::
 
 ```bash
-curl -X DELETE https://api.tracewatch.io/api/organisations/<uuid> \
+curl -X DELETE https://api.effectinsight.com/api/organisations/<uuid> \
   -H "Cookie: <superuser sanctum session>"
 ```
 

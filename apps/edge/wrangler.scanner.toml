@@ -1,4 +1,4 @@
-name = "tracewatch-scanner"
+name = "effectinsight-scanner"
 main = "src/scanner-worker.ts"
 compatibility_date = "2026-05-01"
 compatibility_flags = ["nodejs_compat"]
@@ -30,5 +30,5 @@ binding = "BROWSER"
 # Generate with `openssl rand -hex 32`.
 
 # [routes]
-# pattern = "scanner.tracewatch.io/*"
+# pattern = "scanner.effectinsight.com/*"
 # custom_domain = true

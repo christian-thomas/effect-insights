@@ -31,7 +31,7 @@ In GTM (Tags → New):
 | Field              | Value                                  |
 | ------------------ | -------------------------------------- |
 | Tag type           | **Custom HTML**                        |
-| Tag name           | `Tracewatch — cmp.js loader`           |
+| Tag name           | `Effect Insight — cmp.js loader`           |
 | HTML               | (see below)                            |
 | Tag firing options | **Once per page**                      |
 | Trigger            | **Consent Initialization — All Pages** |
@@ -60,7 +60,7 @@ The HTML:
     });
   })();
 </script>
-<script src="https://assets.tracewatch.io/loader.js" data-domain-id="pk_REPLACE_ME" async></script>
+<script src="https://assets.effectinsight.com/loader.js" data-domain-id="pk_REPLACE_ME" async></script>
 ```
 
 Replace `pk_REPLACE_ME` with the **Public key** from your domain's

@@ -1,4 +1,4 @@
-name = "tracewatch-consent"
+name = "effectinsight-consent"
 main = "src/consent-worker.ts"
 compatibility_date = "2026-05-01"
 compatibility_flags = ["nodejs_compat"]
@@ -11,12 +11,12 @@ enabled = true
 # `bun run db:migrate:consent` (or `db:migrate:consent:local` against `wrangler dev`).
 # [[d1_databases]]
 # binding = "CONSENT_DB"
-# database_name = "tracewatch-consent"
+# database_name = "effectinsight-consent"
 # database_id = "<paste-from-wrangler-d1-create>"
 
 [vars]
 ENVIRONMENT = "production"
-LARAVEL_INGEST_URL = "https://api.tracewatch.io/api/internal/consent-events"
+LARAVEL_INGEST_URL = "https://api.effectinsight.com/api/internal/consent-events"
 
 # CF native rate limiter for /consent and /rum. Keys are the visitor IP
 # (cf-connecting-ip). 60 requests per 60 seconds per IP is loose enough
@@ -33,5 +33,5 @@ simple = { limit = 60, period = 60 }
 # Laravel side. Generate with `openssl rand -hex 32`.
 
 # [routes]
-# pattern = "assets.tracewatch.io/consent"
+# pattern = "assets.effectinsight.com/consent"
 # custom_domain = true

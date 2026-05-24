@@ -2,7 +2,7 @@ import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:
 import { describe, it, expect, beforeEach } from 'vitest';
 import worker from '../src/consent-worker';
 import migration0001 from '../migrations/0001_consent_events.sql?raw';
-import type { ConsentEventInput } from '@tracewatch/types/schemas/consent';
+import type { ConsentEventInput } from '@effectinsight/types/schemas/consent';
 
 interface RateLimitBindingMock {
   limit(opts: { key: string }): Promise<{ success: boolean }>;

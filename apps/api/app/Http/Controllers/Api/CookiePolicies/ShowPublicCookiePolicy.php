@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response as HttpFoundationResponse;
  * Designed to be dropped into an iframe on the client's privacy page:
  *
  *   <iframe
- *     src="https://api.tracewatch.io/cookie-policy/pk_xxx.html"
+ *     src="https://api.effectinsight.com/cookie-policy/pk_xxx.html"
  *     title="Cookies in use"
  *     style="width:100%; min-height:600px; border:0;"
  *   ></iframe>

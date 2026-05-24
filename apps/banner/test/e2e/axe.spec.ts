@@ -13,7 +13,7 @@ import { expect, test } from '@playwright/test';
 test.describe('banner accessibility', () => {
   test('passes axe-core with no WCAG 2.1 A/AA violations', async ({ page }) => {
     await page.goto('/test/e2e/fixtures/host-preview.html');
-    await page.locator('.tracewatch-card').waitFor({ state: 'visible' });
+    await page.locator('.effectinsight-card').waitFor({ state: 'visible' });
 
     const results = await new AxeBuilder({ page })
       .include('[role="dialog"]')
@@ -40,7 +40,7 @@ test.describe('banner accessibility', () => {
 
   test('initial focus lands inside the dialog', async ({ page }) => {
     await page.goto('/test/e2e/fixtures/host-preview.html');
-    await page.locator('.tracewatch-card').waitFor({ state: 'visible' });
+    await page.locator('.effectinsight-card').waitFor({ state: 'visible' });
     // queueMicrotask in renderBanner means focus arrives a tick after the
     // dialog mounts. Tiny wait covers it.
     await page.waitForFunction(() => {
@@ -51,7 +51,7 @@ test.describe('banner accessibility', () => {
 
   test('Tab cycles inside the dialog (focus trap)', async ({ page }) => {
     await page.goto('/test/e2e/fixtures/host-preview.html');
-    await page.locator('.tracewatch-card').waitFor({ state: 'visible' });
+    await page.locator('.effectinsight-card').waitFor({ state: 'visible' });
 
     await page.waitForFunction(() => document.activeElement?.closest('[role="dialog"]') !== null);
 
@@ -71,7 +71,7 @@ test.describe('banner accessibility', () => {
 
   test('Escape inside the customise pane returns to the simple view', async ({ page }) => {
     await page.goto('/test/e2e/fixtures/host-preview.html');
-    await page.locator('.tracewatch-card').waitFor({ state: 'visible' });
+    await page.locator('.effectinsight-card').waitFor({ state: 'visible' });
 
     // Open the customise pane.
     const customise = page.getByRole('button', { name: 'Customise' });

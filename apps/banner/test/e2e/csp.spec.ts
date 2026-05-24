@@ -53,7 +53,7 @@ const sampleConfig = {
 };
 
 const setupRoutes = async (page: Page): Promise<void> => {
-  await page.route('**/assets.tracewatch.io/config/*', async (route) => {
+  await page.route('**/assets.effectinsight.com/config/*', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -61,7 +61,7 @@ const setupRoutes = async (page: Page): Promise<void> => {
     });
   });
 
-  await page.route('**/assets.tracewatch.io/consent', async (route, _request: Request) => {
+  await page.route('**/assets.effectinsight.com/consent', async (route, _request: Request) => {
     await route.fulfill({
       status: 202,
       contentType: 'application/json',
@@ -85,7 +85,7 @@ test.describe('banner under strict CSP', () => {
     });
 
     await page.goto('/test/e2e/fixtures/host-csp-strict.html');
-    await page.locator('.tracewatch-card').waitFor({ state: 'visible' });
+    await page.locator('.effectinsight-card').waitFor({ state: 'visible' });
 
     // The injected <style> must carry the page nonce so the browser applies
     // it under the strict CSP. Reading via attribute confirms the nonce is
@@ -103,7 +103,7 @@ test.describe('banner under strict CSP', () => {
     await setupRoutes(page);
 
     await page.goto('/test/e2e/fixtures/host-csp-strict.html');
-    await page.locator('.tracewatch-card').waitFor({ state: 'visible' });
+    await page.locator('.effectinsight-card').waitFor({ state: 'visible' });
 
     await page.getByRole('button', { name: 'Accept all' }).click();
 

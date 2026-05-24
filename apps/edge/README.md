@@ -1,12 +1,12 @@
-# @tracewatch/edge
+# @effectinsight/edge
 
-Three Cloudflare Workers behind `assets.tracewatch.io` (and `scanner.tracewatch.io` for the scanner):
+Three Cloudflare Workers behind `assets.effectinsight.com` (and `scanner.effectinsight.com` for the scanner):
 
 | Worker               | Path(s)                                                    | Local port | Backed by                          |
 | -------------------- | ---------------------------------------------------------- | ---------- | ---------------------------------- |
-| `tracewatch-config`  | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | 8787       | KV (configs), R2 (bundles)         |
-| `tracewatch-consent` | `/consent` (POST), `/rum` (POST)                           | 8788       | D1 (hot log) + Laravel mirror, native rate limiter |
-| `tracewatch-scanner` | `/scan` (POST)                                             | 8789       | Browser Rendering (paid plan only) |
+| `effectinsight-config`  | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | 8787       | KV (configs), R2 (bundles)         |
+| `effectinsight-consent` | `/consent` (POST), `/rum` (POST)                           | 8788       | D1 (hot log) + Laravel mirror, native rate limiter |
+| `effectinsight-scanner` | `/scan` (POST)                                             | 8789       | Browser Rendering (paid plan only) |
 
 ## How the workers connect
 
@@ -35,8 +35,8 @@ wrangler login
 
 # Create the backing resources (one-time)
 wrangler kv namespace create BANNER_CONFIGS
-wrangler r2 bucket create tracewatch-bundles
-wrangler d1 create tracewatch-consent
+wrangler r2 bucket create effectinsight-bundles
+wrangler d1 create effectinsight-consent
 
 # Paste the IDs into wrangler.config.toml / wrangler.consent.toml
 # Then apply the consent D1 migrations:
@@ -136,6 +136,6 @@ beacon shape:
 ```
 
 Emits a structured JSON log line per beacon — no D1 writes yet.
-`wrangler tail tracewatch-consent --format=json | grep cmp_rum` for
+`wrangler tail effectinsight-consent --format=json | grep cmp_rum` for
 live tailing during incidents, or Cloudflare Logpush to a data
 warehouse for aggregation.

@@ -151,7 +151,7 @@ scanner's 04:00 so the two don't fight for Cloudflare Browser
 Rendering quota.
 
 If client adoption grows and a11y scans start starving cookie scans,
-the next step is a dedicated `tracewatch-accessibility-scanner`
+the next step is a dedicated `effectinsight-accessibility-scanner`
 worker on a separate Browser Rendering plan. Until then, the shared
 worker is the simpler operationally.
 
@@ -202,7 +202,7 @@ From the scan detail page, expand any finding card and click
 Or via the API:
 
 ```bash
-curl -X POST https://api.tracewatch.io/api/accessibility-rule-overrides \
+curl -X POST https://api.effectinsight.com/api/accessibility-rule-overrides \
   -H "Content-Type: application/json" \
   -H "Cookie: <sanctum-session>" \
   -d '{
@@ -279,7 +279,7 @@ Set via the admin's organisation slideover or
 `PATCH /api/organisations/{id}`:
 
 ```bash
-curl -X PATCH https://api.tracewatch.io/api/organisations/<uuid> \
+curl -X PATCH https://api.effectinsight.com/api/organisations/<uuid> \
   -H "Content-Type: application/json" \
   -H "Cookie: <sanctum-session>" \
   -d '{ "a11y_alert_scope": "wcag_only" }'

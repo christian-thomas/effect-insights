@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Domain, ScanCadence } from '@tracewatch/types/domain';
+import type { Domain, ScanCadence } from '@effectinsight/types/domain';
 
 const route = useRoute();
 const toast = useToast();
@@ -86,7 +86,7 @@ const embedSnippet = computed(() => {
   // <script setup> block on a literal closing-script-tag sequence even when
   // it appears inside a TypeScript template literal.
   // eslint-disable-next-line no-useless-escape
-  return `<script src="https://assets.tracewatch.io/loader.js" data-domain-id="${domain.value.publicKey}" async><\/script>`;
+  return `<script src="https://assets.effectinsight.com/loader.js" data-domain-id="${domain.value.publicKey}" async><\/script>`;
 });
 
 const copyEmbed = async (): Promise<void> => {

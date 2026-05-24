@@ -1,4 +1,4 @@
-import type { CookieCategory } from '@tracewatch/types/banner';
+import type { CookieCategory } from '@effectinsight/types/banner';
 
 export interface CanonicalCookie {
   readonly namePattern: string;

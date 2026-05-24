@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: Tracewatch
+  name: Effect Insight
   text: Consent Management Platform
   tagline: White-label cookie consent, scanner, and audit log — owned end-to-end.
   actions:

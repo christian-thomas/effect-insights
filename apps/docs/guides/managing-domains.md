@@ -1,6 +1,6 @@
 # Managing domains
 
-A "domain" in Tracewatch is one host that embeds the banner. Each
+A "domain" in Effect Insight is one host that embeds the banner. Each
 domain has its own banner config, its own scan history, its own
 consent log, and its own scheduled-scan cadence.
 

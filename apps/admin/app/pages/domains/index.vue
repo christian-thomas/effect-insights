@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { domainInputSchema, type Domain, type DomainInput } from '@tracewatch/types/domain';
+import { domainInputSchema, type Domain, type DomainInput } from '@effectinsight/types/domain';
 import type { FormSubmitEvent, TableColumn } from '@nuxt/ui';
 
 const domainsStore = useDomainsStore();

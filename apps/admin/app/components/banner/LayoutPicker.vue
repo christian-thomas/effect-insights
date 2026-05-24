@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BannerLayout } from '@tracewatch/types/schemas/banner';
+import type { BannerLayout } from '@effectinsight/types/schemas/banner';
 
 const modelValue = defineModel<BannerLayout>({ required: true });
 

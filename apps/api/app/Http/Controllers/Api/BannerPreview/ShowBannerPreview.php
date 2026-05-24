@@ -29,7 +29,7 @@ class ShowBannerPreview extends Controller
         $draft = $service->getOrCreateDraft($domain);
         $payload = $payloadBuilder->buildPreview($draft, $domain);
 
-        $cdnUrl = rtrim((string) config('services.banner.cdn_url', 'https://assets.tracewatch.io'), '/');
+        $cdnUrl = rtrim((string) config('services.banner.cdn_url', 'https://assets.effectinsight.com'), '/');
         $configJson = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
         $html = $this->renderHtml($cdnUrl, (string) $domain->getAttribute('public_key'), $configJson);

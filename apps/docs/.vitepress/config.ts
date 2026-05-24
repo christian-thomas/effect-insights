@@ -1,17 +1,17 @@
 import { defineConfig } from 'vitepress';
 
 export default defineConfig({
-  title: 'Tracewatch',
+  title: 'Effect Insight',
   description: 'Effect Digital Consent Management Platform — implementation + operator docs',
   cleanUrls: true,
   lastUpdated: true,
 
   themeConfig: {
-    siteTitle: 'Tracewatch',
+    siteTitle: 'Effect Insight',
 
     nav: [
       { text: 'Guides', link: '/guides/implementing-the-banner' },
-      { text: 'Admin app', link: 'https://admin.tracewatch.io', target: '_blank' },
+      { text: 'Admin app', link: 'https://admin.effectinsight.com', target: '_blank' },
     ],
 
     sidebar: {

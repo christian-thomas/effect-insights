@@ -80,7 +80,7 @@ final class AccessibilityIssuesFound extends Notification
 
         $message = (new MailMessage)
             ->subject(sprintf(
-                '[Tracewatch] %d accessibility violation%s on %s',
+                '[Effect Insight] %d accessibility violation%s on %s',
                 $this->total,
                 $this->total === 1 ? '' : 's',
                 $fqdn,

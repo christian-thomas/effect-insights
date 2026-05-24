@@ -31,7 +31,7 @@
     </style>
   </head>
   <body>
-    <h1>Tracewatch — local end-to-end host</h1>
+    <h1>Effect Insight — local end-to-end host</h1>
     <p>
       This page embeds <code>cmp.js</code> exactly like a client site would, but points the config
       fetch at the local <code>config</code> worker and the consent POST at the local
@@ -40,15 +40,15 @@
 
     <h2>What needs to be running</h2>
     <ul>
-      <li>Banner build watcher: <code>bun --filter @tracewatch/banner run dev</code></li>
+      <li>Banner build watcher: <code>bun --filter @effectinsight/banner run dev</code></li>
       <li>
         Local static server (this page):
-        <code>bun --filter @tracewatch/banner run serve:local</code> →
+        <code>bun --filter @effectinsight/banner run serve:local</code> →
         <code>http://127.0.0.1:4173/test/e2e/fixtures/host-local.html</code>
       </li>
-      <li>Config worker: <code>bun --filter @tracewatch/edge run dev:config</code> → port 8787</li>
+      <li>Config worker: <code>bun --filter @effectinsight/edge run dev:config</code> → port 8787</li>
       <li>
-        Consent worker: <code>bun --filter @tracewatch/edge run dev:consent</code> → port 8788
+        Consent worker: <code>bun --filter @effectinsight/edge run dev:consent</code> → port 8788
       </li>
       <li>Laravel API (Herd or <code>php artisan serve</code>)</li>
     </ul>

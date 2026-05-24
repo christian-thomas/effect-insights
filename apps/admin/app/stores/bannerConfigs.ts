@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { BannerDraftInput } from '@tracewatch/types/schemas/banner';
+import type { BannerDraftInput } from '@effectinsight/types/schemas/banner';
 import type { BannerConfig } from '~/types/banner';
 
 interface FetchResponse {

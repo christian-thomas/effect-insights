@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.schemastore.org/package.json",
-  "name": "@tracewatch/api",
+  "name": "@effectinsight/api",
   "version": "0.0.0",
   "private": true,
   "type": "module",

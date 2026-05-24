@@ -8,14 +8,14 @@ the banner before any tracking scripts run.
 
 ```html
 <script
-  src="https://assets.tracewatch.io/loader.js"
+  src="https://assets.effectinsight.com/loader.js"
   data-domain-id="<your-domain-public-key>"
   async
 ></script>
 ```
 
 Replace `<your-domain-public-key>` with the `publicKey` shown on the domain's
-detail page in the admin (`https://admin.tracewatch.io/domains/{id}`). It looks
+detail page in the admin (`https://admin.effectinsight.com/domains/{id}`). It looks
 like `pk_AbCdEf…` — copy the **Public key** field exactly.
 
 ## Where to paste it
@@ -61,7 +61,7 @@ These go on the same `<script>` tag as the embed.
 
 | Attribute               | When to use it                                                                                                                                                      |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data-cmp-base`         | Override the config base URL. Defaults to `https://assets.tracewatch.io`. Used for staging / preview hosts.                                                         |
+| `data-cmp-base`         | Override the config base URL. Defaults to `https://assets.effectinsight.com`. Used for staging / preview hosts.                                                         |
 | `data-cmp-consent-base` | Override the consent POST target separately from the config base. Only relevant for local dev (`bun run dev`) where each Cloudflare Worker listens on its own port. |
 | `data-cmp-config`       | Inline a JSON config and skip the fetch. Used internally by the admin live-preview iframe — most embeds should ignore this.                                         |
 | `data-cmp-preview`      | Render the banner every page load (no cookie short-circuit, no `/consent` POST). Only for the admin preview iframe.                                                 |
@@ -72,7 +72,7 @@ These go on the same `<script>` tag as the embed.
 - **First visit**: the banner renders centred (modal) / docked (bar) / pinned
   (corner) depending on the layout you've published.
 - **Accept all / Reject all / Customise**: visitor's choice is written to a
-  `_tracewatch` cookie + POSTed to the edge. GCM signals update synchronously,
+  `_effectinsight` cookie + POSTed to the edge. GCM signals update synchronously,
   blocked scripts unblock, the banner disappears.
 - **Subsequent visits**: cmp.js reads the cookie, replays the GCM signals,
   unblocks the right scripts, and **doesn't render the banner again** —

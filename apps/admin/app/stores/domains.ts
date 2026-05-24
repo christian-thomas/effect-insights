@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Domain, DomainInput } from '@tracewatch/types/domain';
+import type { Domain, DomainInput } from '@effectinsight/types/domain';
 
 interface DomainListResponse {
   data: Domain[];

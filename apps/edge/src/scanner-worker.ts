@@ -6,7 +6,7 @@ import {
   scannerRequestSchema,
   type AccessibilityScannerResultInput,
   type ScannerResultInput,
-} from '@tracewatch/types/schemas/scanner';
+} from '@effectinsight/types/schemas/scanner';
 
 // axe-core's UMD bundle, imported as a string at build time via the
 // Wrangler [[rules]] Text rule in wrangler.scanner.toml. Bundling it

@@ -62,7 +62,7 @@ final class AccessibilityScanFailed extends Notification
         $fqdn = (string) $this->domain->getAttribute('fqdn');
 
         return (new MailMessage)
-            ->subject(sprintf('[Tracewatch] Accessibility scan failed on %s', $fqdn))
+            ->subject(sprintf('[Effect Insight] Accessibility scan failed on %s', $fqdn))
             ->line(sprintf('An accessibility scan on %s failed with the following error:', $fqdn))
             ->line(sprintf('%s: %s', $this->errorClass, $this->errorMessage))
             ->action('Open scan in admin', $this->detailUrl);
