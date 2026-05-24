@@ -72,6 +72,7 @@
         "@cloudflare/puppeteer": "^1.1.0",
         "@effect-cmp/types": "workspace:*",
         "@hono/zod-validator": "latest",
+        "axe-core": "^4.11.4",
         "hono": "latest",
         "zod": "latest",
       },
