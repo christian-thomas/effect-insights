@@ -22,6 +22,27 @@ Clicking the link drops you on the Cookie database admin page with the
 Unknown cookies](./troubleshooting#unknown-cookies-in-the-review-queue) for
 how to triage from there.
 
+## Scan failures
+
+When a scan transitions to `failed` (the scanner worker timed out, threw,
+or returned a malformed response) a Slack message lands in your
+configured channel:
+
+> _Scan failed on `app.example.com` (Acme Ltd)_:
+>
+> `RuntimeException`
+>
+> ```
+> Browser binding timeout
+> ```
+>
+> [Open scan in admin →](https://admin.effectcmp.com/scans/uuid-here)
+
+The alert fires regardless of how the scan was triggered (manual,
+scheduled, or API). The scan row stays at `failed` with the original
+exception in `error_log` even if the alerter itself errors — alert
+delivery is best-effort and never overwrites the canonical record.
+
 ## Configuration
 
 Slack notifications are configured platform-wide via two environment
@@ -91,5 +112,3 @@ logs are the source of truth.
 - **Email notifications** — same alerts via email for orgs without Slack.
 - **Banner-publish notifications** — heads-up to ops when a material
   change goes live.
-- **Scan-failure notifications** — currently a failed scan is only visible
-  in the admin; alerting on it would let ops investigate without polling.

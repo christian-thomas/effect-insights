@@ -14,6 +14,7 @@ use App\Models\Scan;
 use App\Models\ScanFinding;
 use App\Models\User;
 use App\Services\Cookies\CookieCategoryResolver;
+use App\Services\Notifications\ScanFailureAlertService;
 use App\Services\Notifications\UnknownCookieAlertService;
 use App\Support\Cookies\CookieResolution;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +43,7 @@ final readonly class ScanRunner
         private ScannerClientContract $scanner,
         private CookieCategoryResolver $resolver,
         private UnknownCookieAlertService $unknownCookieAlerts,
+        private ScanFailureAlertService $scanFailureAlerts,
     ) {}
 
     /**
@@ -114,14 +116,28 @@ final readonly class ScanRunner
                 // Best-effort; alert delivery is not part of the canonical record.
             }
         } catch (Throwable $exception) {
+            $error = [
+                'message' => $exception->getMessage(),
+                'class' => $exception::class,
+            ];
+
             $scan->update([
                 'status' => ScanStatus::Failed,
                 'finished_at' => now(),
-                'error_log' => [
-                    'message' => $exception->getMessage(),
-                    'class' => $exception::class,
-                ],
+                'error_log' => $error,
             ]);
+
+            // Best-effort failure alert — alerter problems must not mask
+            // the original scan exception that we've already persisted.
+            try {
+                /** @var Domain|null $failedDomain */
+                $failedDomain = $scan->domain()->withoutGlobalScope('organisation')->first();
+                if ($failedDomain !== null) {
+                    $this->scanFailureAlerts->alert($scan, $failedDomain, $error);
+                }
+            } catch (Throwable) {
+                // Swallow — operator sees the status flip in admin either way.
+            }
         }
 
         return $scan->refresh();
