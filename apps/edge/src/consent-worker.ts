@@ -1,8 +1,20 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
 import { consentEventSchema } from '@effect-cmp/types/schemas/consent';
 import type { ConsentEventInput } from '@effect-cmp/types/schemas/consent';
+
+// Minimal RUM payload — cmp.js posts one per banner render so we can
+// track paint-time p95 against the <50ms budget. Schema is intentionally
+// loose; we just want to drop obviously-malformed bodies on the floor.
+const rumBeaconSchema = z.object({
+  domainPublicKey: z.string().min(1).max(128),
+  paintMs: z.number().nonnegative().max(60_000),
+  hadStoredConsent: z.boolean(),
+  effectiveConnectionType: z.string().max(16).optional(),
+  deviceMemoryGb: z.number().optional(),
+});
 
 type Bindings = {
   readonly CONSENT_DB: D1Database;
@@ -85,6 +97,20 @@ app.post('/consent', zValidator('json', consentEventSchema), async (c) => {
   );
 
   return c.json({ ok: true }, 202);
+});
+
+// RUM beacon sink. Logs each valid beacon as a single JSON line so
+// `wrangler tail --format=json` and CF Logpush capture it. No DB write
+// yet — server-side aggregation is a separate piece. Always 204 even
+// on malformed beacons so cmp.js never retries the call.
+app.post('/rum', zValidator('json', rumBeaconSchema), async (c) => {
+  const beacon = c.req.valid('json');
+  // Structured-log shape that's easy to grep / aggregate downstream.
+  // console.log is the intended sink here — `wrangler tail --format=json`
+  // and CF Logpush both capture it.
+  // eslint-disable-next-line no-console -- intentional log sink for RUM
+  console.log(JSON.stringify({ type: 'cmp_rum', ...beacon }));
+  return new Response(null, { status: 204 });
 });
 
 app.notFound((c) => c.json({ error: 'not_found' }, 404));

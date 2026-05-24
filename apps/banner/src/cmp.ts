@@ -14,6 +14,7 @@ import { detectCspNonce } from './csp';
 import { renderBanner } from './dom';
 import { installDefaults, sendUpdate } from './gcm';
 import { flushOutbox, queueOutboxEntry } from './outbox';
+import { collectNavigatorSignals, sendRumBeacon, startPaintTimer } from './rum';
 import { unblockScripts, watchForBlockedScripts } from './scripts';
 import { generateStyles } from './styles';
 import type { BannerConfig, ConsentCategories } from './types';
@@ -85,6 +86,7 @@ const recordConsent = async (params: {
 };
 
 const boot = async (): Promise<void> => {
+  const paintTimer = startPaintTimer();
   try {
     const tag = findScriptTag();
     if (!tag) return;
@@ -141,6 +143,14 @@ const boot = async (): Promise<void> => {
       if (isStoredConsentStillValid(stored, config) && stored !== null) {
         sendUpdate(stored.categories);
         unblockScripts(stored.categories, cspNonce);
+        // RUM beacon for the short-circuit path — typically the fastest,
+        // worth tracking separately from the cold-paint path.
+        sendRumBeacon(consentBaseUrl, {
+          domainPublicKey: config.domainPublicKey,
+          paintMs: paintTimer.elapsed(),
+          hadStoredConsent: true,
+          ...collectNavigatorSignals(),
+        });
         return;
       }
     }
@@ -180,6 +190,16 @@ const boot = async (): Promise<void> => {
     });
 
     document.body.appendChild(handles.root);
+
+    // Self-monitoring beacon. Fire-and-forget; never blocks the banner.
+    if (!previewMode) {
+      sendRumBeacon(consentBaseUrl, {
+        domainPublicKey: config.domainPublicKey,
+        paintMs: paintTimer.elapsed(),
+        hadStoredConsent: false,
+        ...collectNavigatorSignals(),
+      });
+    }
   } catch {
     // The banner must never throw uncaught. A failed banner is worse than
     // no banner — bail silently and let the host page proceed.

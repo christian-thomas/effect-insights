@@ -124,4 +124,34 @@ describe('consent worker', () => {
     const response = await fetchWorker({ method: 'POST' }, 'http://edge.test/nope');
     expect(response.status).toBe(404);
   });
+
+  it('accepts a valid RUM beacon with 204 No Content', async () => {
+    const response = await fetchWorker(
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          domainPublicKey: 'pk_test_abc123',
+          paintMs: 42,
+          hadStoredConsent: false,
+          effectiveConnectionType: '4g',
+          deviceMemoryGb: 8,
+        }),
+      },
+      'http://edge.test/rum',
+    );
+    expect(response.status).toBe(204);
+  });
+
+  it('rejects a malformed RUM beacon with 400', async () => {
+    const response = await fetchWorker(
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paintMs: 'not-a-number' }),
+      },
+      'http://edge.test/rum',
+    );
+    expect(response.status).toBe(400);
+  });
 });
