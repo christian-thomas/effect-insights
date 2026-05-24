@@ -79,6 +79,14 @@ const copyEmbed = async (): Promise<void> => {
     <template #right>
       <UButton
         v-if="domain"
+        :to="`/domains/${domain.id}/scans`"
+        color="neutral"
+        variant="soft"
+        icon="i-lucide-radar"
+        label="Scans"
+      />
+      <UButton
+        v-if="domain"
         :to="`/domains/${domain.id}/banner`"
         icon="i-lucide-palette"
         label="Banner config"

@@ -40,14 +40,12 @@ const tiles = computed(() => {
       value: counts.value.scans,
       icon: 'i-lucide-radar',
       to: '/scans',
-      muted: true,
     },
     {
       label: 'Consent events',
       value: counts.value.consentEvents,
       icon: 'i-lucide-file-check',
       to: '/consent',
-      muted: true,
     },
   ];
 });
@@ -76,9 +74,6 @@ const tiles = computed(() => {
             <div>
               <p class="text-sm text-gray-500">{{ tile.label }}</p>
               <p class="mt-1 text-3xl font-semibold tabular-nums">{{ tile.value }}</p>
-              <p v-if="tile.muted" class="mt-1 text-xs text-gray-400">
-                Lands in a future iteration
-              </p>
             </div>
             <UIcon :name="tile.icon" class="size-8 text-gray-400" />
           </div>
@@ -100,9 +95,15 @@ const tiles = computed(() => {
           Drop the embed snippet (shown on the domain detail page) into the client site's
           <code>&lt;head&gt;</code>.
         </li>
-        <li class="text-gray-400">
-          Scans + consent log light up once the CF Browser Rendering + D1 integration lands
-          (iteration 4).
+        <li>
+          Trigger a
+          <NuxtLink to="/scans" class="text-primary-500 hover:underline">scan</NuxtLink>
+          to populate the cookie policy and consent categories.
+        </li>
+        <li>
+          Watch
+          <NuxtLink to="/consent" class="text-primary-500 hover:underline">consent events</NuxtLink>
+          land as visitors interact with the banner.
         </li>
       </ol>
     </UCard>

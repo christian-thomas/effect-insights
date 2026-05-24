@@ -27,6 +27,9 @@ const downloadReceipt = async (path: string, fallbackName: string): Promise<void
   URL.revokeObjectURL(objectUrl);
 };
 
+const exporting = ref(false);
+const toast = useToast();
+
 await domainsStore.list();
 
 const filters = reactive<{
@@ -98,6 +101,37 @@ const selected = ref<ConsentEvent | null>(null);
 const openDetail = (event: ConsentEvent): void => {
   selected.value = event;
   detailOpen.value = true;
+};
+
+const exportCsv = async (): Promise<void> => {
+  exporting.value = true;
+  try {
+    // Mirror the live filter bar exactly so the export matches what the
+    // operator is looking at. The endpoint honours the same query keys
+    // as ListConsentEvents.
+    const params = new URLSearchParams();
+    if (filters.domainId) params.set('domain_id', filters.domainId);
+    if (filters.anonymousId) params.set('anonymous_id', filters.anonymousId);
+    if (filters.eventType) params.set('event_type', filters.eventType);
+    if (filters.from) params.set('from', filters.from);
+    if (filters.to) params.set('to', filters.to);
+
+    const query = params.toString();
+    await downloadReceipt(
+      `/api/consent-events.csv${query ? `?${query}` : ''}`,
+      `consent-events-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
+    toast.add({ title: 'CSV exported', color: 'success', icon: 'i-lucide-check' });
+  } catch (caught) {
+    toast.add({
+      title: 'Export failed',
+      description: caught instanceof Error ? caught.message : 'Please try again',
+      color: 'error',
+      icon: 'i-lucide-triangle-alert',
+    });
+  } finally {
+    exporting.value = false;
+  }
 };
 
 const eventReceiptMenu = (event: ConsentEvent): DropdownMenuItem[] => [
@@ -214,6 +248,14 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
             label="Download visitor receipt"
           />
         </UDropdownMenu>
+        <UButton
+          icon="i-lucide-table"
+          color="neutral"
+          variant="soft"
+          label="Export CSV"
+          :loading="exporting"
+          @click="exportCsv"
+        />
         <UButton color="neutral" variant="ghost" label="Clear" @click="clearFilters" />
         <UButton icon="i-lucide-filter" label="Apply" :loading="loading" @click="applyFilters" />
       </div>
