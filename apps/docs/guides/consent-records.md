@@ -95,15 +95,44 @@ bundle.
 
 - **D1 (Cloudflare hot store)**: bounded by the nightly archive job
   that drains events older than ~90 days. Use D1 for high-volume reads
-  - recent events.
+  of recent events.
 - **MySQL (Laravel archive)**: indefinite by default. Events sit here
   until you explicitly delete them (which only happens via
   cascade-delete from the parent domain — see
   [Managing domains → Deleting a domain](./managing-domains#deleting-a-domain)).
 
-If your retention policy requires explicit deletion after N years,
-[get in touch](mailto:support@effectdigital.com) — a scheduled
-purge command is on the roadmap.
+### Configurable retention per organisation
+
+Each organisation has a `consentRetentionDays` field (NULL by default
+= retain indefinitely; positive integer = delete events older than N
+days). Set via the `PATCH /api/organisations/{id}` endpoint:
+
+```bash
+curl -X PATCH https://api.effectcmp.com/api/organisations/<uuid> \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <sanctum-session>" \
+  -d '{ "consent_retention_days": 365 }'
+```
+
+A daily `consent-events:purge` command runs at 02:00 UTC (offset from
+the 03:00 archive job so they never race for the same rows) and
+hard-deletes anything past the threshold for every org that has one
+configured. Run it ad-hoc with:
+
+```bash
+php artisan consent-events:purge
+```
+
+The command is idempotent — re-running with the same data is a no-op
+once the rows are gone. Output reports the per-org delete count + the
+cut-off timestamp it used.
+
+::: warning Hard delete
+The purge bypasses receipts + the archive — deleted events cannot be
+re-downloaded. Keep the retention window generous enough to satisfy
+your regulator's bar (UK ICO guidance is "indefinite while consent is
+in force" — typically the rePromptAfterDays window is the lower bound).
+:::
 
 ## What's NOT in a receipt
 

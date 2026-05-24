@@ -28,3 +28,13 @@ Schedule::command('scans:dispatch-scheduled')
     ->name('dispatch-scheduled-scans')
     ->onOneServer()
     ->withoutOverlapping();
+
+// Daily purge of consent events past each org's configured retention
+// window. Runs at 02:00 — before the 03:00 archive so the two never
+// race for the same rows (purge only touches the MySQL archive; D1
+// is rotated independently by the archive job).
+Schedule::command('consent-events:purge')
+    ->dailyAt('02:00')
+    ->name('purge-consent-events')
+    ->onOneServer()
+    ->withoutOverlapping();

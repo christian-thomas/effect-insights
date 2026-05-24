@@ -27,6 +27,11 @@ class UpdateOrganisationRequest extends FormRequest
                 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
                 Rule::unique('organisations', 'slug')->ignore($organisationId),
             ],
+            // NULL = retain consent events indefinitely. Positive integer
+            // = consent-events:purge deletes anything older than N days
+            // on its nightly run. Cap at 10 years — defensible upper
+            // bound for the strictest regulators.
+            'consent_retention_days' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:3650'],
         ];
     }
 

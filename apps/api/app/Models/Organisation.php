@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['name', 'slug', 'settings'])]
+#[Fillable(['name', 'slug', 'settings', 'consent_retention_days'])]
 class Organisation extends Model
 {
     /** @use HasFactory<OrganisationFactory> */
@@ -25,6 +25,7 @@ class Organisation extends Model
     {
         return [
             'settings' => 'array',
+            'consent_retention_days' => 'integer',
         ];
     }
 

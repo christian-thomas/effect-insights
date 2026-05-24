@@ -23,6 +23,7 @@ class OrganisationResource extends JsonResource
             'id' => $this->getAttribute('id'),
             'name' => $this->getAttribute('name'),
             'slug' => $this->getAttribute('slug'),
+            'consentRetentionDays' => $this->getAttribute('consent_retention_days'),
         ];
     }
 }
