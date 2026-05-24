@@ -31,7 +31,8 @@ maintains its own data shape:
    `/scan-a11y` route. For each URL it:
    - Navigates via `@cloudflare/puppeteer` (`waitUntil:
      networkidle0`, 30s timeout).
-   - Injects `axe-core` from jsDelivr via `page.addScriptTag`.
+   - Injects the bundled `axe-core` source (no network round-trip)
+     via `page.addScriptTag({ content })`.
    - Runs `axe.run()` in the page context.
    - Collects `violations[]` and returns them.
 3. **Persistence.** `App\Services\Accessibility\AccessibilityScanRunner`
@@ -258,12 +259,6 @@ points.
 
 ## Limitations
 
-- **CDN-loaded axe-core.** The worker pulls `axe.min.js` from
-  jsDelivr per scanned page rather than bundling 500KB into the
-  worker image. If jsDelivr is unavailable the scan fails (the
-  runner records the error, fires the failure alert, moves on).
-  Acceptable for v1; we can switch to a Wrangler text-bundle import
-  later for offline guarantees.
 - **No tag-aware alert filtering.** Best-practice + WCAG rules at the
   same impact level trip the same threshold. Filter visually in the
   admin via the WCAG/Best-practice tab on the scan detail page; or

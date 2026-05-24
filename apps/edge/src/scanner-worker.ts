@@ -8,12 +8,13 @@ import {
   type ScannerResultInput,
 } from '@tracewatch/types/schemas/scanner';
 
-// axe-core is loaded into each crawled page via CDN. Bundling the
-// ~500KB axe.min.js source into the worker bundle isn't worth the
-// build complexity right now — jsdelivr is reliable and the Browser
-// Rendering context has internet egress. If we ever want offline
-// guarantees, switch to a Wrangler [[rules]] text-bundle import.
-const AXE_CDN_URL = 'https://cdn.jsdelivr.net/npm/axe-core@4.11.4/axe.min.js';
+// axe-core's UMD bundle, imported as a string at build time via the
+// Wrangler [[rules]] Text rule in wrangler.scanner.toml. Bundling it
+// directly into the worker (~565KB) removes the runtime dependency on
+// jsdelivr — scans are now offline-safe relative to third-party CDN
+// availability, and the version we run is pinned to package.json
+// rather than whatever the CDN happens to serve at request time.
+import axeSource from 'axe-core/axe.min.js';
 
 type Bindings = {
   readonly BROWSER: Fetcher;
@@ -247,10 +248,12 @@ const runAxeScans = async (
     try {
       await page.goto(url, { waitUntil: 'networkidle0', timeout: 30_000 });
 
-      // Inject axe-core from CDN, wait for it to register, then run.
-      // page.evaluate runs in the page context so `window.axe` is the
-      // globally-installed object after the script tag loads.
-      await page.addScriptTag({ url: AXE_CDN_URL });
+      // Inject the bundled axe-core source into the page. content:
+      // hands the script tag the raw JS string we imported at build
+      // time, no network round-trip. page.evaluate runs in the page
+      // context so `window.axe` is the globally-installed object
+      // once the script tag has executed.
+      await page.addScriptTag({ content: axeSource });
 
       const result = (await page.evaluate(async () => {
         // Inside page.evaluate `window` resolves to the page's window.

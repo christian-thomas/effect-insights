@@ -3,6 +3,16 @@ main = "src/scanner-worker.ts"
 compatibility_date = "2026-05-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Text-import rule so `import axeSource from 'axe-core/axe.min.js'`
+# resolves to the source as a string at build time. Without this rule,
+# Wrangler tries to evaluate the file as a JS module and chokes on
+# axe-core's UMD wrapper. fallthrough = false stops esbuild from
+# also bundling the file the normal way after the rule has claimed it.
+[[rules]]
+type = "Text"
+globs = ["**/*.min.js"]
+fallthrough = false
+
 [observability]
 enabled = true
 

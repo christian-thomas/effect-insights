@@ -1,6 +1,15 @@
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { describe, it, expect, vi } from 'vitest';
 
+// Stub axe-core's UMD bundle before the worker imports it. In production
+// the Wrangler [[rules]] Text rule (wrangler.scanner.toml) resolves the
+// .min.js file to a raw string at build time. vitest-pool-workers doesn't
+// apply that rule, so without this mock the IIFE wrapper tries to set up
+// DOM helpers in the workers runtime and explodes (elementsFromPoint).
+vi.mock('axe-core/axe.min.js', () => ({
+  default: '/* mocked axe-core source — replaced by Wrangler Text rule in prod */',
+}));
+
 // Stub @cloudflare/puppeteer before importing the worker. The Browser binding
 // needs a real Chromium fleet to actually launch, so tests fake the launch +
 // page surface and return pre-canned cookies / scripts / iframes / requests.
