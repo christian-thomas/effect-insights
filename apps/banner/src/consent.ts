@@ -16,11 +16,37 @@ export const readStoredConsent = (): StoredConsent | null => {
   }
 };
 
+/**
+ * Trivial apex extraction — last two dot-segments of the hostname. Mirrors
+ * the PHP `Domain::extractApex` exactly so client + server agree. Doesn't
+ * handle the public suffix list (co.uk, gov.au — visitors on those would
+ * incorrectly get a `Domain=co.uk` cookie which the browser silently
+ * refuses to set). When that bites a client we'll bring in tldts.
+ */
+const apexDomainOf = (hostname: string): string => {
+  const parts = hostname.toLowerCase().split('.');
+  if (parts.length <= 2) {
+    return parts.join('.');
+  }
+  return parts.slice(-2).join('.');
+};
+
+const buildCookieDomainAttribute = (config: BannerConfig): string => {
+  if (!config.behaviour.crossSubdomainConsent) return '';
+  if (typeof location === 'undefined') return '';
+  const apex = apexDomainOf(location.hostname);
+  // No Domain= attribute for IP addresses or localhost — browsers reject
+  // those. Cheap detection: an apex with no dot is one of those cases.
+  if (!apex.includes('.')) return '';
+  return `; Domain=.${apex}`;
+};
+
 export const writeStoredConsent = (consent: StoredConsent, config: BannerConfig): void => {
   if (!isBrowser()) return;
   const maxAge = Math.max(1, config.behaviour.rePromptAfterDays) * SECONDS_PER_DAY;
   const value = encodeURIComponent(JSON.stringify(consent));
-  document.cookie = `${COOKIE_NAME}=${value}; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
+  const domainAttr = buildCookieDomainAttribute(config);
+  document.cookie = `${COOKIE_NAME}=${value}; Max-Age=${maxAge}; Path=/; SameSite=Lax${domainAttr}`;
 };
 
 export const generateAnonymousId = (): string => {

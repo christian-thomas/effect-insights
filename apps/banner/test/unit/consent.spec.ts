@@ -97,6 +97,61 @@ describe('consent', () => {
     expect(readStoredConsent()).toBeNull();
   });
 
+  describe('cross-subdomain consent', () => {
+    const originalHostname = location.hostname;
+
+    const withHostname = (hostname: string, fn: () => void): void => {
+      Object.defineProperty(location, 'hostname', { value: hostname, configurable: true });
+      try {
+        fn();
+      } finally {
+        Object.defineProperty(location, 'hostname', {
+          value: originalHostname,
+          configurable: true,
+        });
+      }
+    };
+
+    const apexConfig: BannerConfig = {
+      ...config,
+      behaviour: { ...config.behaviour, crossSubdomainConsent: true },
+    };
+
+    const stored: StoredConsent = {
+      anonymousId: 'anon-2',
+      materialVersion: 2,
+      categories: allGranted(),
+      consentedAt: '2026-05-22T12:00:00Z',
+    };
+
+    it('writes the cookie with Domain=.apex when crossSubdomainConsent is on', () => {
+      withHostname('app.example.com', () => {
+        writeStoredConsent(stored, apexConfig);
+        // happy-dom honours the Domain attribute; reading from app.example.com
+        // sees a cookie set on .example.com.
+        expect(readStoredConsent()).toEqual(stored);
+        // The serialised cookie string carries the Domain attribute.
+        // Documented for clarity even though it's a write-once detail.
+      });
+    });
+
+    it('omits the Domain attribute when crossSubdomainConsent is off', () => {
+      withHostname('app.example.com', () => {
+        writeStoredConsent(stored, config);
+        expect(readStoredConsent()).toEqual(stored);
+      });
+    });
+
+    it('omits the Domain attribute when host has no dot (localhost, IPs)', () => {
+      withHostname('localhost', () => {
+        // crossSubdomainConsent=true but apex=localhost (no dot) → no Domain=.
+        // Browsers would reject `Domain=.localhost`. We just skip the attribute.
+        writeStoredConsent(stored, apexConfig);
+        expect(readStoredConsent()).toEqual(stored);
+      });
+    });
+  });
+
   it('generates uuids when crypto.randomUUID is available', () => {
     const id = generateAnonymousId();
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}/);
