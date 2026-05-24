@@ -79,6 +79,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/scans/{scan}', Api\Scans\ShowScan::class);
         Route::post('/domains/{domain}/scans', Api\Scans\TriggerScan::class);
 
+        // Accessibility scans — sibling of the cookie scanner. Same
+        // pagination + `?domain_id=` filter shape so the admin reads
+        // the same way as /scans.
+        Route::get('/accessibility-scans', Api\AccessibilityScans\ListAccessibilityScans::class);
+        Route::get('/accessibility-scans/{accessibilityScan}', Api\AccessibilityScans\ShowAccessibilityScan::class);
+        Route::post('/domains/{domain}/accessibility-scans', Api\AccessibilityScans\TriggerAccessibilityScan::class);
+
         // Manual review queue: cookies the scanner saw but the resolver
         // couldn't categorise, grouped by name. The /cookies admin page
         // surfaces this as the "Review queue" tab.

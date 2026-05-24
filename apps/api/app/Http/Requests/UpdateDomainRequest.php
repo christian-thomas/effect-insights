@@ -42,6 +42,11 @@ class UpdateDomainRequest extends FormRequest
                 ScanCadence::Monthly,
                 ScanCadence::Never,
             ])],
+            'a11y_scan_cadence' => ['sometimes', Rule::in([
+                ScanCadence::Weekly,
+                ScanCadence::Monthly,
+                ScanCadence::Never,
+            ])],
             'settings' => ['sometimes', 'nullable', 'array'],
         ];
     }
