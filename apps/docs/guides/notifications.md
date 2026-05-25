@@ -99,9 +99,35 @@ read (the splitter in `Organisation::notificationEmails()`). Send
 yourself a test alert via `php artisan accessibility:dispatch-scheduled`
 on a domain with known violations to confirm delivery.
 
-Mail driver configuration (SES, Mailtrap for dev, etc.) lives in
-`apps/api/config/mail.php` and `apps/api/.env`. Effect Insight doesn't
-ship a mail-driver bias — pick whatever fits your hosting.
+### Mail driver
+
+Outbound email goes through Laravel 13's native **Cloudflare** mail
+transport — the same provider that backs every other edge of the
+platform, so there's one set of API tokens to manage rather than
+mixing in SES or Mailgun.
+
+`apps/api/config/mail.php` declares the `cloudflare` mailer
+(transport: `cloudflare`); `apps/api/config/services.php` provides
+`account_id` + `key`; the env vars are:
+
+```bash
+MAIL_MAILER=cloudflare
+CF_ACCOUNT_ID=...                 # same as the existing KV / D1 work
+CLOUDFLARE_MAIL_API_KEY=...       # dedicated token scoped to Email Routing Send
+```
+
+Use a **dedicated** API token scoped to Email Routing Send rather
+than re-using `CF_API_TOKEN` (which has KV / D1 / Workers scopes).
+Principle of least privilege — if the mail token leaks, an attacker
+can send email from your domain but can't tamper with banner configs
+or the consent log.
+
+`CLOUDFLARE_MAIL_API_KEY` falls back to `CF_API_TOKEN` if unset, so a
+single combined token still works for simpler setups.
+
+For local development keep `MAIL_MAILER=log` — every outbound message
+just lands in `storage/logs/laravel.log` with full headers and body,
+no real send.
 
 ## Configuration
 

@@ -65,6 +65,15 @@ return [
             'transport' => 'resend',
         ],
 
+        // Laravel 13's native Cloudflare mail transport. Reads
+        // services.cloudflare.account_id + services.cloudflare.key
+        // and posts the outbound message via the Cloudflare API.
+        // Default driver in production; the `log` driver is the
+        // fallback for local dev where no real send is wanted.
+        'cloudflare' => [
+            'transport' => 'cloudflare',
+        ],
+
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),

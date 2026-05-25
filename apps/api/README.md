@@ -122,8 +122,10 @@ Default credentials (from `DatabaseSeeder`):
 - **MySQL 9** (Herd Services) for local dev; **SQLite in-memory** for `php artisan test` (override in `phpunit.xml`)
 - **Redis** for queues + cache
 - **Laravel Horizon** for queue dashboards
-- **Sanctum** for SPA auth
+- **Sanctum** for SPA auth (email/password + passkeys)
+- **`spatie/laravel-passkeys`** for WebAuthn / FIDO2 credentials
 - **spatie/laravel-permission** for per-organisation roles
+- **Cloudflare mail transport** (Laravel 13 native `cloudflare` driver) for outbound notifications
 - **`laravel/slack-notification-channel`** for unknown-cookie + scan-failure alerts
 - **`barryvdh/laravel-dompdf`** for consent-receipt PDF rendering
 

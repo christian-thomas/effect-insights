@@ -44,6 +44,13 @@ return [
         'd1_database_id' => env('CF_D1_DATABASE_ID'),
         // Optional override for tests / local — defaults to Cloudflare's real API.
         'api_base' => env('CF_API_BASE', 'https://api.cloudflare.com/client/v4'),
+        // API key for the Cloudflare email-sending transport (Laravel 13's
+        // built-in `cloudflare` mailer reads `services.cloudflare.key`).
+        // Use a dedicated token scoped to Email Routing Send rather than
+        // re-using CF_API_TOKEN — principle of least privilege.
+        // Falls back to CF_API_TOKEN if CLOUDFLARE_MAIL_API_KEY is unset
+        // so a single combined token still works for simpler setups.
+        'key' => env('CLOUDFLARE_MAIL_API_KEY', env('CF_API_TOKEN')),
     ],
 
     'consent_ingest' => [
