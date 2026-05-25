@@ -2,11 +2,11 @@
 
 Three Cloudflare Workers behind `assets.effectinsight.com` (and `scanner.effectinsight.com` for the scanner):
 
-| Worker               | Path(s)                                                    | Local port | Backed by                          |
-| -------------------- | ---------------------------------------------------------- | ---------- | ---------------------------------- |
-| `effectinsight-config`  | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | 8787       | KV (configs), R2 (bundles)         |
+| Worker                  | Path(s)                                                    | Local port | Backed by                                          |
+| ----------------------- | ---------------------------------------------------------- | ---------- | -------------------------------------------------- |
+| `effectinsight-config`  | `/config/:domainPublicKey`, `/loader.js`, `/cmp.[hash].js` | 8787       | KV (configs), R2 (bundles)                         |
 | `effectinsight-consent` | `/consent` (POST), `/rum` (POST)                           | 8788       | D1 (hot log) + Laravel mirror, native rate limiter |
-| `effectinsight-scanner` | `/scan` (POST)                                             | 8789       | Browser Rendering (paid plan only) |
+| `effectinsight-scanner` | `/scan` (POST)                                             | 8789       | Browser Rendering (paid plan only)                 |
 
 ## How the workers connect
 
@@ -90,11 +90,11 @@ wrangler secret put SCANNER_SECRET            --config wrangler.scanner.toml
 Generate matching values with `openssl rand -hex 32` and mirror them into
 the Laravel side (`apps/api/.env`):
 
-| Worker secret                | Mirrors Laravel env                          |
-| ---------------------------- | -------------------------------------------- |
-| `BANNER_CONFIG_SIGNING_KEY`  | `BANNER_CONFIG_SIGNING_KEY` (same name)      |
-| `LARAVEL_INGEST_SECRET`      | `CONSENT_INGEST_SECRET`                      |
-| `SCANNER_SECRET`             | `SCANNER_WORKER_SECRET`                      |
+| Worker secret               | Mirrors Laravel env                     |
+| --------------------------- | --------------------------------------- |
+| `BANNER_CONFIG_SIGNING_KEY` | `BANNER_CONFIG_SIGNING_KEY` (same name) |
+| `LARAVEL_INGEST_SECRET`     | `CONSENT_INGEST_SECRET`                 |
+| `SCANNER_SECRET`            | `SCANNER_WORKER_SECRET`                 |
 
 Rotating any of these is a two-step deploy — see `cmp-handoff.md` for
 the exact ordering. The cheaper option for the signing key is a brief

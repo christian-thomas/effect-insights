@@ -270,11 +270,12 @@ const runAxeScans = async (
       for (const violation of result.violations) {
         const nodes: AccessibilityScannerResultInput['findings'][number]['nodes'] =
           violation.nodes.map((node) => {
-            const result: AccessibilityScannerResultInput['findings'][number]['nodes'][number] = {};
-            if (node.target !== undefined) result.target = [...node.target];
-            if (node.html !== undefined) result.html = node.html;
-            if (node.failureSummary !== undefined) result.failureSummary = node.failureSummary;
-            return result;
+            const finding: AccessibilityScannerResultInput['findings'][number]['nodes'][number] =
+              {};
+            if (node.target !== undefined) finding.target = [...node.target];
+            if (node.html !== undefined) finding.html = node.html;
+            if (node.failureSummary !== undefined) finding.failureSummary = node.failureSummary;
+            return finding;
           });
 
         findings.push({

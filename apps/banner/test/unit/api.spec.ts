@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  installPublicApi,
-  type ConsentChangeEvent,
-  type CmpApi,
-} from '../../src/api';
+import { installPublicApi, type ConsentChangeEvent, type CmpApi } from '../../src/api';
 import type { BannerConfig, ConsentCategories, StoredConsent } from '../../src/types';
 
 const config: BannerConfig = {

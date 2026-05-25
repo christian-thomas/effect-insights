@@ -84,17 +84,17 @@ non-JS-API integrations (Tag Manager–style DOM listeners).
 
 ## Scripts
 
-| Command                | Notes                                                                |
-| ---------------------- | -------------------------------------------------------------------- |
-| `bun run dev`          | Boot the dev stack — Vite watch + fixture host on :4173 in parallel. |
-| `bun run build`        | Production build to `dist/`.                                         |
-| `bun run preview`      | Serve `dist/` on :4173 for manual smoke tests.                       |
-| `bun run serve:local`  | Fixture host (`test/e2e/fixtures/*.html`) on :4173.                  |
-| `bun run typecheck`    | `tsc --noEmit`.                                                      |
-| `bun run check`        | format:check + lint + typecheck.                                     |
-| `bun run test`         | Vitest unit tests under `test/unit/`.                                |
-| `bun run test:e2e`     | Playwright (Chromium + axe-core) under `test/e2e/`.                  |
-| `bun run test:e2e:install` | Install Playwright's Chromium binary.                            |
+| Command                    | Notes                                                                |
+| -------------------------- | -------------------------------------------------------------------- |
+| `bun run dev`              | Boot the dev stack — Vite watch + fixture host on :4173 in parallel. |
+| `bun run build`            | Production build to `dist/`.                                         |
+| `bun run preview`          | Serve `dist/` on :4173 for manual smoke tests.                       |
+| `bun run serve:local`      | Fixture host (`test/e2e/fixtures/*.html`) on :4173.                  |
+| `bun run typecheck`        | `tsc --noEmit`.                                                      |
+| `bun run check`            | format:check + lint + typecheck.                                     |
+| `bun run test`             | Vitest unit tests under `test/unit/`.                                |
+| `bun run test:e2e`         | Playwright (Chromium + axe-core) under `test/e2e/`.                  |
+| `bun run test:e2e:install` | Install Playwright's Chromium binary.                                |
 
 The dev script (`scripts/dev-all.ts`) spawns Vite + the fixture host
 under one foreground process with prefixed logs — Turbo picks it up
@@ -114,7 +114,7 @@ via `bun run dev` at the repo root.
   page's nonce when present.
 - **p95 paint < 50ms.** RUM beacon (`rum.ts`) measures from boot to
   banner mount (or short-circuit). Pick up via `wrangler tail
-  effectinsight-consent | grep cmp_rum`.
+effectinsight-consent | grep cmp_rum`.
 - **Bundle budget ≤ 15 KB gzipped.** Anything that pushes us over
   needs to be tree-shakeable or behind a feature flag.
 
