@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
         // Cookie database review queue — global, not tenant-scoped.
         Route::get('/cookie-imports', Api\CookieImports\ListCookieImports::class);
+        Route::post('/cookie-imports', Api\CookieImports\CreateCookieImport::class);
         Route::post('/cookie-imports/{cookieImport}/promote', Api\CookieImports\PromoteCookieImport::class);
         Route::post('/cookie-imports/{cookieImport}/reject', Api\CookieImports\RejectCookieImport::class);
     });

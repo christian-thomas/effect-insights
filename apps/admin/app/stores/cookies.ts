@@ -81,6 +81,22 @@ export const useCookiesStore = defineStore('cookies', {
       await this.listImports();
     },
 
+    async uploadImport(
+      file: File,
+      sourceVersion: string | null,
+    ): Promise<{ created: number; existing: number; skipped: number; sourceVersion: string }> {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (sourceVersion && sourceVersion.trim() !== '') {
+        formData.append('source_version', sourceVersion.trim());
+      }
+      const response = await $api<{
+        data: { created: number; existing: number; skipped: number; sourceVersion: string };
+      }>('/api/cookie-imports', { method: 'POST', body: formData });
+      await this.listImports();
+      return response.data;
+    },
+
     async listOverrides(): Promise<void> {
       this.loading = true;
       this.error = null;

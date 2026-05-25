@@ -86,6 +86,55 @@ const reject = async (importId: string): Promise<void> => {
   toast.add({ title: 'Marked as rejected', color: 'neutral' });
 };
 
+interface ImportFormState {
+  file: File | null;
+  sourceVersion: string;
+}
+
+const importForm = reactive<ImportFormState>({ file: null, sourceVersion: '' });
+const uploading = ref(false);
+const lastResult = ref<
+  | { created: number; existing: number; skipped: number; sourceVersion: string }
+  | null
+>(null);
+
+const onFileChange = (event: Event): void => {
+  const target = event.target as HTMLInputElement;
+  importForm.file = target.files?.[0] ?? null;
+};
+
+const onUpload = async (): Promise<void> => {
+  if (!importForm.file) return;
+  uploading.value = true;
+  try {
+    lastResult.value = await cookiesStore.uploadImport(
+      importForm.file,
+      importForm.sourceVersion,
+    );
+    toast.add({
+      title: 'Cookie list imported',
+      description: `${lastResult.value.created} new row(s) staged for review.`,
+      icon: 'i-lucide-check',
+      color: 'success',
+    });
+    importForm.file = null;
+    importForm.sourceVersion = '';
+  } catch (caught) {
+    const data = (caught as Error & { data?: { message?: string; errors?: Record<string, string[]> } }).data;
+    const message = data?.message
+      ?? Object.values(data?.errors ?? {})[0]?.[0]
+      ?? (caught instanceof Error ? caught.message : 'Please try again');
+    toast.add({
+      title: 'Could not import cookie list',
+      description: message,
+      icon: 'i-lucide-triangle-alert',
+      color: 'error',
+    });
+  } finally {
+    uploading.value = false;
+  }
+};
+
 const domainFqdn = (id: string | null): string => {
   if (id === null) return 'All domains';
   return domainsStore.items.find((domain) => domain.id === id)?.fqdn ?? id.slice(0, 8);
@@ -353,11 +402,83 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
       </UTable>
     </div>
 
-    <div v-else class="mt-6">
-      <p class="text-sm text-gray-500 mb-4">
-        Run <code>php artisan cookies:import --file=path/to/ocd.csv</code> to stage rows. Review
-        each row and promote into the canonical DB or reject.
-      </p>
+    <div v-else class="mt-6 space-y-6">
+      <UCard>
+        <template #header>
+          <div>
+            <h3 class="font-semibold">Import a cookie list</h3>
+            <p class="text-sm text-gray-500 mt-0.5">
+              Upload an
+              <a
+                href="https://github.com/jkwakman/Open-Cookie-Database/blob/master/open-cookie-database.csv"
+                target="_blank"
+                rel="noopener"
+                class="text-primary-500 hover:underline"
+              >Open-Cookie-Database</a>
+              CSV (or any file matching the same column layout) to stage rows for review. Rows are
+              parsed into the queue below — promote each one into the canonical DB or reject it.
+              Re-uploading the same dataset is safe; duplicates count as <em>existing</em> rather
+              than re-staging.
+            </p>
+          </div>
+        </template>
+
+        <UForm :state="importForm" class="space-y-4 max-w-xl" @submit="onUpload">
+          <UFormField
+            label="CSV file"
+            name="file"
+            required
+            help="Required columns: ID, Vendor, Category, Cookie / Data Key name, Domain, Description, Retention period, Wildcard match."
+          >
+            <UInput
+              type="file"
+              accept=".csv,text/csv"
+              :disabled="uploading"
+              @change="onFileChange"
+            />
+          </UFormField>
+          <UFormField
+            label="Source version (optional)"
+            name="source_version"
+            help="A label to distinguish this upload in the review queue (e.g. '2026-05-25', 'ocd-v1.4'). Leave blank to auto-stamp."
+          >
+            <UInput
+              v-model="importForm.sourceVersion"
+              placeholder="e.g. 2026-05-25"
+              :disabled="uploading"
+              class="w-full sm:w-64"
+            />
+          </UFormField>
+          <UAlert
+            v-if="lastResult"
+            color="success"
+            variant="subtle"
+            icon="i-lucide-check"
+            :title="`Imported ${lastResult.sourceVersion}`"
+            :description="`Created ${lastResult.created}, already existed ${lastResult.existing}, skipped ${lastResult.skipped}.`"
+          />
+          <div class="flex items-center gap-3 pt-2">
+            <UButton
+              type="submit"
+              icon="i-lucide-upload"
+              label="Upload + stage"
+              :loading="uploading"
+              :disabled="!importForm.file"
+            />
+            <UButton
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              icon="i-lucide-download"
+              label="Download example.csv"
+              to="/examples/cookie-import-example.csv"
+              target="_blank"
+              external
+            />
+          </div>
+        </UForm>
+      </UCard>
+
       <UTable :data="imports" :columns="importColumns" :loading="loading">
         <template #category-cell="{ row }">
           <UBadge :color="categoryColor[row.original.category] ?? 'neutral'" variant="soft">
