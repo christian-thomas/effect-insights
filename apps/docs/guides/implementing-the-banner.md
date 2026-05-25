@@ -94,7 +94,7 @@ and `onConsentChange()` are the most-used methods.
 
 ## Troubleshooting
 
-- Banner doesn't show on first visit → see [Troubleshooting](./troubleshooting#banner-doesnt-render).
+- Banner doesn't show on first visit → see [Troubleshooting](./troubleshooting/consent#banner-doesnt-render).
 - Visitor clicks accept but tracking scripts don't run → check the
   `data-category` attribute matches what your published banner config offers
   (`necessary` / `preferences` / `statistics` / `marketing`).

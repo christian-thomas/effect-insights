@@ -394,4 +394,4 @@ the rule is:
 3. Use `async` — don't block first paint.
 
 If you've checked all three and still get nowhere, see
-[Troubleshooting → Banner doesn't render](./troubleshooting#banner-doesnt-render).
+[Troubleshooting → Banner doesn't render](./troubleshooting/consent#banner-doesnt-render).

@@ -290,4 +290,4 @@ decision is affected.
 - [Notifications](./notifications) — Slack channel setup.
 - [Triggering scans](./triggering-scans) — cookie scanner's
   equivalent doc (most of the operational shape is the same).
-- [Troubleshooting](./troubleshooting) — common scan failure modes.
+- [Troubleshooting → Accessibility](./troubleshooting/accessibility) — common scan failure modes.

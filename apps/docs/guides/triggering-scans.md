@@ -69,7 +69,7 @@ Cookies are resolved through:
 2. Per-organisation overrides
 3. The canonical cookie database (curated + OpenCookieDatabase imports)
 
-Anything that doesn't match lands in the [review queue](./troubleshooting#unknown-cookies-in-the-review-queue).
+Anything that doesn't match lands in the [review queue](./troubleshooting/consent#unknown-cookies-in-the-review-queue).
 
 ## REST surface
 

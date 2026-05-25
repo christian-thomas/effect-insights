@@ -145,7 +145,7 @@ document.head.appendChild(script);
 
 If a script runs before consent because you forgot to block it, the
 scanner will catch it on the next run and flag the cookies it sets in
-the [review queue](./troubleshooting#unknown-cookies-in-the-review-queue).
+the [review queue](./troubleshooting/consent#unknown-cookies-in-the-review-queue).
 You'll see something like _"`_ga_ABC123` observed on `https://your-site.com/`
 — uncategorised"_ — that's your prompt to go block the underlying script
 in the source.

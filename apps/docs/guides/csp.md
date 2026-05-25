@@ -117,4 +117,4 @@ All three are nonce / origin allow-list issues. Each maps to one of the
 recommendations above.
 
 If you see no CSP errors but the banner still doesn't render, jump to
-[Troubleshooting](./troubleshooting#banner-doesnt-render).
+[Troubleshooting](./troubleshooting/consent#banner-doesnt-render).

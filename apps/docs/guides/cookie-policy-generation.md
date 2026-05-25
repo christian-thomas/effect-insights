@@ -76,7 +76,7 @@ For each cookie observed in the most recent **completed** scan
 4. Cookies the resolver couldn't categorise land in an
    **"Unknown — pending review"** bucket so legal can see them rather
    than have them silently disappear. They also surface in the admin's
-   [review queue](./troubleshooting#unknown-cookies-in-the-review-queue)
+   [review queue](./troubleshooting/consent#unknown-cookies-in-the-review-queue)
    for one-click override.
 
 `script` and `iframe` scan findings are deliberately excluded — the
@@ -140,7 +140,7 @@ Override shape:
 
 `domain_id: null` makes it org-wide; setting it to a domain UUID
 scopes the override to that domain only.
-[CookieCategoryResolver](./troubleshooting#unknown-cookies-in-the-review-queue)
+[CookieCategoryResolver](./troubleshooting/consent#unknown-cookies-in-the-review-queue)
 walks `domain override → org override → canonical DB` in that order
 when classifying.
 

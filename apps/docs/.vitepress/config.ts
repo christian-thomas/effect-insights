@@ -53,7 +53,15 @@ export default defineConfig({
           items: [
             { text: 'Notifications', link: '/guides/notifications' },
             { text: 'Rate limits', link: '/guides/rate-limits' },
-            { text: 'Troubleshooting', link: '/guides/troubleshooting' },
+            {
+              text: 'Troubleshooting',
+              collapsed: true,
+              items: [
+                { text: 'Consent management', link: '/guides/troubleshooting/consent' },
+                { text: 'Accessibility', link: '/guides/troubleshooting/accessibility' },
+                { text: 'Platform', link: '/guides/troubleshooting/platform' },
+              ],
+            },
           ],
         },
         {

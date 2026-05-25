@@ -19,7 +19,7 @@ single Slack message lands in your configured channel:
 
 Clicking the link drops you on the Cookie database admin page with the
 **Review queue** tab pre-selected — see [Troubleshooting →
-Unknown cookies](./troubleshooting#unknown-cookies-in-the-review-queue) for
+Unknown cookies](./troubleshooting/consent#unknown-cookies-in-the-review-queue) for
 how to triage from there.
 
 ## Scan failures

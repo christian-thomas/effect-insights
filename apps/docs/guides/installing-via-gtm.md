@@ -123,7 +123,7 @@ can be overridden in the banner config under **GCM defaults**.
    `analytics_storage` / `ad_storage`.
 
 If signals don't flip, jump to [Troubleshooting →
-Tracking scripts don't run after accept](./troubleshooting#tracking-scripts-dont-run-after-accept).
+Tracking scripts don't run after accept](./troubleshooting/consent#tracking-scripts-dont-run-after-accept).
 
 ## What if I already have a "consent" tag in GTM?
 
