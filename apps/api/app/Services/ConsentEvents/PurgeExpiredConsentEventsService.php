@@ -34,7 +34,7 @@ final readonly class PurgeExpiredConsentEventsService
      */
     public function purge(?CarbonImmutable $now = null): array
     {
-        $now = $now ?? CarbonImmutable::now();
+        $now ??= CarbonImmutable::now();
 
         $results = [];
 

@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace App\Services\Accessibility;
 
+use App\Http\Controllers\Api\AccessibilityScans\ShowAccessibilityScan;
 use App\Models\AccessibilityRuleOverride;
 use App\Models\Domain;
+use App\Services\Notifications\AccessibilityAlertService;
 
 /**
  * Checks whether a given (rule_id, domain) pair is muted by a current
  * override row. Used in two places:
  *
- * - {@see \App\Services\Notifications\AccessibilityAlertService} — to
+ * - {@see AccessibilityAlertService} — to
  *   skip muted findings when computing the alert threshold count.
- * - {@see \App\Http\Controllers\Api\AccessibilityScans\ShowAccessibilityScan}
+ * - {@see ShowAccessibilityScan}
  *   — to mark `muted: true` on each rendered finding so the admin UI
  *   can dim them.
  *
@@ -21,11 +23,8 @@ use App\Models\Domain;
  * {@see self::forOrganisation()} and reuses the result for many
  * lookups — avoids N+1 across a scan's findings.
  */
-final class AccessibilityRuleMuteResolver
+final readonly class AccessibilityRuleMuteResolver
 {
-    /**
-     * @return self
-     */
     public static function forOrganisation(string $organisationId): self
     {
         $overrides = AccessibilityRuleOverride::query()
@@ -49,12 +48,12 @@ final class AccessibilityRuleMuteResolver
     }
 
     /**
-     * @param  array<string, true>  $orgWide                rule_id => true
+     * @param  array<string, true>  $orgWide  rule_id => true
      * @param  array<string, array<string, true>>  $byDomain  domain_id => rule_id => true
      */
     public function __construct(
-        private readonly array $orgWide,
-        private readonly array $byDomain,
+        private array $orgWide,
+        private array $byDomain,
     ) {}
 
     public function isMuted(string $ruleId, ?string $domainId): bool
@@ -63,11 +62,7 @@ final class AccessibilityRuleMuteResolver
             return true;
         }
 
-        if ($domainId !== null && isset($this->byDomain[$domainId][$ruleId])) {
-            return true;
-        }
-
-        return false;
+        return $domainId !== null && isset($this->byDomain[$domainId][$ruleId]);
     }
 
     public function isMutedForDomain(string $ruleId, Domain $domain): bool

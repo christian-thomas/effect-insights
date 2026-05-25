@@ -7,6 +7,7 @@ namespace App\Notifications;
 use App\Models\Domain;
 use App\Models\Scan;
 use App\Notifications\Concerns\RoutesViaConfiguredChannels;
+use App\Services\Notifications\ScanFailureAlertService;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\ContextBlock;
@@ -15,7 +16,7 @@ use Illuminate\Notifications\Slack\SlackMessage;
 
 /**
  * Fires when a scan transitions to ScanStatus::Failed. Routed through
- * {@see \App\Services\Notifications\ScanFailureAlertService}, posts to
+ * {@see ScanFailureAlertService}, posts to
  * services.slack.notifications.channel. Mirrors the {@see UnknownCookieFound}
  * shape so on-call has a consistent reading experience between alert types.
  */
@@ -39,7 +40,7 @@ final class ScanFailed extends Notification
             ->first();
         $orgName = (string) ($organisation?->getAttribute('name') ?? 'unknown org');
         $fqdn = (string) $this->domain->getAttribute('fqdn');
-        $trigger = $this->scan->getAttribute('trigger')?->value ?? 'unknown';
+        $trigger = $this->scan->getAttribute('trigger')->value;
 
         return (new SlackMessage)
             ->text(sprintf('Scan failed on %s — %s', $fqdn, $this->errorMessage))

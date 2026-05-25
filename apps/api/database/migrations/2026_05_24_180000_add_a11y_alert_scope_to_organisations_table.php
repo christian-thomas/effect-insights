@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Services\Notifications\AccessibilityAlertService;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +19,7 @@ use Illuminate\Support\Facades\Schema;
  *                   legally-required findings.
  *
  * Resolution at alert time:
- *   {@see \App\Services\Notifications\AccessibilityAlertService::effectiveByImpact()}
+ *   {@see AccessibilityAlertService::effectiveByImpact()}
  *   reads this column and filters before counting.
  */
 return new class extends Migration

@@ -32,7 +32,7 @@ class UserInvited extends Notification
             $this->invitation->getAttribute('token'),
         );
 
-        $invitedBy = optional($this->invitation->invitedBy)->getAttribute('name') ?? 'A superuser';
+        $invitedBy = $this->invitation->invitedBy?->getAttribute('name') ?? 'A superuser';
 
         return (new MailMessage)
             ->subject(sprintf("You're invited to %s on Effect Insight", $organisationName))

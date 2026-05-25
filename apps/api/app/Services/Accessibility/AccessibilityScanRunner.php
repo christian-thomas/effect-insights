@@ -13,12 +13,13 @@ use App\Models\AccessibilityScan;
 use App\Models\Domain;
 use App\Models\User;
 use App\Services\Notifications\AccessibilityAlertService;
+use App\Services\Scanner\ScanRunner;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
  * Orchestrates a single accessibility scan. Mirrors the dispatch /
- * execute / run shape of {@see \App\Services\Scanner\ScanRunner} so
+ * execute / run shape of {@see ScanRunner} so
  * the two scanners look the same to anyone debugging either pipeline.
  *
  * The three entry points:
@@ -163,12 +164,12 @@ final readonly class AccessibilityScanRunner
         foreach ($result->findings as $finding) {
             AccessibilityFinding::create([
                 'accessibility_scan_id' => $scan->getKey(),
-                'rule_id' => (string) ($finding['rule_id'] ?? ''),
-                'impact' => $this->coerceImpact($finding['impact'] ?? null),
-                'description' => (string) ($finding['description'] ?? ''),
-                'help_text' => (string) ($finding['help_text'] ?? ''),
-                'help_url' => (string) ($finding['help_url'] ?? ''),
-                'url' => (string) ($finding['url'] ?? ''),
+                'rule_id' => (string) $finding['rule_id'],
+                'impact' => $this->coerceImpact($finding['impact']),
+                'description' => (string) $finding['description'],
+                'help_text' => (string) $finding['help_text'],
+                'help_url' => (string) $finding['help_url'],
+                'url' => (string) $finding['url'],
                 'tags' => is_array($finding['tags'] ?? null) ? array_values($finding['tags']) : [],
                 'nodes' => is_array($finding['nodes'] ?? null) ? array_values($finding['nodes']) : [],
             ]);

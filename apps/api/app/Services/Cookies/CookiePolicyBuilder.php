@@ -54,7 +54,7 @@ final class CookiePolicyBuilder
         $latestScan = Scan::query()
             ->where('domain_id', $domain->getKey())
             ->where('status', ScanStatus::Completed)
-            ->orderByDesc('finished_at')
+            ->latest('finished_at')
             ->first();
 
         $categoriesPayload = [];
@@ -74,7 +74,10 @@ final class CookiePolicyBuilder
 
             foreach ($findings as $finding) {
                 $name = (string) $finding->getAttribute('name');
-                if ($name === '' || isset($seen[$name])) {
+                if ($name === '') {
+                    continue;
+                }
+                if (isset($seen[$name])) {
                     continue;
                 }
                 $seen[$name] = true;

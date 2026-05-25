@@ -50,7 +50,7 @@ class StorePasskey extends Controller
                 authenticatable: $user,
                 passkeyJson: $validated['passkey'],
                 passkeyOptionsJson: $passkeyOptionsJson,
-                hostName: (string) $request->getHost(),
+                hostName: $request->getHost(),
                 additionalProperties: ['name' => $validated['name']],
             );
         } catch (InvalidPasskey|InvalidPasskeyOptions $exception) {

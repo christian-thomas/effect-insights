@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Cookies\CookieImportPromoter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Throwable;
 
 /**
@@ -31,26 +32,29 @@ class PromoteAllCookieImports extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $pending = CookieImport::query()
-            ->where('status', CookieImportStatus::Pending)
-            ->orderBy('created_at')
-            ->get();
-
         $promoted = 0;
         $failed = 0;
         $firstError = null;
 
-        foreach ($pending as $import) {
-            try {
-                $promoter->promote($import, $user);
-                $promoted++;
-            } catch (Throwable $exception) {
-                $failed++;
-                if ($firstError === null) {
-                    $firstError = $exception->getMessage();
+        // Process in chunks of 200 to avoid hydrating thousands of models
+        // at once. The caller may submit large OCD releases (2 000+ rows)
+        // so keeping a bounded memory profile matters more than batching
+        // into a single DB transaction.
+        CookieImport::query()
+            ->where('status', CookieImportStatus::Pending)->oldest()
+            ->chunk(200, function (Collection $imports) use ($promoter, $user, &$promoted, &$failed, &$firstError): void {
+                foreach ($imports as $import) {
+                    try {
+                        $promoter->promote($import, $user);
+                        $promoted++;
+                    } catch (Throwable $exception) {
+                        $failed++;
+                        if ($firstError === null) {
+                            $firstError = $exception->getMessage();
+                        }
+                    }
                 }
-            }
-        }
+            });
 
         return response()->json([
             'data' => [

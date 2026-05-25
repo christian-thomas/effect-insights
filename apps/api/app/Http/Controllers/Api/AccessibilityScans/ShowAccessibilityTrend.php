@@ -35,7 +35,7 @@ class ShowAccessibilityTrend extends Controller
             ->where('domain_id', $domain->getKey())
             ->where('status', ScanStatus::Completed)
             ->where('finished_at', '>=', $since)
-            ->orderBy('finished_at')
+            ->oldest('finished_at')
             ->get(['id', 'finished_at', 'violations_total', 'violations_by_impact']);
 
         return response()->json([

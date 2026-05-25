@@ -6,10 +6,13 @@ namespace App\Http\Controllers\Api\AccessibilityScans;
 
 use App\Enums\A11yImpact;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AccessibilityFindingResource;
 use App\Http\Resources\AccessibilityScanResource;
 use App\Models\AccessibilityFinding;
+use App\Models\AccessibilityRuleOverride;
 use App\Models\AccessibilityScan;
 use App\Services\Accessibility\AccessibilityRuleMuteResolver;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -18,7 +21,7 @@ use Illuminate\Http\JsonResponse;
  * never has to re-sort client-side.
  *
  * Each finding carries a computed `muted` flag derived at request time
- * from the org's {@see \App\Models\AccessibilityRuleOverride} rows.
+ * from the org's {@see AccessibilityRuleOverride} rows.
  * Mute resolution is dynamic — operators can mute/unmute without
  * re-running the scan, and the next list/show reflects it.
  */
@@ -38,7 +41,7 @@ class ShowAccessibilityScan extends Controller
             A11yImpact::Minor->value,
         );
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, AccessibilityFinding> $findings */
+        /** @var Collection<int, AccessibilityFinding> $findings */
         $findings = $accessibilityScan->findings()
             ->orderByRaw($impactOrder)
             ->orderBy('rule_id')
@@ -61,7 +64,7 @@ class ShowAccessibilityScan extends Controller
 
         return response()->json([
             'scan' => AccessibilityScanResource::make($accessibilityScan),
-            'findings' => \App\Http\Resources\AccessibilityFindingResource::collection($findings),
+            'findings' => AccessibilityFindingResource::collection($findings),
         ]);
     }
 }

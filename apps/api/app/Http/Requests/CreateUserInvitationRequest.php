@@ -9,9 +9,10 @@ use App\Models\Organisation;
 use App\Models\User;
 use App\Models\UserInvitation;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 
 class CreateUserInvitationRequest extends FormRequest
 {
@@ -41,7 +42,7 @@ class CreateUserInvitationRequest extends FormRequest
             // a member of this org — the invite would be a no-op.
             $existing = User::query()
                 ->where('email', $email)
-                ->whereHas('organisations', fn ($query) => $query->whereKey($organisation->getKey()))
+                ->whereHas('organisations', fn (Builder $query): Builder => $query->whereKey($organisation->getKey()))
                 ->exists();
 
             if ($existing) {

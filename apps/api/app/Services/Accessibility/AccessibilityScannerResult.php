@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\Accessibility;
 
+use App\Services\Scanner\ScannerResult;
+
 /**
  * Normalised shape returned by every {@see AccessibilityScannerClientContract}.
- * Mirrors the cookie scanner's {@see \App\Services\Scanner\ScannerResult}
+ * Mirrors the cookie scanner's {@see ScannerResult}
  * pattern but with axe-core's violation shape instead of cookie metadata.
  *
  * @phpstan-type ObservedFinding array{

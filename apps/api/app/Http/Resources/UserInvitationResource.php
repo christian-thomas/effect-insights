@@ -23,9 +23,9 @@ class UserInvitationResource extends JsonResource
             'id' => $this->getAttribute('id'),
             'email' => $this->getAttribute('email'),
             'role' => $this->getAttribute('role')->value,
-            'expiresAt' => optional($this->getAttribute('expires_at'))->toIso8601String(),
-            'acceptedAt' => optional($this->getAttribute('accepted_at'))?->toIso8601String(),
-            'createdAt' => optional($this->getAttribute('created_at'))?->toIso8601String(),
+            'expiresAt' => $this->getAttribute('expires_at')?->toIso8601String(),
+            'acceptedAt' => $this->getAttribute('accepted_at')?->toIso8601String(),
+            'createdAt' => $this->getAttribute('created_at')?->toIso8601String(),
             'invitedBy' => $this->whenLoaded('invitedBy', fn (): array => [
                 'id' => $this->invitedBy->getKey(),
                 'name' => $this->invitedBy->getAttribute('name'),

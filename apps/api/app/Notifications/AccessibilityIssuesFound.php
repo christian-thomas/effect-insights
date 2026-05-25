@@ -7,6 +7,7 @@ namespace App\Notifications;
 use App\Models\AccessibilityScan;
 use App\Models\Domain;
 use App\Notifications\Concerns\RoutesViaConfiguredChannels;
+use App\Services\Notifications\AccessibilityAlertService;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\ContextBlock;
@@ -16,7 +17,7 @@ use Illuminate\Notifications\Slack\SlackMessage;
 /**
  * Fires when an accessibility scan completes with violations at or
  * above the configured threshold (default: Serious). Routed through
- * {@see \App\Services\Notifications\AccessibilityAlertService}.
+ * {@see AccessibilityAlertService}.
  *
  * Slack message shape mirrors {@see UnknownCookieFound} so on-call
  * sees a consistent reading experience between the three alert types

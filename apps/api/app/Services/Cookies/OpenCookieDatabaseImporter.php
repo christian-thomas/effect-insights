@@ -88,7 +88,6 @@ final class OpenCookieDatabaseImporter
                 static fn (string $key): string => match ($key) {
                     'name' => 'Cookie / Data Key name',
                     'category' => 'Category',
-                    default => $key,
                 },
                 $missing,
             ));

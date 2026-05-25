@@ -23,7 +23,7 @@ final class InvalidCookieImportFormat extends RuntimeException
     public static function missingColumns(array $missing): self
     {
         return new self(sprintf(
-            "Your CSV is missing the required column(s): %s. The importer expects the Open-Cookie-Database column layout — download the example CSV from the import dialog for a working template.",
+            'Your CSV is missing the required column(s): %s. The importer expects the Open-Cookie-Database column layout — download the example CSV from the import dialog for a working template.',
             implode(', ', $missing),
         ));
     }

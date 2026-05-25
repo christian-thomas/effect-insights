@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Spatie\LaravelPasskeys\Actions\FindPasskeyToAuthenticateAction;
 use Spatie\LaravelPasskeys\Events\PasskeyUsedToAuthenticateEvent;
 use Spatie\LaravelPasskeys\Http\Requests\AuthenticateUsingPasskeysRequest;
+use Spatie\LaravelPasskeys\Models\Passkey;
 
 /**
  * Step 2 of WebAuthn authentication. Receives the
@@ -54,7 +55,7 @@ class AuthenticateWithPasskey extends Controller
 
         $passkey = $find->execute($validated['passkey'], $passkeyOptionsJson);
 
-        if ($passkey === null) {
+        if (! $passkey instanceof Passkey) {
             throw new AuthenticationException('Invalid passkey.');
         }
 

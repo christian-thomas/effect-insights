@@ -39,7 +39,7 @@ class Organisation extends Model
         }
 
         return array_values(array_filter(
-            array_map('trim', explode(',', $raw)),
+            array_map(trim(...), explode(',', $raw)),
             static fn (string $email): bool => $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false,
         ));
     }

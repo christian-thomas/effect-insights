@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Api\OrganisationMembers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Organisation;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Http\JsonResponse;
 
 class ListMembers extends Controller
@@ -15,13 +17,18 @@ class ListMembers extends Controller
         $members = $organisation->users()
             ->orderBy('name')
             ->get()
-            ->map(fn ($user): array => [
-                'id' => $user->getKey(),
-                'name' => $user->getAttribute('name'),
-                'email' => $user->getAttribute('email'),
-                'role' => (string) $user->pivot->getAttribute('role'),
-                'joinedAt' => optional($user->pivot->getAttribute('created_at'))?->toIso8601String(),
-            ])
+            ->map(function (User $user): array {
+                /** @var Pivot $pivot */
+                $pivot = $user->getRelation('pivot');
+
+                return [
+                    'id' => $user->getKey(),
+                    'name' => $user->getAttribute('name'),
+                    'email' => $user->getAttribute('email'),
+                    'role' => (string) $pivot->getAttribute('role'),
+                    'joinedAt' => $pivot->getAttribute('created_at')?->toIso8601String(),
+                ];
+            })
             ->all();
 
         return response()->json(['data' => $members]);

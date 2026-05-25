@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\ConsentEvents;
 
+use App\Http\Concerns\ClampsPerPage;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ConsentEventResource;
 use App\Models\ConsentEvent;
@@ -17,9 +18,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class ListConsentEvents extends Controller
 {
-    private const int MAX_PER_PAGE = 100;
-
-    private const int DEFAULT_PER_PAGE = 25;
+    use ClampsPerPage;
 
     public function __invoke(Request $request): AnonymousResourceCollection
     {
@@ -45,10 +44,7 @@ class ListConsentEvents extends Controller
             $query->where('occurred_at', '<=', $request->date('to'));
         }
 
-        $perPage = min(
-            self::MAX_PER_PAGE,
-            max(1, (int) $request->input('per_page', self::DEFAULT_PER_PAGE)),
-        );
+        $perPage = $this->resolvePerPage($request, default: 25);
 
         return ConsentEventResource::collection($query->paginate($perPage));
     }

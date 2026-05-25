@@ -6,7 +6,9 @@ namespace Tests\Feature;
 
 use App\Enums\ScanTrigger;
 use App\Models\Domain;
+use App\Models\Scan;
 use App\Notifications\ScanFailed;
+use App\Services\Notifications\ScanFailureAlertService;
 use App\Services\Scanner\ScannerClientContract;
 use App\Services\Scanner\ScannerResult;
 use App\Services\Scanner\ScanRunner;
@@ -36,9 +38,9 @@ class ScanFailureAlertTest extends TenantTestCase
 
     private function bindFailingScanner(string $message = 'Browser binding timeout'): void
     {
-        $failing = new class($message) implements ScannerClientContract
+        $failing = new readonly class($message) implements ScannerClientContract
         {
-            public function __construct(private readonly string $message) {}
+            public function __construct(private string $message) {}
 
             #[\Override]
             public function scan(Domain $domain, array $urls): ScannerResult
@@ -104,15 +106,13 @@ class ScanFailureAlertTest extends TenantTestCase
         // Bind a broken alerter that always throws. The original scan failure
         // path must still leave the row as failed with the original error.
         $this->bindFailingScanner('Real scanner exception');
-        $this->app->bind(\App\Services\Notifications\ScanFailureAlertService::class, function (): \App\Services\Notifications\ScanFailureAlertService {
-            return new readonly class extends \App\Services\Notifications\ScanFailureAlertService
+        $this->app->bind(ScanFailureAlertService::class, fn (): ScanFailureAlertService => new readonly class extends ScanFailureAlertService
+        {
+            #[\Override]
+            public function alert(Scan $scan, Domain $domain, array $error): void
             {
-                #[\Override]
-                public function alert(\App\Models\Scan $scan, Domain $domain, array $error): void
-                {
-                    throw new RuntimeException('alerter blew up');
-                }
-            };
+                throw new RuntimeException('alerter blew up');
+            }
         });
 
         $scan = $this->app->make(ScanRunner::class)

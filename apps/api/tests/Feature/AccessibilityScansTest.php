@@ -6,7 +6,10 @@ namespace Tests\Feature;
 
 use App\Enums\ScanCadence;
 use App\Enums\ScanStatus;
+use App\Enums\ScanTrigger;
+use App\Models\AccessibilityScan;
 use App\Models\Domain;
+use App\Services\Accessibility\AccessibilityScannerClientContract;
 use App\Services\Accessibility\AccessibilityScannerResult;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
@@ -132,10 +135,10 @@ class AccessibilityScansTest extends TenantTestCase
         // Seed the foreign-org scan directly rather than via the API so
         // we don't have to re-auth mid-test.
         $foreignDomain = Domain::factory()->for($this->otherOrg)->create();
-        $foreignScan = \App\Models\AccessibilityScan::create([
+        $foreignScan = AccessibilityScan::create([
             'domain_id' => $foreignDomain->getKey(),
             'status' => ScanStatus::Completed,
-            'trigger' => \App\Enums\ScanTrigger::Manual,
+            'trigger' => ScanTrigger::Manual,
         ]);
 
         $this->actingAsMember($this->user, $this->org)
@@ -164,16 +167,16 @@ class AccessibilityScansTest extends TenantTestCase
     {
         // The default Array scanner returns an empty result. To exercise
         // the failure branch we swap in a stub that throws.
-        $failing = new class implements \App\Services\Accessibility\AccessibilityScannerClientContract
+        $failing = new class implements AccessibilityScannerClientContract
         {
             #[\Override]
-            public function scan(\App\Models\Domain $domain, array $urls): AccessibilityScannerResult
+            public function scan(Domain $domain, array $urls): AccessibilityScannerResult
             {
                 throw new \RuntimeException('Browser binding timeout');
             }
         };
         $this->app->instance(
-            \App\Services\Accessibility\AccessibilityScannerClientContract::class,
+            AccessibilityScannerClientContract::class,
             $failing,
         );
 

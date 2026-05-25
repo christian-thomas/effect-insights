@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\CookieCategory;
+use App\Enums\CookieSource;
 use App\Enums\ScanTrigger;
+use App\Models\Cookie;
 use App\Models\Domain;
 use App\Notifications\AccessibilityIssuesFound;
 use App\Notifications\AccessibilityScanFailed;
@@ -13,6 +16,7 @@ use App\Notifications\UnknownCookieFound;
 use App\Services\Accessibility\AccessibilityScannerClientContract;
 use App\Services\Accessibility\AccessibilityScannerResult;
 use App\Services\Accessibility\AccessibilityScanRunner;
+use App\Services\Scanner\ScannerClientContract;
 use App\Services\Scanner\ScannerResult;
 use App\Services\Scanner\ScanRunner;
 use Illuminate\Notifications\AnonymousNotifiable;
@@ -56,12 +60,12 @@ class EmailNotificationChannelTest extends TenantTestCase
     {
         // Seed a canonical cookie so the resolver doesn't match the
         // mystery one.
-        \App\Models\Cookie::create([
+        Cookie::create([
             'name_pattern' => '_known_*',
             'vendor' => 'Known',
-            'category' => \App\Enums\CookieCategory::Statistics,
+            'category' => CookieCategory::Statistics,
             'purpose' => 'p',
-            'source' => \App\Enums\CookieSource::Manual,
+            'source' => CookieSource::Manual,
         ]);
 
         $this->scanner->setNext(new ScannerResult(
@@ -79,9 +83,7 @@ class EmailNotificationChannelTest extends TenantTestCase
         // Slack: routed by channel name
         Notification::assertSentOnDemand(
             UnknownCookieFound::class,
-            function (UnknownCookieFound $notification, array $channels, AnonymousNotifiable $notifiable): bool {
-                return ($notifiable->routes['slack'] ?? null) === '#cmp-ops';
-            },
+            fn (UnknownCookieFound $notification, array $channels, AnonymousNotifiable $notifiable): bool => ($notifiable->routes['slack'] ?? null) === '#cmp-ops',
         );
 
         // Mail: routed to the org's two recipients as an array
@@ -89,6 +91,7 @@ class EmailNotificationChannelTest extends TenantTestCase
             UnknownCookieFound::class,
             function (UnknownCookieFound $notification, array $channels, AnonymousNotifiable $notifiable): bool {
                 $mailRoute = $notifiable->routes['mail'] ?? null;
+
                 return is_array($mailRoute) && in_array('alerts@example.test', $mailRoute, true);
             },
         );
@@ -97,7 +100,7 @@ class EmailNotificationChannelTest extends TenantTestCase
     #[Test]
     public function scan_failure_alert_fires_to_both_channels(): void
     {
-        $failing = new class implements \App\Services\Scanner\ScannerClientContract
+        $failing = new class implements ScannerClientContract
         {
             #[\Override]
             public function scan(Domain $domain, array $urls): ScannerResult
@@ -105,24 +108,19 @@ class EmailNotificationChannelTest extends TenantTestCase
                 throw new RuntimeException('boom');
             }
         };
-        $this->app->instance(\App\Services\Scanner\ScannerClientContract::class, $failing);
+        $this->app->instance(ScannerClientContract::class, $failing);
 
         $this->app->make(ScanRunner::class)
             ->run($this->domain, ['https://site.example.test/'], ScanTrigger::Manual);
 
-        Notification::assertSentOnDemand(ScanFailed::class, function (
-            ScanFailed $notification,
-            array $channels,
-            AnonymousNotifiable $notifiable,
-        ): bool {
-            return ($notifiable->routes['slack'] ?? null) === '#cmp-ops';
-        });
+        Notification::assertSentOnDemand(ScanFailed::class, fn (ScanFailed $notification, array $channels, AnonymousNotifiable $notifiable): bool => ($notifiable->routes['slack'] ?? null) === '#cmp-ops');
         Notification::assertSentOnDemand(ScanFailed::class, function (
             ScanFailed $notification,
             array $channels,
             AnonymousNotifiable $notifiable,
         ): bool {
             $mailRoute = $notifiable->routes['mail'] ?? null;
+
             return is_array($mailRoute) && in_array('ops@example.test', $mailRoute, true);
         });
     }
@@ -146,19 +144,14 @@ class EmailNotificationChannelTest extends TenantTestCase
         $this->app->make(AccessibilityScanRunner::class)
             ->run($this->domain, ['https://site.example.test/'], ScanTrigger::Manual);
 
-        Notification::assertSentOnDemand(AccessibilityIssuesFound::class, function (
-            AccessibilityIssuesFound $notification,
-            array $channels,
-            AnonymousNotifiable $notifiable,
-        ): bool {
-            return ($notifiable->routes['slack'] ?? null) === '#cmp-ops';
-        });
+        Notification::assertSentOnDemand(AccessibilityIssuesFound::class, fn (AccessibilityIssuesFound $notification, array $channels, AnonymousNotifiable $notifiable): bool => ($notifiable->routes['slack'] ?? null) === '#cmp-ops');
         Notification::assertSentOnDemand(AccessibilityIssuesFound::class, function (
             AccessibilityIssuesFound $notification,
             array $channels,
             AnonymousNotifiable $notifiable,
         ): bool {
             $mailRoute = $notifiable->routes['mail'] ?? null;
+
             return is_array($mailRoute) && count($mailRoute) === 2;
         });
     }
@@ -185,6 +178,7 @@ class EmailNotificationChannelTest extends TenantTestCase
             AnonymousNotifiable $notifiable,
         ): bool {
             $mailRoute = $notifiable->routes['mail'] ?? null;
+
             return is_array($mailRoute) && in_array('alerts@example.test', $mailRoute, true);
         });
     }
@@ -211,13 +205,7 @@ class EmailNotificationChannelTest extends TenantTestCase
             ->run($this->domain, ['https://site.example.test/'], ScanTrigger::Manual);
 
         // Slack still fires
-        Notification::assertSentOnDemand(AccessibilityIssuesFound::class, function (
-            AccessibilityIssuesFound $notification,
-            array $channels,
-            AnonymousNotifiable $notifiable,
-        ): bool {
-            return ($notifiable->routes['slack'] ?? null) === '#cmp-ops';
-        });
+        Notification::assertSentOnDemand(AccessibilityIssuesFound::class, fn (AccessibilityIssuesFound $notification, array $channels, AnonymousNotifiable $notifiable): bool => ($notifiable->routes['slack'] ?? null) === '#cmp-ops');
 
         // But no mail-route fired
         Notification::assertSentOnDemandTimes(AccessibilityIssuesFound::class, 1);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Cookies;
 
+use App\Http\Concerns\ClampsPerPage;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CookieResource;
 use App\Models\Cookie;
@@ -12,6 +13,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ListCookies extends Controller
 {
+    use ClampsPerPage;
+
     public function __invoke(Request $request): AnonymousResourceCollection
     {
         $query = Cookie::query()
@@ -32,7 +35,7 @@ class ListCookies extends Controller
             $query->where('category', $category);
         }
 
-        $perPage = max(1, min(100, (int) $request->integer('per_page', 50)));
+        $perPage = $this->resolvePerPage($request, default: 50);
 
         return CookieResource::collection($query->paginate($perPage));
     }

@@ -11,7 +11,7 @@ use Tests\TenantTestCase;
 
 class CreateCookieImportTest extends TenantTestCase
 {
-    private const SAMPLE_CSV = <<<CSV
+    private const string SAMPLE_CSV = <<<'CSV'
 ID,Vendor,Category,Cookie / Data Key name,Domain,Description,Retention period,Wildcard match
 1,Google,Analytics,_ga,google.com,Used to distinguish users,2 years,0
 2,Google,Analytics,_ga_,google.com,Container-specific GA4 cookie,2 years,1
@@ -22,7 +22,7 @@ CSV;
      * The actual upstream Open-Cookie-Database CSV header uses "Platform"
      * for the vendor column and includes extra columns we ignore.
      */
-    private const REAL_OCD_CSV = <<<CSV
+    private const string REAL_OCD_CSV = <<<'CSV'
 ID,Platform,Category,Cookie / Data Key name,Domain,Description,Retention period,Data Controller,User Privacy & GDPR Rights Portals,Wildcard match
 1,Google,Analytics,_ga,google.com,Distinguishes unique users,2 years,Google LLC,https://policies.google.com/privacy,0
 2,Meta,Marketing,_fbp,facebook.com,Pixel tracking,3 months,Meta,https://facebook.com/policies/cookies/,0
@@ -164,7 +164,7 @@ CSV;
             ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
             ->assertJsonStructure(['message'])
             ->assertJsonFragment([
-                'message' => "Your CSV is missing the required column(s): Cookie / Data Key name, Category. The importer expects the Open-Cookie-Database column layout — download the example CSV from the import dialog for a working template.",
+                'message' => 'Your CSV is missing the required column(s): Cookie / Data Key name, Category. The importer expects the Open-Cookie-Database column layout — download the example CSV from the import dialog for a working template.',
             ]);
 
         $this->assertDatabaseCount('cookie_imports', 0);
@@ -177,7 +177,7 @@ CSV;
 
         // Required columns are present, but the Category values aren't in
         // the recognised set — every row gets skipped.
-        $csv = <<<CSV
+        $csv = <<<'CSV'
 ID,Platform,Category,Cookie / Data Key name,Wildcard match
 1,Vendor,Mystery,foo,0
 2,Vendor,Unknown,bar,0
@@ -200,7 +200,7 @@ CSV;
     {
         $this->makeSuperuser($this->user);
 
-        $csv = <<<CSV
+        $csv = <<<'CSV'
 ID,Vendor,Category,Cookie / Data Key name,Domain,Description,Retention period,Wildcard match
 1,Vendor,Mystery,foo,example.com,Unknown category,1 year,0
 2,Vendor,Analytics,bar,example.com,Categorisable,1 year,0

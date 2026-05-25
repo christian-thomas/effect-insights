@@ -27,8 +27,8 @@ readonly class ScanFailureAlertService
         $notification = new ScanFailed(
             scan: $scan,
             domain: $domain,
-            errorMessage: $error['message'] ?? 'unknown error',
-            errorClass: $error['class'] ?? 'Throwable',
+            errorMessage: $error['message'],
+            errorClass: $error['class'],
             detailUrl: $this->detailUrlFor($scan),
         );
 

@@ -39,7 +39,7 @@ final class AccessibilityScanFailed extends Notification
             ->first();
         $orgName = (string) ($organisation?->getAttribute('name') ?? 'unknown org');
         $fqdn = (string) $this->domain->getAttribute('fqdn');
-        $trigger = $this->scan->getAttribute('trigger')?->value ?? 'unknown';
+        $trigger = $this->scan->getAttribute('trigger')->value;
 
         return (new SlackMessage)
             ->text(sprintf('Accessibility scan failed on %s — %s', $fqdn, $this->errorMessage))

@@ -320,7 +320,7 @@ class BannerConfigService
     {
         $status = $domain->getAttribute('status');
 
-        if ($status === DomainStatus::Active && $published !== null) {
+        if ($status === DomainStatus::Active && $published instanceof BannerConfig) {
             $this->pushToEdge($published);
 
             return;
