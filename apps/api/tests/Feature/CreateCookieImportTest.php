@@ -18,6 +18,16 @@ ID,Vendor,Category,Cookie / Data Key name,Domain,Description,Retention period,Wi
 3,Meta,Marketing,_fbp,facebook.com,Facebook pixel tracking cookie,3 months,0
 CSV;
 
+    /**
+     * The actual upstream Open-Cookie-Database CSV header uses "Platform"
+     * for the vendor column and includes extra columns we ignore.
+     */
+    private const REAL_OCD_CSV = <<<CSV
+ID,Platform,Category,Cookie / Data Key name,Domain,Description,Retention period,Data Controller,User Privacy & GDPR Rights Portals,Wildcard match
+1,Google,Analytics,_ga,google.com,Distinguishes unique users,2 years,Google LLC,https://policies.google.com/privacy,0
+2,Meta,Marketing,_fbp,facebook.com,Pixel tracking,3 months,Meta,https://facebook.com/policies/cookies/,0
+CSV;
+
     #[Test]
     public function requires_superuser(): void
     {
@@ -108,6 +118,81 @@ CSV;
             ->assertJsonPath('data.existing', 3);
 
         $this->assertDatabaseCount('cookie_imports', 3);
+    }
+
+    #[Test]
+    public function accepts_the_real_open_cookie_database_format_with_platform_column(): void
+    {
+        $this->makeSuperuser($this->user);
+
+        $response = $this->actingAsMember($this->user, $this->org)
+            ->postJson('/api/cookie-imports', [
+                'file' => UploadedFile::fake()->createWithContent('opencookies.csv', self::REAL_OCD_CSV),
+                'source_version' => 'ocd-real',
+            ])
+            ->assertStatus(Response::HTTP_CREATED)
+            ->assertJsonPath('data.created', 2);
+
+        $this->assertDatabaseHas('cookie_imports', [
+            'source_version' => 'ocd-real',
+            'name_pattern' => '_ga',
+            'vendor' => 'Google',
+            'category' => 'statistics',
+        ]);
+        $this->assertDatabaseHas('cookie_imports', [
+            'source_version' => 'ocd-real',
+            'name_pattern' => '_fbp',
+            'vendor' => 'Meta',
+            'category' => 'marketing',
+        ]);
+        // Suppress the warning about the unused `data` from assertStatus chain.
+        $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
+    }
+
+    #[Test]
+    public function returns_422_with_a_friendly_message_when_required_columns_are_missing(): void
+    {
+        $this->makeSuperuser($this->user);
+
+        // Missing both "Category" and "Cookie / Data Key name".
+        $csv = "ID,Platform,Domain\n1,Google,google.com\n";
+
+        $this->actingAsMember($this->user, $this->org)
+            ->postJson('/api/cookie-imports', [
+                'file' => UploadedFile::fake()->createWithContent('broken.csv', $csv),
+            ])
+            ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
+            ->assertJsonStructure(['message'])
+            ->assertJsonFragment([
+                'message' => "Your CSV is missing the required column(s): Cookie / Data Key name, Category. The importer expects the Open-Cookie-Database column layout — download the example CSV from the import dialog for a working template.",
+            ]);
+
+        $this->assertDatabaseCount('cookie_imports', 0);
+    }
+
+    #[Test]
+    public function returns_422_when_every_row_is_skipped(): void
+    {
+        $this->makeSuperuser($this->user);
+
+        // Required columns are present, but the Category values aren't in
+        // the recognised set — every row gets skipped.
+        $csv = <<<CSV
+ID,Platform,Category,Cookie / Data Key name,Wildcard match
+1,Vendor,Mystery,foo,0
+2,Vendor,Unknown,bar,0
+CSV;
+
+        $this->actingAsMember($this->user, $this->org)
+            ->postJson('/api/cookie-imports', [
+                'file' => UploadedFile::fake()->createWithContent('all-skipped.csv', $csv),
+            ])
+            ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
+            ->assertJsonFragment([
+                'message' => 'No rows could be imported. 2 row(s) were skipped — usually because the Category column uses values outside the recognised set (Functional, Analytics, Performance, Marketing, Advertising, Preferences, Personalization, Strictly Necessary).',
+            ]);
+
+        $this->assertDatabaseCount('cookie_imports', 0);
     }
 
     #[Test]

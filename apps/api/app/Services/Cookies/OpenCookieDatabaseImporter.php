@@ -38,33 +38,61 @@ final class OpenCookieDatabaseImporter
     ];
 
     /**
-     * Column header → array key. OCD's header row spells things out long-
-     * form; this lets us key by a stable short name regardless of trailing
-     * version changes.
+     * Map of recognised CSV header names → internal short keys. Multiple
+     * spellings can map to the same key — the upstream OCD dataset uses
+     * "Platform" for the vendor column, but our older hand-written sample
+     * CSV used "Vendor"; both work.
+     *
+     * Lower-cased for case-insensitive matching.
      *
      * @var array<string, string>
      */
-    private const array COLUMNS = [
-        'ID' => 'id',
-        'Vendor' => 'vendor',
-        'Category' => 'category',
-        'Cookie / Data Key name' => 'name',
-        'Domain' => 'domain',
-        'Description' => 'description',
-        'Retention period' => 'retention',
-        'Wildcard match' => 'wildcard',
+    private const array COLUMN_ALIASES = [
+        'id' => 'id',
+        'platform' => 'vendor',
+        'vendor' => 'vendor',
+        'category' => 'category',
+        'cookie / data key name' => 'name',
+        'cookie name' => 'name',
+        'domain' => 'domain',
+        'description' => 'description',
+        'retention period' => 'retention',
+        'retention' => 'retention',
+        'wildcard match' => 'wildcard',
+        'wildcard' => 'wildcard',
     ];
+
+    /**
+     * Internal keys that MUST be present in the resolved column map —
+     * without these the importer can't build a row. Vendor / domain /
+     * description are optional with sensible defaults.
+     *
+     * @var array<int, string>
+     */
+    private const array REQUIRED_KEYS = ['name', 'category'];
 
     public function import(string $csv, string $sourceVersion): ImportResult
     {
         $rows = $this->parse($csv);
 
         if ($rows === []) {
-            return new ImportResult(0, 0, 0);
+            throw InvalidCookieImportFormat::headerUnreadable();
         }
 
         [$header, $records] = [array_shift($rows), $rows];
         $columnMap = $this->buildColumnMap($header);
+
+        $missing = array_values(array_diff(self::REQUIRED_KEYS, array_keys($columnMap)));
+        if ($missing !== []) {
+            throw InvalidCookieImportFormat::missingColumns(array_map(
+                static fn (string $key): string => match ($key) {
+                    'name' => 'Cookie / Data Key name',
+                    'category' => 'Category',
+                    default => $key,
+                },
+                $missing,
+            ));
+        }
 
         $created = 0;
         $existing = 0;
@@ -99,11 +127,13 @@ final class OpenCookieDatabaseImporter
                     'name_pattern' => $namePattern,
                 ],
                 [
-                    'vendor' => $row['vendor'] ?: 'Unknown',
-                    'vendor_domain' => $row['domain'] ?: null,
+                    'vendor' => ($row['vendor'] ?? '') !== '' ? $row['vendor'] : 'Unknown',
+                    'vendor_domain' => ($row['domain'] ?? '') !== '' ? $row['domain'] : null,
                     'category' => $category,
-                    'purpose' => $row['description'] ?: 'No description provided',
-                    'expiry_hint' => $row['retention'] ?: null,
+                    'purpose' => ($row['description'] ?? '') !== ''
+                        ? $row['description']
+                        : 'No description provided',
+                    'expiry_hint' => ($row['retention'] ?? '') !== '' ? $row['retention'] : null,
                     'status' => CookieImportStatus::Pending,
                 ],
             );
@@ -143,9 +173,9 @@ final class OpenCookieDatabaseImporter
     {
         $map = [];
         foreach ($header as $index => $name) {
-            $trimmed = trim($name);
-            if (isset(self::COLUMNS[$trimmed])) {
-                $map[self::COLUMNS[$trimmed]] = $index;
+            $normalised = strtolower(trim($name));
+            if (isset(self::COLUMN_ALIASES[$normalised])) {
+                $map[self::COLUMN_ALIASES[$normalised]] = $index;
             }
         }
 

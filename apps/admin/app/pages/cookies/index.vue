@@ -94,19 +94,56 @@ interface ImportFormState {
 const importForm = reactive<ImportFormState>({ file: null, sourceVersion: '' });
 const uploading = ref(false);
 const importSlideoverOpen = ref(false);
+const importError = ref<string | null>(null);
 const lastResult = ref<
   | { created: number; existing: number; skipped: number; sourceVersion: string }
   | null
 >(null);
 
+// Reset transient feedback whenever the slideover opens / closes so the
+// next attempt starts on a clean slate.
+watch(importSlideoverOpen, (isOpen: boolean): void => {
+  if (!isOpen) return;
+  importError.value = null;
+  lastResult.value = null;
+});
+
 const onFileChange = (event: Event): void => {
   const target = event.target as HTMLInputElement;
   importForm.file = target.files?.[0] ?? null;
+  importError.value = null;
+};
+
+/**
+ * Pull the operator-facing message out of an Ofetch error. The Laravel
+ * exception handler returns `{ message }` for our 422 cases; validation
+ * errors come through under `errors[field][0]`. Bare 500s without our
+ * own message fall back to a generic note that hides Laravel's
+ * APP_DEBUG stack trace + file paths.
+ */
+const extractError = (caught: unknown): string => {
+  if (caught instanceof Error) {
+    const data = (caught as Error & {
+      status?: number;
+      data?: { message?: string; errors?: Record<string, string[]> };
+    }).data;
+    if (data?.message) return data.message;
+    if (data?.errors) {
+      const firstFieldErrors = Object.values(data.errors)[0];
+      if (firstFieldErrors?.[0]) return firstFieldErrors[0];
+    }
+    const status = (caught as Error & { status?: number }).status;
+    if (status === undefined || status >= 500) {
+      return "Something went wrong on the server while parsing the file. Try again, and if it keeps failing share the file with the platform team.";
+    }
+  }
+  return 'The upload failed. Please try again.';
 };
 
 const onUpload = async (): Promise<void> => {
   if (!importForm.file) return;
   uploading.value = true;
+  importError.value = null;
   try {
     lastResult.value = await cookiesStore.uploadImport(
       importForm.file,
@@ -128,16 +165,7 @@ const onUpload = async (): Promise<void> => {
       importSlideoverOpen.value = false;
     }, 1500);
   } catch (caught) {
-    const data = (caught as Error & { data?: { message?: string; errors?: Record<string, string[]> } }).data;
-    const message = data?.message
-      ?? Object.values(data?.errors ?? {})[0]?.[0]
-      ?? (caught instanceof Error ? caught.message : 'Please try again');
-    toast.add({
-      title: 'Could not import cookie list',
-      description: message,
-      icon: 'i-lucide-triangle-alert',
-      color: 'error',
-    });
+    importError.value = extractError(caught);
   } finally {
     uploading.value = false;
   }
@@ -461,7 +489,7 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
             label="CSV file"
             name="file"
             required
-            help="Required columns: ID, Vendor, Category, Cookie / Data Key name, Domain, Description, Retention period, Wildcard match."
+            help="Required columns: Cookie / Data Key name, Category. Optional: Platform (or Vendor), Domain, Description, Retention period, Wildcard match. Extra columns are ignored."
           >
             <UInput
               type="file"
@@ -469,6 +497,10 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
               :disabled="uploading"
               @change="onFileChange"
             />
+            <p v-if="importForm.file" class="mt-1 text-xs text-gray-500">
+              <UIcon name="i-lucide-file-text" class="inline-block align-middle" />
+              {{ importForm.file.name }} ({{ Math.round(importForm.file.size / 1024) }} KB)
+            </p>
           </UFormField>
           <UFormField
             label="Source version (optional)"
@@ -482,6 +514,14 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
               class="w-full"
             />
           </UFormField>
+          <UAlert
+            v-if="importError"
+            color="error"
+            variant="subtle"
+            icon="i-lucide-triangle-alert"
+            title="Couldn't import this CSV"
+            :description="importError"
+          />
           <UAlert
             v-if="lastResult"
             color="success"
