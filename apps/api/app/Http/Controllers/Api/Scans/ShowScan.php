@@ -20,7 +20,7 @@ class ShowScan extends Controller
             ->orderBy('name')
             ->get();
 
-        return response()->json([
+        return new JsonResponse([
             'scan' => ScanResource::make($scan),
             'findings' => ScanFindingResource::collection($findings),
             // Cookie-policy diff vs the previous completed scan on this

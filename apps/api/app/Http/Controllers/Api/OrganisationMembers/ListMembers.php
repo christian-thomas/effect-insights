@@ -31,6 +31,6 @@ class ListMembers extends Controller
             })
             ->all();
 
-        return response()->json(['data' => $members]);
+        return new JsonResponse(['data' => $members]);
     }
 }

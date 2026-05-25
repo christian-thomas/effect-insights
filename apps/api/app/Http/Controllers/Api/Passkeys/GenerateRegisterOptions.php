@@ -38,9 +38,9 @@ class GenerateRegisterOptions extends Controller
         // server challenge up from.
         $request->session()->put('passkey-register-options', $optionsJson);
 
-        // json_decode → response()->json so the response body is the
+        // json_decode → JsonResponse so the response body is the
         // raw WebAuthn structure (no `{ data: { ... } }` envelope —
         // the WebAuthn JS API consumes the structure directly).
-        return response()->json(json_decode($optionsJson, true));
+        return new JsonResponse(json_decode($optionsJson, true));
     }
 }

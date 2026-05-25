@@ -24,6 +24,6 @@ class IngestConsentEvent extends Controller
     {
         $ingest($request->validated());
 
-        return response()->json(['ok' => true], Response::HTTP_ACCEPTED);
+        return new JsonResponse(['ok' => true], Response::HTTP_ACCEPTED);
     }
 }

@@ -15,7 +15,7 @@ class ShowDashboard extends Controller
 {
     public function __invoke(): JsonResponse
     {
-        return response()->json([
+        return new JsonResponse([
             'data' => [
                 'domains' => Domain::query()->count(),
                 'cookieScans' => Scan::query()->count(),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Responses;
 
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -49,7 +50,7 @@ final class ReceiptDownloadResponse
      */
     private static function json(array $receipt, string $filenameBase): Response
     {
-        return response()->json($receipt, Response::HTTP_OK, [
+        return new JsonResponse($receipt, Response::HTTP_OK, [
             'Content-Disposition' => sprintf('attachment; filename="%s.json"', $filenameBase),
         ]);
     }

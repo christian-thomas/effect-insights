@@ -21,7 +21,7 @@ class ListReviewQueue extends Controller
         ScanFindingsReviewQueueService $queue,
         CurrentOrganisation $currentOrganisation,
     ): JsonResponse {
-        return response()->json([
+        return new JsonResponse([
             'data' => $queue->forOrganisation($currentOrganisation->getOrFail()),
         ]);
     }

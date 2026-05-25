@@ -24,7 +24,7 @@ class ShowBannerConfig extends Controller
             ->orderByDesc('version')
             ->first();
 
-        return response()->json([
+        return new JsonResponse([
             'draft' => BannerConfigResource::make($draft),
             'published' => $published === null
                 ? null

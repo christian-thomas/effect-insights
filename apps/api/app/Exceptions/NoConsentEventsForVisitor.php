@@ -27,7 +27,7 @@ final class NoConsentEventsForVisitor extends RuntimeException
 
     public function render(Request $request): JsonResponse
     {
-        return response()->json(
+        return new JsonResponse(
             ['message' => $this->getMessage()],
             Response::HTTP_NOT_FOUND,
         );

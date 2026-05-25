@@ -18,6 +18,6 @@ class Logout extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['ok' => true]);
+        return new JsonResponse(['ok' => true]);
     }
 }

@@ -22,7 +22,7 @@ class PromoteAllCookieImports extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        return response()->json([
+        return new JsonResponse([
             'data' => $promoter->promoteAllPending($user),
         ]);
     }

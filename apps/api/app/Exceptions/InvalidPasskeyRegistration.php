@@ -45,6 +45,6 @@ final class InvalidPasskeyRegistration extends RuntimeException
 
     public function render(Request $request): JsonResponse
     {
-        return response()->json(['message' => $this->getMessage()], $this->status);
+        return new JsonResponse(['message' => $this->getMessage()], $this->status);
     }
 }

@@ -26,7 +26,7 @@ final class LastMemberCannotBeRemoved extends RuntimeException
 
     public function render(Request $request): JsonResponse
     {
-        return response()->json(
+        return new JsonResponse(
             ['message' => $this->getMessage()],
             Response::HTTP_UNPROCESSABLE_ENTITY,
         );

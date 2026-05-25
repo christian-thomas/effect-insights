@@ -22,7 +22,7 @@ class ShowCookiePolicy extends Controller
 
     public function __invoke(Domain $domain): JsonResponse
     {
-        return response()->json([
+        return new JsonResponse([
             'data' => $this->builder->build($domain),
         ]);
     }

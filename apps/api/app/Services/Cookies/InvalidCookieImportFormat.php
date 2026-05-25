@@ -47,6 +47,6 @@ final class InvalidCookieImportFormat extends RuntimeException
 
     public function render(Request $request): JsonResponse
     {
-        return response()->json(['message' => $this->getMessage()], self::STATUS);
+        return new JsonResponse(['message' => $this->getMessage()], self::STATUS);
     }
 }

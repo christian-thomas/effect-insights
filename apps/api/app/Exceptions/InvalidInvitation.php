@@ -24,7 +24,7 @@ final class InvalidInvitation extends RuntimeException
 
     public function render(Request $request): JsonResponse
     {
-        return response()->json(
+        return new JsonResponse(
             [
                 'error' => 'invitation_invalid',
                 'message' => $this->getMessage(),

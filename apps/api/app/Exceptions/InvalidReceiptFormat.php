@@ -28,7 +28,7 @@ final class InvalidReceiptFormat extends RuntimeException
 
     public function render(Request $request): JsonResponse
     {
-        return response()->json(
+        return new JsonResponse(
             ['message' => 'format must be json or pdf'],
             Response::HTTP_UNPROCESSABLE_ENTITY,
         );

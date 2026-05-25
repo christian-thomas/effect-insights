@@ -36,7 +36,7 @@ class ShowAccessibilityScan extends Controller
             (string) $accessibilityScan->getAttribute('organisation_id'),
         )->muteFindings($findings, (string) $accessibilityScan->getAttribute('domain_id'));
 
-        return response()->json([
+        return new JsonResponse([
             'scan' => AccessibilityScanResource::make($accessibilityScan),
             'findings' => AccessibilityFindingResource::collection($findings),
         ]);

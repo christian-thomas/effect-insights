@@ -18,7 +18,7 @@ class CreateCookieImport extends Controller
     {
         $result = $this->importer->import($request->csv(), $request->sourceVersion());
 
-        return response()->json([
+        return new JsonResponse([
             'data' => [
                 'sourceVersion' => $request->sourceVersion(),
                 'created' => $result->created,

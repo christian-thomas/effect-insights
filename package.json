@@ -19,6 +19,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "horizon": "turbo run horizon",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "format": "turbo run format",

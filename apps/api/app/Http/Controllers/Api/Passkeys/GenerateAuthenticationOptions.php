@@ -25,6 +25,6 @@ class GenerateAuthenticationOptions extends Controller
     {
         $optionsJson = $generate->execute();
 
-        return response()->json(json_decode($optionsJson, true));
+        return new JsonResponse(json_decode($optionsJson, true));
     }
 }

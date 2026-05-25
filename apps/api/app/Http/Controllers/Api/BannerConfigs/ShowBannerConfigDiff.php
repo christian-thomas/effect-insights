@@ -28,7 +28,7 @@ class ShowBannerConfigDiff extends Controller
             ->orderByDesc('version')
             ->first();
 
-        return response()->json([
+        return new JsonResponse([
             'data' => BannerConfigDiffer::diff($published, $draft),
         ]);
     }

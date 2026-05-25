@@ -24,7 +24,7 @@ class ShowInvitation extends Controller
             throw new InvalidInvitation;
         }
 
-        return response()->json([
+        return new JsonResponse([
             'email' => $invitation->getAttribute('email'),
             'role' => $invitation->getAttribute('role')->value,
             'expiresAt' => $invitation->getAttribute('expires_at')->toIso8601String(),

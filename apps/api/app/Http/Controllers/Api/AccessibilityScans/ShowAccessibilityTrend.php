@@ -38,7 +38,7 @@ class ShowAccessibilityTrend extends Controller
             ->oldest('finished_at')
             ->get(['id', 'finished_at', 'violations_total', 'violations_by_impact']);
 
-        return response()->json([
+        return new JsonResponse([
             'data' => [
                 'domainId' => (string) $domain->getKey(),
                 'days' => $days,

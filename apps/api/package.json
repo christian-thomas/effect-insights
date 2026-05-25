@@ -7,6 +7,7 @@
   "description": "Laravel 13 backend — exposed via Turborepo so `bun run dev` / `bun run test` orchestrate it alongside the JS apps.",
   "scripts": {
     "dev": "php artisan serve --host=127.0.0.1 --port=8000",
+    "horizon": "php artisan horizon",
     "test": "php artisan test",
     "lint": "composer check",
     "lint:fix": "composer fix",
