@@ -325,6 +325,8 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
     <USlideover
       v-model:open="detailOpen"
       :title="selected ? `Consent event ${selected.id.substring(0, 8)}…` : ''"
+      :dismissible="true"
+      :close="true"
     >
       <template #body>
         <div v-if="selected" class="space-y-4 text-sm">

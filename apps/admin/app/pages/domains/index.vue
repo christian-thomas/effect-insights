@@ -27,7 +27,10 @@ const openEdit = (domain: Domain): void => {
   slideoverOpen.value = true;
 };
 
-const onSubmit = async (event: FormSubmitEvent<DomainInput>): Promise<void> => {
+const onSubmit = async (
+  event: FormSubmitEvent<DomainInput>,
+  close: () => void,
+): Promise<void> => {
   submitting.value = true;
   try {
     if (editing.value) {
@@ -37,7 +40,7 @@ const onSubmit = async (event: FormSubmitEvent<DomainInput>): Promise<void> => {
       await domainsStore.create(event.data);
       toast.add({ title: 'Domain added', color: 'success', icon: 'i-lucide-check' });
     }
-    slideoverOpen.value = false;
+    close();
   } catch (caught) {
     toast.add({
       title: editing.value ? 'Could not update domain' : 'Could not add domain',
@@ -146,9 +149,19 @@ const columns: TableColumn<Domain>[] = [
     </UTable>
   </div>
 
-  <USlideover v-model:open="slideoverOpen" :title="editing ? `Edit ${editing.fqdn}` : 'Add domain'">
-    <template #body>
-      <UForm :schema="domainInputSchema" :state="state" class="space-y-4" @submit="onSubmit">
+  <USlideover
+    v-model:open="slideoverOpen"
+    :title="editing ? `Edit ${editing.fqdn}` : 'Add domain'"
+    :dismissible="true"
+    :close="true"
+  >
+    <template #body="{ close }">
+      <UForm
+        :schema="domainInputSchema"
+        :state="state"
+        class="space-y-4"
+        @submit="(event: FormSubmitEvent<DomainInput>) => onSubmit(event, close)"
+      >
         <UFormField
           label="FQDN"
           name="fqdn"
@@ -175,7 +188,7 @@ const columns: TableColumn<Domain>[] = [
         </UFormField>
 
         <div class="flex justify-end gap-2 pt-2">
-          <UButton color="neutral" variant="ghost" label="Cancel" @click="slideoverOpen = false" />
+          <UButton color="neutral" variant="ghost" label="Cancel" @click="close" />
           <UButton
             type="submit"
             :loading="submitting"

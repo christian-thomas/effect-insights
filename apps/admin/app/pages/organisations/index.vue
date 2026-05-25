@@ -69,7 +69,10 @@ watch([retentionIndefinite, retentionDays], (): void => {
   state.consent_retention_days = retentionIndefinite.value ? null : retentionDays.value;
 });
 
-const onSubmit = async (event: FormSubmitEvent<OrganisationInput>): Promise<void> => {
+const onSubmit = async (
+  event: FormSubmitEvent<OrganisationInput>,
+  close: () => void,
+): Promise<void> => {
   submitting.value = true;
   try {
     if (editing.value) {
@@ -79,7 +82,11 @@ const onSubmit = async (event: FormSubmitEvent<OrganisationInput>): Promise<void
       await organisationsStore.create(event.data);
       toast.add({ title: 'Organisation created', color: 'success', icon: 'i-lucide-check' });
     }
-    slideoverOpen.value = false;
+    // Use the slideover's imperative close() rather than toggling the
+    // v-model ref. Reka's `controlled` mode doesn't always honour external
+    // open-state writes here; the close fn from the body slot routes
+    // through the same path the cross button uses.
+    close();
   } catch (caught) {
     toast.add({
       title: 'Save failed',
@@ -194,9 +201,16 @@ const columns: TableColumn<Organisation>[] = [
   <USlideover
     v-model:open="slideoverOpen"
     :title="editing ? `Edit ${editing.name}` : 'New organisation'"
+    :dismissible="true"
+    :close="true"
   >
-    <template #body>
-      <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+    <template #body="{ close }">
+      <UForm
+        :schema="schema"
+        :state="state"
+        class="space-y-4"
+        @submit="(event: FormSubmitEvent<OrganisationInput>) => onSubmit(event, close)"
+      >
         <UFormField label="Name" name="name">
           <UInput v-model="state.name" placeholder="Acme Corp" class="w-full" />
         </UFormField>
@@ -318,7 +332,7 @@ const columns: TableColumn<Organisation>[] = [
         </div>
 
         <div class="flex justify-end gap-2 pt-2">
-          <UButton color="neutral" variant="ghost" label="Cancel" @click="slideoverOpen = false" />
+          <UButton color="neutral" variant="ghost" label="Cancel" @click="close" />
           <UButton
             type="submit"
             :loading="submitting"
