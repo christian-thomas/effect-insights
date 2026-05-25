@@ -44,14 +44,15 @@ const domainFqdn = (id: string): string =>
 </script>
 
 <template>
-  <UDashboardNavbar title="Cookie scans" />
-
-  <div class="p-4 sm:p-6 lg:p-8 space-y-4">
-    <p class="text-sm text-gray-500">
+  <PageHeader title="Cookie scans">
+    <template #description>
       Cookie scanner runs across the active organisation's domains. For axe-core accessibility
-      audits see <NuxtLink to="/accessibility-scans" class="text-primary-500 hover:underline">Accessibility scans</NuxtLink>.
-    </p>
+      audits see
+      <NuxtLink to="/accessibility-scans" class="text-primary-500 hover:underline">Accessibility scans</NuxtLink>.
+    </template>
+  </PageHeader>
 
+  <div class="px-4 sm:px-6 lg:px-8 pt-4 pb-6 space-y-4">
     <UCard>
       <div class="flex items-center gap-3">
         <USelectMenu

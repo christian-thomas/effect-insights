@@ -86,6 +86,40 @@ const reject = async (importId: string): Promise<void> => {
   toast.add({ title: 'Marked as rejected', color: 'neutral' });
 };
 
+const promotingAll = ref(false);
+const onPromoteAll = async (): Promise<void> => {
+  if (imports.value.length === 0) return;
+  if (
+    !window.confirm(
+      `Promote all ${imports.value.length} pending row(s) into the canonical DB? Each one is added as if you clicked Promote individually — duplicates against existing canonical entries fail silently.`,
+    )
+  ) {
+    return;
+  }
+  promotingAll.value = true;
+  try {
+    const result = await cookiesStore.promoteAll();
+    toast.add({
+      title: `Promoted ${result.promoted} row(s)`,
+      description:
+        result.failed > 0
+          ? `${result.failed} failed${result.firstError ? ` — first error: ${result.firstError}` : ''}.`
+          : 'All pending imports moved to the canonical DB.',
+      icon: result.failed > 0 ? 'i-lucide-triangle-alert' : 'i-lucide-check',
+      color: result.failed > 0 ? 'warning' : 'success',
+    });
+  } catch (caught) {
+    toast.add({
+      title: 'Could not promote all',
+      description: caught instanceof Error ? caught.message : 'Please try again',
+      icon: 'i-lucide-triangle-alert',
+      color: 'error',
+    });
+  } finally {
+    promotingAll.value = false;
+  }
+};
+
 interface ImportFormState {
   file: File | null;
   sourceVersion: string;
@@ -282,7 +316,10 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
 </script>
 
 <template>
-  <UDashboardNavbar title="Cookie database">
+  <PageHeader
+    title="Cookie database"
+    :description="`Canonical catalogue (${cookies.length}), per-org overrides (${overrides.length})${auth.user?.isSuperuser ? `, plus pending imports (${imports.length})` : ''}.`"
+  >
     <template #right>
       <UButton
         v-if="auth.user?.isSuperuser"
@@ -291,9 +328,9 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
         @click="importSlideoverOpen = true"
       />
     </template>
-  </UDashboardNavbar>
+  </PageHeader>
 
-  <UContainer class="py-6">
+  <div class="px-4 sm:px-6 lg:px-8 pt-4 pb-6">
 
     <div class="mt-4 flex flex-wrap gap-2">
       <UButton :variant="tab === 'canonical' ? 'solid' : 'soft'" @click="tab = 'canonical'">
@@ -446,11 +483,23 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
     </div>
 
     <div v-else class="mt-6">
-      <p class="text-sm text-gray-500 mb-4">
-        Rows staged from CSV uploads via the
-        <strong>Import cookies</strong> button above. Promote each row into
-        the canonical DB or reject it.
-      </p>
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <p class="text-sm text-gray-500">
+          Rows staged from CSV uploads via the
+          <strong>Import cookies</strong> button above. Promote each row into
+          the canonical DB or reject it.
+        </p>
+        <UButton
+          v-if="imports.length > 0"
+          icon="i-lucide-check-check"
+          color="success"
+          variant="soft"
+          size="sm"
+          :loading="promotingAll"
+          :label="`Promote all (${imports.length})`"
+          @click="onPromoteAll"
+        />
+      </div>
       <UTable :data="imports" :columns="importColumns" :loading="loading">
         <template #category-cell="{ row }">
           <UBadge :color="categoryColor[row.original.category] ?? 'neutral'" variant="soft">
@@ -646,5 +695,5 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
         </UCard>
       </template>
     </USlideover>
-  </UContainer>
+  </div>
 </template>

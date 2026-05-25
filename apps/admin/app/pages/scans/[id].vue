@@ -43,15 +43,13 @@ const categoryLabel = (key: string): string =>
 </script>
 
 <template>
-  <UDashboardNavbar :title="scan ? `Scan ${scan.id.slice(0, 8)}…` : 'Scan'" />
+  <PageHeader
+    :title="scan ? `Scan ${scan.id.slice(0, 8)}…` : 'Scan'"
+    :description="scan ? `Status: ${scan.status} · ${scan.urlsScanned} URLs scanned · ${findings.length} findings` : undefined"
+  />
 
-  <div class="p-4 sm:p-6 lg:p-8 space-y-4">
+  <div class="px-4 sm:px-6 lg:px-8 pt-4 pb-6 space-y-4">
     <div v-if="scan">
-      <p class="text-sm text-gray-500">
-        Status: {{ scan.status }} · {{ scan.urlsScanned }} URLs scanned ·
-        {{ findings.length }} findings
-      </p>
-
       <UAlert
         v-if="scan.errorLog"
         color="error"

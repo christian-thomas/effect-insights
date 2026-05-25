@@ -53,7 +53,10 @@ const domainFqdn = (id: string): string =>
 </script>
 
 <template>
-  <UDashboardNavbar title="Accessibility scans">
+  <PageHeader
+    title="Accessibility scans"
+    description="Scheduled and manual axe-core scans across the active organisation's domains."
+  >
     <template #right>
       <UButton
         to="/accessibility-rule-overrides"
@@ -63,13 +66,9 @@ const domainFqdn = (id: string): string =>
         label="Rule overrides"
       />
     </template>
-  </UDashboardNavbar>
+  </PageHeader>
 
-  <div class="p-4 sm:p-6 lg:p-8 space-y-4">
-    <p class="text-sm text-gray-500">
-      Scheduled and manual axe-core scans across the active organisation's domains.
-    </p>
-
+  <div class="px-4 sm:px-6 lg:px-8 pt-4 pb-6 space-y-4">
     <UCard>
       <div class="flex items-center gap-3">
         <USelectMenu

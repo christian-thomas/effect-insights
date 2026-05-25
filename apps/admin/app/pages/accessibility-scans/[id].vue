@@ -152,23 +152,19 @@ const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> =
 </script>
 
 <template>
-  <UDashboardNavbar
+  <PageHeader
     :title="scan ? `Accessibility scan ${scan.id.slice(0, 8)}…` : 'Accessibility scan'"
+    :description="scan ? `Status: ${scan.status} · ${scan.urlsScanned} URLs scanned · ${scan.violationsTotal} violations` : undefined"
   >
     <template v-if="scan" #right>
       <UBadge :color="statusColor[scan.status] ?? 'neutral'" variant="soft">
         {{ scan.status }}
       </UBadge>
     </template>
-  </UDashboardNavbar>
+  </PageHeader>
 
-  <div class="p-4 sm:p-6 lg:p-8 space-y-4">
+  <div class="px-4 sm:px-6 lg:px-8 pt-4 pb-6 space-y-4">
     <div v-if="scan">
-      <p class="text-sm text-gray-500">
-        Status: {{ scan.status }} · {{ scan.urlsScanned }} URLs scanned ·
-        {{ scan.violationsTotal }} violations
-      </p>
-
       <UAlert
         v-if="scan.errorLog"
         color="error"

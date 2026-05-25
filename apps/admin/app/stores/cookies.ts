@@ -76,6 +76,14 @@ export const useCookiesStore = defineStore('cookies', {
       await Promise.all([this.listImports(), this.listCookies()]);
     },
 
+    async promoteAll(): Promise<{ promoted: number; failed: number; firstError: string | null }> {
+      const response = await $api<{
+        data: { promoted: number; failed: number; firstError: string | null };
+      }>('/api/cookie-imports/promote-all', { method: 'POST' });
+      await Promise.all([this.listImports(), this.listCookies()]);
+      return response.data;
+    },
+
     async reject(importId: string): Promise<void> {
       await $api(`/api/cookie-imports/${importId}/reject`, { method: 'POST' });
       await this.listImports();
