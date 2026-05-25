@@ -25,20 +25,37 @@ const formatTime = (iso: string | null): string => {
   return new Date(iso).toLocaleString();
 };
 
-const onRegister = async (): Promise<void> => {
-  const name = window.prompt('Label this passkey (e.g. "MacBook TouchID", "YubiKey").', '');
-  if (name === null || name.trim() === '') return;
+// Register modal — replaces window.prompt() with a designed input.
+const registerOpen = ref(false);
+const registerLabel = ref('');
+const registerError = ref<string | null>(null);
+
+const openRegister = (): void => {
+  registerLabel.value = '';
+  registerError.value = null;
+  registerOpen.value = true;
+};
+
+const submitRegister = async (close: () => void): Promise<void> => {
+  const trimmed = registerLabel.value.trim();
+  if (trimmed === '') {
+    registerError.value = 'Give the passkey a label so you can recognise it later.';
+    return;
+  }
+  registerError.value = null;
 
   try {
-    await store.register(name.trim());
+    await store.register(trimmed);
     toast.add({
-      title: `Passkey "${name}" registered`,
+      title: `Passkey "${trimmed}" registered`,
       color: 'success',
       icon: 'i-lucide-fingerprint',
     });
+    close();
   } catch (caught) {
     if (caught instanceof DOMException && caught.name === 'NotAllowedError') {
-      return; // User cancelled the browser prompt.
+      // User cancelled the browser prompt — leave the modal open so they can retry.
+      return;
     }
     toast.add({
       title: 'Could not register passkey',
@@ -49,21 +66,31 @@ const onRegister = async (): Promise<void> => {
   }
 };
 
-const onRemove = async (passkey: Passkey): Promise<void> => {
-  if (
-    !window.confirm(
-      `Revoke "${passkey.name}"? Your other registered passkeys (and your email + password) will still work.`,
-    )
-  ) {
+// Revoke modal — replaces window.confirm() with a designed destructive confirm.
+const revokeOpen = ref(false);
+const revokeTarget = ref<Passkey | null>(null);
+const revoking = ref(false);
+
+const openRevoke = (passkey: Passkey): void => {
+  revokeTarget.value = passkey;
+  revokeOpen.value = true;
+};
+
+const submitRevoke = async (close: () => void): Promise<void> => {
+  const target = revokeTarget.value;
+  if (target === null) {
+    close();
     return;
   }
+  revoking.value = true;
   try {
-    await store.remove(passkey.id);
+    await store.remove(target.id);
     toast.add({
-      title: `Removed "${passkey.name}"`,
+      title: `Removed "${target.name}"`,
       color: 'success',
       icon: 'i-lucide-check',
     });
+    close();
   } catch (caught) {
     toast.add({
       title: 'Could not revoke',
@@ -71,6 +98,8 @@ const onRemove = async (passkey: Passkey): Promise<void> => {
       color: 'error',
       icon: 'i-lucide-triangle-alert',
     });
+  } finally {
+    revoking.value = false;
   }
 };
 </script>
@@ -83,7 +112,7 @@ const onRemove = async (passkey: Passkey): Promise<void> => {
         icon="i-lucide-fingerprint"
         :loading="registering"
         label="Register a passkey"
-        @click="onRegister"
+        @click="openRegister"
       /></template>
   </UDashboardNavbar>
 
@@ -120,7 +149,7 @@ const onRemove = async (passkey: Passkey): Promise<void> => {
           icon="i-lucide-fingerprint"
           label="Register a passkey"
           :loading="registering"
-          @click="onRegister"
+          @click="openRegister"
         />
       </div>
     </UCard>
@@ -147,9 +176,63 @@ const onRemove = async (passkey: Passkey): Promise<void> => {
           color="error"
           icon="i-lucide-trash-2"
           label="Revoke"
-          @click="onRemove(row.original)"
+          @click="openRevoke(row.original)"
         />
       </template>
     </UTable>
   </div>
+
+  <UModal
+    v-model:open="registerOpen"
+    title="Register a passkey"
+    description="Label this passkey so you can recognise it later — your browser will prompt your authenticator next."
+  >
+    <template #body>
+      <UFormField
+        label="Label"
+        name="label"
+        :error="registerError ?? undefined"
+        help="A short name to identify this authenticator."
+      >
+        <UInput
+          v-model="registerLabel"
+          placeholder="e.g. MacBook TouchID"
+          autocomplete="off"
+          autofocus
+          class="w-full"
+          @keydown.enter.prevent="submitRegister(() => (registerOpen = false))"
+        />
+      </UFormField>
+    </template>
+    <template #footer="{ close }">
+      <div class="flex justify-end gap-2 w-full">
+        <UButton color="neutral" variant="ghost" label="Cancel" @click="close" />
+        <UButton
+          icon="i-lucide-fingerprint"
+          label="Register"
+          :loading="registering"
+          @click="submitRegister(close)"
+        />
+      </div>
+    </template>
+  </UModal>
+
+  <UModal
+    v-model:open="revokeOpen"
+    :title="revokeTarget ? `Revoke “${revokeTarget.name}”?` : 'Revoke passkey?'"
+    description="Your other registered passkeys (and your email + password) will still work."
+  >
+    <template #footer="{ close }">
+      <div class="flex justify-end gap-2 w-full">
+        <UButton color="neutral" variant="ghost" label="Keep" @click="close" />
+        <UButton
+          color="error"
+          icon="i-lucide-trash-2"
+          label="Revoke"
+          :loading="revoking"
+          @click="submitRevoke(close)"
+        />
+      </div>
+    </template>
+  </UModal>
 </template>
