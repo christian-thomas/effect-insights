@@ -26,6 +26,11 @@ Route::middleware('consent.ingest')->group(function (): void {
 Route::get('/cookie-policy/{publicKey}.html', Api\CookiePolicies\ShowPublicCookiePolicy::class)
     ->where('publicKey', 'pk_[A-Za-z0-9_-]+');
 
+// Invitation acceptance flow — unauthenticated because the invitee
+// doesn't have a session yet. Token gates both endpoints.
+Route::get('/invitations/{token}', Api\Invitations\ShowInvitation::class);
+Route::post('/invitations/{token}/accept', Api\Invitations\AcceptInvitation::class);
+
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/me', Api\Auth\Me::class);
     Route::patch('/me', Api\Auth\UpdateMe::class);
@@ -49,6 +54,15 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/organisations/{organisation}', Api\Organisations\ShowOrganisation::class);
         Route::patch('/organisations/{organisation}', Api\Organisations\UpdateOrganisation::class);
         Route::delete('/organisations/{organisation}', Api\Organisations\DeleteOrganisation::class);
+
+        // Per-org user management. Superuser-only for v1 — when per-org role
+        // enforcement lands we can relax to "owner / admin" of the org.
+        Route::get('/organisations/{organisation}/users', Api\OrganisationMembers\ListMembers::class);
+        Route::delete('/organisations/{organisation}/users/{user}', Api\OrganisationMembers\RemoveMember::class);
+
+        Route::get('/organisations/{organisation}/invitations', Api\Invitations\ListInvitations::class);
+        Route::post('/organisations/{organisation}/invitations', Api\Invitations\CreateInvitation::class);
+        Route::delete('/organisations/{organisation}/invitations/{invitation}', Api\Invitations\RevokeInvitation::class);
 
         // Cookie database review queue — global, not tenant-scoped.
         Route::get('/cookie-imports', Api\CookieImports\ListCookieImports::class);

@@ -9,6 +9,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class Me extends Controller
 {
@@ -17,6 +18,12 @@ class Me extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        return UserResource::make($user->load('organisations'))->response();
+        // Force 200 — JsonResource::calculateStatus() returns 201 if the
+        // model's `wasRecentlyCreated` is still true (which it is when /me
+        // is hit in the same test as a user-creating endpoint via the same
+        // session). /me is always a read, never a create.
+        return UserResource::make($user->load('organisations'))
+            ->response()
+            ->setStatusCode(Response::HTTP_OK);
     }
 }

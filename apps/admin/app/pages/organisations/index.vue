@@ -123,6 +123,8 @@ const columns: TableColumn<Organisation>[] = [
   <UDashboardNavbar title="Organisations">
     <template #right>
       <UButton icon="i-lucide-plus" label="New organisation" @click="openCreate" />
+      <div class="mx-1 h-6 w-px bg-accented" aria-hidden="true" />
+      <OrgSwitcher />
     </template>
   </UDashboardNavbar>
 
@@ -161,12 +163,18 @@ const columns: TableColumn<Organisation>[] = [
         <span v-if="row.original.consentRetentionDays === null" class="text-sm text-gray-500">
           Indefinite
         </span>
-        <span v-else class="text-sm">
-          {{ row.original.consentRetentionDays }} days
-        </span>
+        <span v-else class="text-sm"> {{ row.original.consentRetentionDays }} days </span>
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end gap-1">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-users"
+            size="xs"
+            :to="`/organisations/${row.original.id}/users`"
+            title="Manage users"
+          />
           <UButton
             color="neutral"
             variant="ghost"
@@ -258,7 +266,9 @@ const columns: TableColumn<Organisation>[] = [
               type="text"
               placeholder="alerts@client.com, ops@client.com"
               class="w-full"
-              @update:model-value="(value: string) => state.notification_email = value === '' ? null : String(value)"
+              @update:model-value="
+                (value: string) => (state.notification_email = value === '' ? null : String(value))
+              "
             />
           </UFormField>
         </div>
@@ -283,7 +293,11 @@ const columns: TableColumn<Organisation>[] = [
                 { label: 'Minor (every violation)', value: 'minor' },
               ]"
               class="w-full"
-              @update:model-value="(value: string) => state.a11y_alert_threshold = value === '' ? null : (value as 'critical' | 'serious' | 'moderate' | 'minor')"
+              @update:model-value="
+                (value: string) =>
+                  (state.a11y_alert_threshold =
+                    value === '' ? null : (value as 'critical' | 'serious' | 'moderate' | 'minor'))
+              "
             />
           </UFormField>
 
@@ -299,7 +313,9 @@ const columns: TableColumn<Organisation>[] = [
                 { label: 'WCAG conformance only', value: 'wcag_only' },
               ]"
               class="w-full"
-              @update:model-value="(value: string) => state.a11y_alert_scope = value as 'all' | 'wcag_only'"
+              @update:model-value="
+                (value: string) => (state.a11y_alert_scope = value as 'all' | 'wcag_only')
+              "
             />
           </UFormField>
         </div>

@@ -54,6 +54,12 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Admin SPA origin — used to build links from server-side flows
+    // (invitation emails, password reset, banner editor preview) so they
+    // hit the right host. In dev this is the Nuxt admin on :3001; in
+    // prod it's the admin.effectinsight.com hostname.
+    'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost')),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
