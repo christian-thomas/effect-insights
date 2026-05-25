@@ -66,6 +66,7 @@ const signOut = async (): Promise<void> => {
 
 const userItems = computed(() => [
   [{ label: auth.user?.email ?? '', type: 'label' as const }],
+  [{ label: 'Profile', icon: 'i-lucide-user', to: '/profile' }],
   [{ label: 'Sign out', icon: 'i-lucide-log-out', onSelect: signOut }],
 ]);
 </script>

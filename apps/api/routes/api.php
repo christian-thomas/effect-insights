@@ -62,6 +62,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::middleware('org.current')->group(function (): void {
         Route::get('/dashboard', Api\Dashboard\ShowDashboard::class);
 
+        // Operator-editable runtime settings for the active org. Narrower
+        // surface than the superuser-only /organisations/{org} endpoint —
+        // name + slug stay superuser-gated (they're the tenant identity).
+        Route::get('/current-organisation', Api\Organisations\ShowCurrentOrganisation::class);
+        Route::patch('/current-organisation', Api\Organisations\UpdateCurrentOrganisation::class);
+
         Route::get('/domains', Api\Domains\ListDomains::class);
         Route::post('/domains', Api\Domains\CreateDomain::class);
         Route::get('/domains/{domain}', Api\Domains\ShowDomain::class);
