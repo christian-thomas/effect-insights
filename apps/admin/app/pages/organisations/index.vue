@@ -289,9 +289,9 @@ const columns: TableColumn<Organisation>[] = [
           </div>
           <UFormField label="Threshold" name="a11y_alert_threshold">
             <USelect
-              :model-value="state.a11y_alert_threshold ?? ''"
+              :model-value="state.a11y_alert_threshold ?? 'inherit'"
               :items="[
-                { label: 'Inherit platform default', value: '' },
+                { label: 'Inherit platform default', value: 'inherit' },
                 { label: 'Critical only', value: 'critical' },
                 { label: 'Serious or higher', value: 'serious' },
                 { label: 'Moderate or higher', value: 'moderate' },
@@ -301,7 +301,9 @@ const columns: TableColumn<Organisation>[] = [
               @update:model-value="
                 (value: string) =>
                   (state.a11y_alert_threshold =
-                    value === '' ? null : (value as 'critical' | 'serious' | 'moderate' | 'minor'))
+                    value === 'inherit'
+                      ? null
+                      : (value as 'critical' | 'serious' | 'moderate' | 'minor'))
               "
             />
           </UFormField>
