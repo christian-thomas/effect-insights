@@ -27,10 +27,7 @@ const openEdit = (domain: Domain): void => {
   slideoverOpen.value = true;
 };
 
-const onSubmit = async (
-  event: FormSubmitEvent<DomainInput>,
-  close: () => void,
-): Promise<void> => {
+const onSubmit = async (event: FormSubmitEvent<DomainInput>): Promise<void> => {
   submitting.value = true;
   try {
     if (editing.value) {
@@ -40,7 +37,7 @@ const onSubmit = async (
       await domainsStore.create(event.data);
       toast.add({ title: 'Domain added', color: 'success', icon: 'i-lucide-check' });
     }
-    close();
+    slideoverOpen.value = false;
   } catch (caught) {
     toast.add({
       title: editing.value ? 'Could not update domain' : 'Could not add domain',
@@ -155,12 +152,13 @@ const columns: TableColumn<Domain>[] = [
     :dismissible="true"
     :close="true"
   >
-    <template #body="{ close }">
+    <template #body>
       <UForm
+        id="domain-edit-form"
         :schema="domainInputSchema"
         :state="state"
         class="space-y-4"
-        @submit="(event: FormSubmitEvent<DomainInput>) => onSubmit(event, close)"
+        @submit="onSubmit"
       >
         <UFormField
           label="FQDN"
@@ -186,16 +184,18 @@ const columns: TableColumn<Domain>[] = [
             class="w-full"
           />
         </UFormField>
-
-        <div class="flex justify-end gap-2 pt-2">
-          <UButton color="neutral" variant="ghost" label="Cancel" @click="close" />
-          <UButton
-            type="submit"
-            :loading="submitting"
-            :label="editing ? 'Save changes' : 'Add domain'"
-          />
-        </div>
       </UForm>
+    </template>
+    <template #footer="{ close }">
+      <div class="flex justify-end gap-2 w-full">
+        <UButton color="neutral" variant="ghost" label="Cancel" @click="close" />
+        <UButton
+          type="submit"
+          form="domain-edit-form"
+          :loading="submitting"
+          :label="editing ? 'Save changes' : 'Add domain'"
+        />
+      </div>
     </template>
   </USlideover>
 </template>
