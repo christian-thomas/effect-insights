@@ -123,10 +123,7 @@ const copyEmbed = async (): Promise<void> => {
         :to="`/domains/${domain.id}/banner`"
         icon="i-lucide-palette"
         label="Banner config"
-      />
-      <div class="mx-1 h-6 w-px bg-accented" aria-hidden="true" />
-      <OrgSwitcher />
-    </template>
+      /></template>
   </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-6">

@@ -262,10 +262,7 @@ const gcmSignals = [
       <UBadge v-if="published" color="success" variant="subtle">
         Published v{{ published.version }}
       </UBadge>
-      <UBadge v-else color="neutral" variant="subtle">Not yet published</UBadge>
-      <div class="mx-1 h-6 w-px bg-accented" aria-hidden="true" />
-      <OrgSwitcher />
-    </template>
+      <UBadge v-else color="neutral" variant="subtle">Not yet published</UBadge></template>
   </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-6">

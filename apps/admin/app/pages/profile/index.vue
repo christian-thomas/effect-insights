@@ -90,11 +90,7 @@ const onSubmitPassword = async (): Promise<void> => {
 </script>
 
 <template>
-  <UDashboardNavbar title="Profile">
-    <template #right>
-      <OrgSwitcher />
-    </template>
-  </UDashboardNavbar>
+  <UDashboardNavbar title="Profile"></UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 max-w-4xl">
     <UCard>

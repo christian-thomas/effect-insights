@@ -6,11 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <UDashboardNavbar :title="title">
-    <template #right>
-      <OrgSwitcher />
-    </template>
-  </UDashboardNavbar>
+  <UDashboardNavbar :title="title"></UDashboardNavbar>
   <div class="p-4 sm:p-6 lg:p-8">
     <UPageHeader :title="title" :description="description" />
     <UAlert

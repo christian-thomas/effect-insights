@@ -18,14 +18,30 @@ class RemoveMember extends Controller
         /** @var User $actingUser */
         $actingUser = $request->user();
 
-        // A superuser shouldn't be able to detach themselves while acting
-        // as one — that's a footgun that locks them out of the very tenant
-        // they're operating against.
-        abort_if(
-            $user->getKey() === $actingUser->getKey(),
-            HttpResponse::HTTP_UNPROCESSABLE_ENTITY,
-            "You can't remove yourself from an organisation.",
-        );
+        if ($user->getKey() === $actingUser->getKey()) {
+            // Removing the last member would leave the org with domains /
+            // scans / banner configs that nobody can administer. Block.
+            $memberCount = $organisation->users()->count();
+            abort_if(
+                $memberCount <= 1,
+                HttpResponse::HTTP_UNPROCESSABLE_ENTITY,
+                "You're the last member of this organisation. Add another member before removing yourself.",
+            );
+
+            // Self-removal as the only platform superuser is allowed
+            // (superuser membership and org membership are orthogonal — they
+            // can still switch into any org via the global /organisations
+            // page), but a fat-finger here is irreversible without DB
+            // access, so we block it as a safety net.
+            if ($actingUser->hasRole(User::ROLE_SUPERUSER)) {
+                $superuserCount = User::role(User::ROLE_SUPERUSER)->count();
+                abort_if(
+                    $superuserCount <= 1,
+                    HttpResponse::HTTP_UNPROCESSABLE_ENTITY,
+                    "You're the last superuser. Grant another user the superuser role before removing yourself.",
+                );
+            }
+        }
 
         $organisation->users()->detach($user->getKey());
 

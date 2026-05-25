@@ -68,18 +68,81 @@ class OrganisationMembersTest extends TenantTestCase
     }
 
     #[Test]
-    public function remove_member_rejects_self_removal(): void
+    public function remove_self_blocked_when_last_member_of_org(): void
     {
         $this->makeSuperuser($this->user);
+        // Org has only one member ($this->user); also seed a second
+        // superuser so the "last superuser" guard doesn't intercept first.
+        $secondSuperuser = User::create([
+            'name' => 'Second Super',
+            'email' => 'second-super@example.test',
+            'password' => Hash::make('password'),
+        ]);
+        $this->makeSuperuser($secondSuperuser);
 
         $this->actingAsMember($this->user, $this->org)
             ->deleteJson(sprintf('/api/organisations/%s/users/%s', $this->org->getKey(), $this->user->getKey()))
             ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
 
-        // Membership intact.
         $this->assertDatabaseHas('organisation_user', [
             'organisation_id' => $this->org->getKey(),
             'user_id' => $this->user->getKey(),
         ]);
+    }
+
+    #[Test]
+    public function remove_self_blocked_when_only_superuser(): void
+    {
+        $this->makeSuperuser($this->user);
+        // Add a second org member so the "last member" guard doesn't fire.
+        $coMember = User::create([
+            'name' => 'Co Member',
+            'email' => 'comember@example.test',
+            'password' => Hash::make('password'),
+        ]);
+        $this->org->users()->attach($coMember, ['role' => OrganisationRole::Viewer->value]);
+
+        $this->actingAsMember($this->user, $this->org)
+            ->deleteJson(sprintf('/api/organisations/%s/users/%s', $this->org->getKey(), $this->user->getKey()))
+            ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
+
+        // Membership intact + still a superuser.
+        $this->assertDatabaseHas('organisation_user', [
+            'organisation_id' => $this->org->getKey(),
+            'user_id' => $this->user->getKey(),
+        ]);
+        $this->assertTrue($this->user->fresh()?->hasRole(User::ROLE_SUPERUSER));
+    }
+
+    #[Test]
+    public function remove_self_allowed_when_other_members_and_other_superusers_exist(): void
+    {
+        $this->makeSuperuser($this->user);
+        // Second superuser so the platform-admin guard passes.
+        $secondSuperuser = User::create([
+            'name' => 'Second Super',
+            'email' => 'second-super@example.test',
+            'password' => Hash::make('password'),
+        ]);
+        $this->makeSuperuser($secondSuperuser);
+        // Second org member so the last-member guard passes.
+        $coMember = User::create([
+            'name' => 'Co Member',
+            'email' => 'comember@example.test',
+            'password' => Hash::make('password'),
+        ]);
+        $this->org->users()->attach($coMember, ['role' => OrganisationRole::Viewer->value]);
+
+        $this->actingAsMember($this->user, $this->org)
+            ->deleteJson(sprintf('/api/organisations/%s/users/%s', $this->org->getKey(), $this->user->getKey()))
+            ->assertStatus(Response::HTTP_NO_CONTENT);
+
+        $this->assertDatabaseMissing('organisation_user', [
+            'organisation_id' => $this->org->getKey(),
+            'user_id' => $this->user->getKey(),
+        ]);
+        // The user record stays + superuser role stays.
+        $this->assertDatabaseHas('users', ['id' => $this->user->getKey()]);
+        $this->assertTrue($this->user->fresh()?->hasRole(User::ROLE_SUPERUSER));
     }
 }

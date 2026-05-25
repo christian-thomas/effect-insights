@@ -46,6 +46,25 @@ const inviteForm = reactive<InviteFormState>({
   role: 'viewer',
 });
 
+/**
+ * Pull the operator-facing message out of an Ofetch error. The Laravel
+ * exception handler wraps abort(422, "...") + validation errors in a
+ * `{ message, errors? }` JSON body — fall back to the bare Error.message
+ * (e.g. "422 Unprocessable Entity") only when that's missing.
+ */
+const apiErrorMessage = (caught: unknown, fallback: string): string => {
+  if (caught instanceof Error) {
+    const data = (caught as Error & { data?: { message?: string; errors?: Record<string, string[]> } }).data;
+    if (data?.message) return data.message;
+    if (data?.errors) {
+      const firstFieldErrors = Object.values(data.errors)[0];
+      if (firstFieldErrors?.[0]) return firstFieldErrors[0];
+    }
+    if (caught.message && !caught.message.match(/^\d{3}\s/)) return caught.message;
+  }
+  return fallback;
+};
+
 const onInvite = async (): Promise<void> => {
   try {
     await store.invite(organisationId, {
@@ -62,7 +81,7 @@ const onInvite = async (): Promise<void> => {
   } catch (caught) {
     toast.add({
       title: 'Could not send invitation',
-      description: caught instanceof Error ? caught.message : 'Please try again',
+      description: apiErrorMessage(caught, 'Please try again'),
       icon: 'i-lucide-triangle-alert',
       color: 'error',
     });
@@ -77,7 +96,7 @@ const onRevoke = async (invitation: PendingInvitation): Promise<void> => {
   } catch (caught) {
     toast.add({
       title: 'Could not revoke invitation',
-      description: caught instanceof Error ? caught.message : 'Please try again',
+      description: apiErrorMessage(caught, 'Please try again'),
       icon: 'i-lucide-triangle-alert',
       color: 'error',
     });
@@ -85,20 +104,24 @@ const onRevoke = async (invitation: PendingInvitation): Promise<void> => {
 };
 
 const onRemoveMember = async (member: OrganisationMember): Promise<void> => {
-  if (
-    !window.confirm(
-      `Remove ${member.name} (${member.email}) from this organisation? Their user account is preserved and any other organisations they belong to stay intact.`,
-    )
-  ) {
-    return;
-  }
+  const isSelf = member.id === auth.user?.id;
+  const prompt = isSelf
+    ? `Remove yourself from this organisation? You'll lose access to its domains, scans, and consent log via the org switcher.`
+    : `Remove ${member.name} (${member.email}) from this organisation? Their user account is preserved and any other organisations they belong to stay intact.`;
+
+  if (!window.confirm(prompt)) return;
+
   try {
     await store.removeMember(organisationId, member.id);
-    toast.add({ title: `Removed ${member.name}`, icon: 'i-lucide-check', color: 'success' });
+    toast.add({
+      title: isSelf ? 'Left organisation' : `Removed ${member.name}`,
+      icon: 'i-lucide-check',
+      color: 'success',
+    });
   } catch (caught) {
     toast.add({
       title: 'Could not remove member',
-      description: caught instanceof Error ? caught.message : 'Please try again',
+      description: apiErrorMessage(caught, 'Please try again'),
       icon: 'i-lucide-triangle-alert',
       color: 'error',
     });
@@ -125,11 +148,7 @@ const goBack = (): void => {
         size="xs"
         @click="goBack"
       />
-    </template>
-    <template #right>
-      <OrgSwitcher />
-    </template>
-  </UDashboardNavbar>
+    </template></UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl">
     <UCard>
@@ -230,7 +249,16 @@ const goBack = (): void => {
         { id: 'actions', header: '' },
       ]" class="w-full">
         <template #name-cell="{ row }">
-          <span class="text-sm font-medium">{{ row.original.name }}</span>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-medium">{{ row.original.name }}</span>
+            <UBadge
+              v-if="row.original.id === auth.user?.id"
+              variant="subtle"
+              color="primary"
+              size="sm"
+              label="You"
+            />
+          </div>
         </template>
         <template #email-cell="{ row }">
           <span class="text-sm font-mono text-gray-700 dark:text-gray-300">{{ row.original.email }}</span>
@@ -242,12 +270,26 @@ const goBack = (): void => {
           <span class="text-xs text-gray-500">{{ formatTime(row.original.joinedAt) }}</span>
         </template>
         <template #actions-cell="{ row }">
+          <UTooltip
+            v-if="row.original.id === auth.user?.id && members.length === 1"
+            text="You're the last member of this organisation. Add another member before you can leave."
+          >
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-user-x"
+              label="Leave"
+              disabled
+            />
+          </UTooltip>
           <UButton
+            v-else
             size="xs"
             variant="ghost"
             color="error"
             icon="i-lucide-user-x"
-            label="Remove"
+            :label="row.original.id === auth.user?.id ? 'Leave' : 'Remove'"
             @click="onRemoveMember(row.original)"
           />
         </template>

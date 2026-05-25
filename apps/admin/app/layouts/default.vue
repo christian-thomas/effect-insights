@@ -64,12 +64,14 @@ const userItems = computed(() => [
         </div>
       </template>
 
-      <!-- The org switcher lives in each page's UDashboardNavbar #right slot
-           (see components/OrgSwitcher.vue). It was previously a ghost-button
-           dropdown here in the sidebar body, but that gave it no visual
-           anchor and made the current tenant hard to spot. Moving it to the
-           navbar puts it next to the page title where users actually look
-           for "what context am I in?". -->
+      <!-- Active organisation lives in the sidebar so it's persistent across
+           every page without each page wiring it into its own navbar #right
+           slot. Uses the same pill design (avatar + name + chevron) the
+           navbar version used. -->
+      <div class="px-1 pb-2">
+        <OrgSwitcher />
+      </div>
+
       <UNavigationMenu :items="nav" orientation="vertical" />
 
       <template #footer>

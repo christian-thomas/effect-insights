@@ -55,11 +55,7 @@ const removeOverride = async (row: AccessibilityRuleOverride): Promise<void> => 
         icon="i-lucide-arrow-left"
         to="/accessibility-scans"
       />
-    </template>
-    <template #right>
-      <OrgSwitcher />
-    </template>
-  </UDashboardNavbar>
+    </template></UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-4">
     <UAlert

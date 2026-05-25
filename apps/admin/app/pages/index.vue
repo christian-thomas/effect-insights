@@ -98,11 +98,7 @@ const moduleStyles: Record<
 </script>
 
 <template>
-  <UDashboardNavbar title="Dashboard">
-    <template #right>
-      <OrgSwitcher />
-    </template>
-  </UDashboardNavbar>
+  <UDashboardNavbar title="Dashboard"></UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-6">
     <UAlert

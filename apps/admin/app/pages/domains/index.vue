@@ -84,10 +84,7 @@ const columns: TableColumn<Domain>[] = [
 <template>
   <UDashboardNavbar title="Domains">
     <template #right>
-      <UButton icon="i-lucide-plus" label="Add domain" @click="openCreate" />
-      <div class="mx-1 h-6 w-px bg-accented" aria-hidden="true" />
-      <OrgSwitcher />
-    </template>
+      <UButton icon="i-lucide-plus" label="Add domain" @click="openCreate" /></template>
   </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8">

@@ -84,10 +84,7 @@ const onRemove = async (passkey: Passkey): Promise<void> => {
         :loading="registering"
         label="Register a passkey"
         @click="onRegister"
-      />
-      <div class="mx-1 h-6 w-px bg-accented" aria-hidden="true" />
-      <OrgSwitcher />
-    </template>
+      /></template>
   </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-4">

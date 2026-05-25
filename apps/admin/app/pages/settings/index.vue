@@ -59,11 +59,7 @@ const onSubmit = async (): Promise<void> => {
 </script>
 
 <template>
-  <UDashboardNavbar title="Settings">
-    <template #right>
-      <OrgSwitcher />
-    </template>
-  </UDashboardNavbar>
+  <UDashboardNavbar title="Settings"></UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 max-w-4xl">
     <USkeleton v-if="loading && !organisation" class="h-96 w-full" />
