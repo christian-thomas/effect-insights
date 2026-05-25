@@ -110,6 +110,25 @@ export const useAuthStore = defineStore('auth', {
       this.hydrate(response);
     },
 
+    async updateProfile(payload: { name?: string; email?: string }): Promise<void> {
+      const response = await $api<SessionPayload>('/api/me', {
+        method: 'PATCH',
+        body: payload,
+      });
+      this.hydrate(response);
+    },
+
+    async changePassword(payload: {
+      current_password: string;
+      password: string;
+      password_confirmation: string;
+    }): Promise<void> {
+      await $api('/api/me/password', {
+        method: 'POST',
+        body: payload,
+      });
+    },
+
     async logout(): Promise<void> {
       try {
         await $api('/api/logout', { method: 'POST' });

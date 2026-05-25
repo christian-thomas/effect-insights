@@ -28,6 +28,8 @@ Route::get('/cookie-policy/{publicKey}.html', Api\CookiePolicies\ShowPublicCooki
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/me', Api\Auth\Me::class);
+    Route::patch('/me', Api\Auth\UpdateMe::class);
+    Route::post('/me/password', Api\Auth\ChangePassword::class);
     Route::post('/logout', Api\Auth\Logout::class);
 
     // Passkey credential management — list + register + revoke for
