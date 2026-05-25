@@ -2,14 +2,23 @@
 
 User-facing documentation for Effect Insight, built with [VitePress](https://vitepress.dev/).
 
-Covers:
+The site is organised around the platform's modules — readers can come for
+one and ignore the others:
 
-- **Implementing the banner** — embed snippet + per-stack guidance
-- **Configuring your site** — CSP, cross-subdomain consent, script blocking
-- **Operations** — notifications, rate limits, troubleshooting
-- **Coming soon** — placeholder pages for cookie policy generation, vendor
-  management, A/B testing (so the future shape is documented and the
-  current absence is honest)
+- **Platform** — managing domains, organisations (multi-tenant), authentication
+- **Consent management** — banner implementation, GTM install, scanner,
+  cookie policy generation, consent records + receipts, script blocking,
+  cross-subdomain consent, CSP, JavaScript API surface
+- **Accessibility scanning** — scheduled axe-core audits, impact thresholds,
+  per-rule muting
+- **Operations** — notifications, rate limits, troubleshooting (shared
+  across modules)
+- **Coming soon** — placeholder pages for unshipped features (vendor /
+  sub-processor management, banner A/B testing)
+
+Codebase-internal documentation (class names, source paths, package
+internals) lives in the per-app READMEs (`apps/api/README.md`,
+`apps/admin/README.md`, etc.) — VitePress is operator-facing only.
 
 ## Local dev
 

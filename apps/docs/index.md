@@ -3,27 +3,33 @@ layout: home
 
 hero:
   name: Effect Insight
-  text: Consent Management Platform
-  tagline: White-label cookie consent, scanner, and audit log — owned end-to-end.
+  text: Website audit platform
+  tagline: White-label consent management + accessibility auditing for the sites you operate. Owned end-to-end, multi-tenant, no third-party SaaS in the request path.
   actions:
     - theme: brand
-      text: Implement the banner
+      text: Set up consent
       link: /guides/implementing-the-banner
     - theme: alt
-      text: Trigger your first scan
-      link: /guides/triggering-scans
+      text: Run accessibility scans
+      link: /guides/accessibility-scans
 
 features:
   - icon: 🛡
-    title: GDPR-ready consent
-    details: Modal / bar / corner layouts, GCM v2 defaults, GPC honoured, refusal as easy as acceptance.
+    title: GDPR-ready consent banner
+    details: Modal / bar / corner layouts, Google Consent Mode v2 defaults, GPC honoured, refusal as easy as acceptance.
   - icon: 🔎
-    title: Cookie scanner
-    details: Discovers what your site actually loads. Schedules per-domain, surfaces unknowns for review.
+    title: Scheduled cookie scanner
+    details: Discovers what your site actually loads. Per-domain cadence, surfaces unknowns for review.
+  - icon: ♿
+    title: Accessibility audits
+    details: Scheduled axe-core scans against your domains. Slack alerts on critical / serious violations, per-rule muting with audit trail.
   - icon: 📜
-    title: Regulator-ready receipts
-    details: Per-event or per-visitor receipt downloads in signed JSON or PDF.
+    title: Audit-ready
+    details: Signed consent receipts (JSON + PDF) plus historical accessibility trend data per domain.
+  - icon: 🏢
+    title: Multi-tenant
+    details: One platform, many client organisations. Domains, scans, banner configs, and findings are tenant-scoped end-to-end.
   - icon: ⚡
-    title: Edge-fast
+    title: Edge-fast consent path
     details: Banner config served from Cloudflare KV, consent ingested at the edge, sub-50ms paint budget.
 ---

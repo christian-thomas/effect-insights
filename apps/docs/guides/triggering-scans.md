@@ -1,8 +1,14 @@
-# Triggering scans
+# Triggering cookie scans
 
-The scanner crawls your site with a real browser, captures every cookie set
-and every third-party request fired, and resolves them against the canonical
-cookie database + your overrides. Two ways to trigger one.
+::: tip Looking for accessibility scans?
+This page covers the **cookie scanner** — what the consent banner uses to
+build its cookie inventory. For axe-core accessibility audits, see
+[Accessibility scans](./accessibility-scans) instead.
+:::
+
+The cookie scanner crawls your site with a real browser, captures every
+cookie set and every third-party request fired, and resolves them against
+the canonical cookie database + your overrides. Two ways to trigger one.
 
 ## Manual — from the admin
 
