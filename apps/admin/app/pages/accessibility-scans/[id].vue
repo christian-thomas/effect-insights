@@ -152,18 +152,22 @@ const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> =
 </script>
 
 <template>
-  <UContainer class="py-6">
+  <UDashboardNavbar
+    :title="scan ? `Accessibility scan ${scan.id.slice(0, 8)}…` : 'Accessibility scan'"
+  >
+    <template v-if="scan" #right>
+      <UBadge :color="statusColor[scan.status] ?? 'neutral'" variant="soft">
+        {{ scan.status }}
+      </UBadge>
+    </template>
+  </UDashboardNavbar>
+
+  <div class="p-4 sm:p-6 lg:p-8 space-y-4">
     <div v-if="scan">
-      <UPageHeader
-        :title="`Accessibility scan ${scan.id.slice(0, 8)}…`"
-        :description="`Status: ${scan.status} · ${scan.urlsScanned} URLs scanned · ${scan.violationsTotal} violations`"
-      >
-        <template #links>
-          <UBadge :color="statusColor[scan.status] ?? 'neutral'" variant="soft">
-            {{ scan.status }}
-          </UBadge>
-        </template>
-      </UPageHeader>
+      <p class="text-sm text-gray-500">
+        Status: {{ scan.status }} · {{ scan.urlsScanned }} URLs scanned ·
+        {{ scan.violationsTotal }} violations
+      </p>
 
       <UAlert
         v-if="scan.errorLog"
@@ -384,5 +388,5 @@ const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> =
         </div>
       </div>
     </div>
-  </UContainer>
+  </div>
 </template>

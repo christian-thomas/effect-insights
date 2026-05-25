@@ -43,12 +43,14 @@ const categoryLabel = (key: string): string =>
 </script>
 
 <template>
-  <UContainer class="py-6">
+  <UDashboardNavbar :title="scan ? `Scan ${scan.id.slice(0, 8)}…` : 'Scan'" />
+
+  <div class="p-4 sm:p-6 lg:p-8 space-y-4">
     <div v-if="scan">
-      <UPageHeader
-        :title="`Scan ${scan.id.slice(0, 8)}…`"
-        :description="`Status: ${scan.status} · ${scan.urlsScanned} URLs scanned · ${findings.length} findings`"
-      />
+      <p class="text-sm text-gray-500">
+        Status: {{ scan.status }} · {{ scan.urlsScanned }} URLs scanned ·
+        {{ findings.length }} findings
+      </p>
 
       <UAlert
         v-if="scan.errorLog"
@@ -147,5 +149,5 @@ const categoryLabel = (key: string): string =>
         class="mt-4"
       />
     </div>
-  </UContainer>
+  </div>
 </template>

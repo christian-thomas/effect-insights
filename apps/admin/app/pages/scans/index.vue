@@ -44,13 +44,15 @@ const domainFqdn = (id: string): string =>
 </script>
 
 <template>
-  <UContainer class="py-6">
-    <UPageHeader
-      title="Cookie scans"
-      description="Cookie scanner runs across the active organisation's domains. For axe-core accessibility audits see Accessibility scans."
-    />
+  <UDashboardNavbar title="Cookie scans" />
 
-    <UCard class="mt-4">
+  <div class="p-4 sm:p-6 lg:p-8 space-y-4">
+    <p class="text-sm text-gray-500">
+      Cookie scanner runs across the active organisation's domains. For axe-core accessibility
+      audits see <NuxtLink to="/accessibility-scans" class="text-primary-500 hover:underline">Accessibility scans</NuxtLink>.
+    </p>
+
+    <UCard>
       <div class="flex items-center gap-3">
         <USelectMenu
           v-model="selectedDomain"
@@ -91,5 +93,5 @@ const domainFqdn = (id: string): string =>
         <UButton size="xs" variant="soft" :to="`/scans/${row.original.id}`">View</UButton>
       </template>
     </UTable>
-  </UContainer>
+  </div>
 </template>

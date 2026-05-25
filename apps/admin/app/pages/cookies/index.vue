@@ -93,6 +93,7 @@ interface ImportFormState {
 
 const importForm = reactive<ImportFormState>({ file: null, sourceVersion: '' });
 const uploading = ref(false);
+const importSlideoverOpen = ref(false);
 const lastResult = ref<
   | { created: number; existing: number; skipped: number; sourceVersion: string }
   | null
@@ -119,6 +120,13 @@ const onUpload = async (): Promise<void> => {
     });
     importForm.file = null;
     importForm.sourceVersion = '';
+    // Switch the tab so the staged rows are visible behind the slideover
+    // when it closes, then dismiss after a beat so the success alert is
+    // readable.
+    if (auth.user?.isSuperuser) tab.value = 'imports';
+    setTimeout(() => {
+      importSlideoverOpen.value = false;
+    }, 1500);
   } catch (caught) {
     const data = (caught as Error & { data?: { message?: string; errors?: Record<string, string[]> } }).data;
     const message = data?.message
@@ -246,11 +254,18 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
 </script>
 
 <template>
+  <UDashboardNavbar title="Cookie database">
+    <template #right>
+      <UButton
+        v-if="auth.user?.isSuperuser"
+        icon="i-lucide-upload"
+        label="Import cookies"
+        @click="importSlideoverOpen = true"
+      />
+    </template>
+  </UDashboardNavbar>
+
   <UContainer class="py-6">
-    <UPageHeader
-      title="Cookie database"
-      :description="`Canonical catalogue (${cookies.length}), per-org overrides (${overrides.length})${auth.user?.isSuperuser ? `, plus pending imports (${imports.length})` : ''}.`"
-    />
 
     <div class="mt-4 flex flex-wrap gap-2">
       <UButton :variant="tab === 'canonical' ? 'solid' : 'soft'" @click="tab = 'canonical'">
@@ -402,83 +417,12 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
       </UTable>
     </div>
 
-    <div v-else class="mt-6 space-y-6">
-      <UCard>
-        <template #header>
-          <div>
-            <h3 class="font-semibold">Import a cookie list</h3>
-            <p class="text-sm text-gray-500 mt-0.5">
-              Upload an
-              <a
-                href="https://github.com/jkwakman/Open-Cookie-Database/blob/master/open-cookie-database.csv"
-                target="_blank"
-                rel="noopener"
-                class="text-primary-500 hover:underline"
-              >Open-Cookie-Database</a>
-              CSV (or any file matching the same column layout) to stage rows for review. Rows are
-              parsed into the queue below — promote each one into the canonical DB or reject it.
-              Re-uploading the same dataset is safe; duplicates count as <em>existing</em> rather
-              than re-staging.
-            </p>
-          </div>
-        </template>
-
-        <UForm :state="importForm" class="space-y-4 max-w-xl" @submit="onUpload">
-          <UFormField
-            label="CSV file"
-            name="file"
-            required
-            help="Required columns: ID, Vendor, Category, Cookie / Data Key name, Domain, Description, Retention period, Wildcard match."
-          >
-            <UInput
-              type="file"
-              accept=".csv,text/csv"
-              :disabled="uploading"
-              @change="onFileChange"
-            />
-          </UFormField>
-          <UFormField
-            label="Source version (optional)"
-            name="source_version"
-            help="A label to distinguish this upload in the review queue (e.g. '2026-05-25', 'ocd-v1.4'). Leave blank to auto-stamp."
-          >
-            <UInput
-              v-model="importForm.sourceVersion"
-              placeholder="e.g. 2026-05-25"
-              :disabled="uploading"
-              class="w-full sm:w-64"
-            />
-          </UFormField>
-          <UAlert
-            v-if="lastResult"
-            color="success"
-            variant="subtle"
-            icon="i-lucide-check"
-            :title="`Imported ${lastResult.sourceVersion}`"
-            :description="`Created ${lastResult.created}, already existed ${lastResult.existing}, skipped ${lastResult.skipped}.`"
-          />
-          <div class="flex items-center gap-3 pt-2">
-            <UButton
-              type="submit"
-              icon="i-lucide-upload"
-              label="Upload + stage"
-              :loading="uploading"
-              :disabled="!importForm.file"
-            />
-            <UButton
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              icon="i-lucide-download"
-              label="Download example.csv"
-              to="/examples/cookie-import-example.csv"
-              target="_blank"
-              external
-            />
-          </div>
-        </UForm>
-      </UCard>
-
+    <div v-else class="mt-6">
+      <p class="text-sm text-gray-500 mb-4">
+        Rows staged from CSV uploads via the
+        <strong>Import cookies</strong> button above. Promote each row into
+        the canonical DB or reject it.
+      </p>
       <UTable :data="imports" :columns="importColumns" :loading="loading">
         <template #category-cell="{ row }">
           <UBadge :color="categoryColor[row.original.category] ?? 'neutral'" variant="soft">
@@ -495,6 +439,87 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
         </template>
       </UTable>
     </div>
+
+    <USlideover v-model:open="importSlideoverOpen" title="Import cookies">
+      <template #body>
+        <UForm :state="importForm" class="space-y-4" @submit="onUpload">
+          <p class="text-sm text-gray-500">
+            Upload an
+            <a
+              href="https://github.com/jkwakman/Open-Cookie-Database/blob/master/open-cookie-database.csv"
+              target="_blank"
+              rel="noopener"
+              class="text-primary-500 hover:underline"
+            >Open-Cookie-Database</a>
+            CSV (or any file matching the same column layout) to stage rows for review. Rows are
+            parsed into the queue on the <strong>Pending imports</strong> tab — promote each one
+            into the canonical DB or reject. Re-uploading the same dataset is safe; duplicates
+            count as <em>existing</em> rather than re-staging.
+          </p>
+
+          <UFormField
+            label="CSV file"
+            name="file"
+            required
+            help="Required columns: ID, Vendor, Category, Cookie / Data Key name, Domain, Description, Retention period, Wildcard match."
+          >
+            <UInput
+              type="file"
+              accept=".csv,text/csv"
+              :disabled="uploading"
+              @change="onFileChange"
+            />
+          </UFormField>
+          <UFormField
+            label="Source version (optional)"
+            name="source_version"
+            help="A label to distinguish this upload in the queue (e.g. '2026-05-25', 'ocd-v1.4'). Leave blank to auto-stamp."
+          >
+            <UInput
+              v-model="importForm.sourceVersion"
+              placeholder="e.g. 2026-05-25"
+              :disabled="uploading"
+              class="w-full"
+            />
+          </UFormField>
+          <UAlert
+            v-if="lastResult"
+            color="success"
+            variant="subtle"
+            icon="i-lucide-check"
+            :title="`Imported ${lastResult.sourceVersion}`"
+            :description="`Created ${lastResult.created}, already existed ${lastResult.existing}, skipped ${lastResult.skipped}.`"
+          />
+          <div class="flex items-center justify-between gap-3 pt-2">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              icon="i-lucide-download"
+              label="Download example.csv"
+              to="/examples/cookie-import-example.csv"
+              target="_blank"
+              external
+            />
+            <div class="flex gap-2">
+              <UButton
+                color="neutral"
+                variant="ghost"
+                label="Close"
+                @click="importSlideoverOpen = false"
+              />
+              <UButton
+                type="submit"
+                icon="i-lucide-upload"
+                label="Upload + stage"
+                :loading="uploading"
+                :disabled="!importForm.file"
+              />
+            </div>
+          </div>
+        </UForm>
+      </template>
+    </USlideover>
 
     <USlideover v-model:open="slideoverOpen" side="right">
       <template #content>

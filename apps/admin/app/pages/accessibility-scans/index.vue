@@ -53,25 +53,24 @@ const domainFqdn = (id: string): string =>
 </script>
 
 <template>
-  <UContainer class="py-6">
-    <UPageHeader
-      title="Accessibility scans"
-      description="Scheduled and manual axe-core scans across the active organisation's domains."
-    >
-      <template #links>
-        <UButton
-          to="/accessibility-rule-overrides"
-          color="neutral"
-          variant="soft"
-          size="sm"
-          icon="i-lucide-volume-x"
-        >
-          Rule overrides
-        </UButton>
-      </template>
-    </UPageHeader>
+  <UDashboardNavbar title="Accessibility scans">
+    <template #right>
+      <UButton
+        to="/accessibility-rule-overrides"
+        color="neutral"
+        variant="soft"
+        icon="i-lucide-volume-x"
+        label="Rule overrides"
+      />
+    </template>
+  </UDashboardNavbar>
 
-    <UCard class="mt-4">
+  <div class="p-4 sm:p-6 lg:p-8 space-y-4">
+    <p class="text-sm text-gray-500">
+      Scheduled and manual axe-core scans across the active organisation's domains.
+    </p>
+
+    <UCard>
       <div class="flex items-center gap-3">
         <USelectMenu
           v-model="selectedDomain"
@@ -131,5 +130,5 @@ const domainFqdn = (id: string): string =>
         </UButton>
       </template>
     </UTable>
-  </UContainer>
+  </div>
 </template>
