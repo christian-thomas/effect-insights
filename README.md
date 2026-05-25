@@ -32,7 +32,10 @@ packages/
 - **Bun 1.3+** (package manager + runtime), **Turborepo** for orchestration
 - **Node 22+** (Nuxt, Wrangler, Vite still run on Node)
 - **PHP 8.3+**, **Composer**, **Laravel 13** (Herd locally)
-- **Cloudflare**: Workers, KV, D1, R2 (Wrangler for local dev)
+- **Cloudflare**: Workers, KV, D1, R2 (Wrangler for local dev), native Laravel mail driver
+- **Auth**: Sanctum SPA sessions + WebAuthn / FIDO2 passkeys
+  (`spatie/laravel-passkeys`) — email/password remains the fallback.
+  See [docs/guides/auth](apps/docs/guides/auth.md).
 
 ## Prerequisites
 

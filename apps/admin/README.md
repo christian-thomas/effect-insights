@@ -80,6 +80,8 @@ app/
 │   ├── domains/[id]/scans.vue      Per-domain scan history + trigger
 │   ├── consent/index.vue           Consent log + filters + CSV export + receipt downloads
 │   ├── cookies/index.vue           Canonical / Overrides / Review queue / Pending imports tabs
+│   ├── settings/index.vue          Settings hub (links to subpages)
+│   ├── settings/passkeys.vue       Register / list / revoke WebAuthn passkeys
 │   └── ...
 ├── stores/            Pinia stores — one per resource
 │   ├── auth.ts                     /me, /login, /logout, organisation switching

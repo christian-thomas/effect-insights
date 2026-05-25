@@ -104,6 +104,24 @@ You hit **Download receipt → JSON/PDF** on a consent event and get an error.
 | 500 with `signature` related error | `CONSENT_RECEIPT_SIGNING_KEY` not set on the API server        | Set it in `apps/api/.env` (`openssl rand -hex 32`) and restart the queue.               |
 | PDF downloads but is blank         | dompdf can't render the Blade template                         | Check `apps/api/storage/logs/laravel.log` — usually a missing dependency or font issue. |
 
+## Passkey sign-in or registration fails
+
+You hit **Sign in with a passkey** (or **Register a passkey**) and the
+flow doesn't complete.
+
+| Symptom                                                                                | Cause                                                                                                                                       | Fix                                                                                                                                                                                                                                                                       |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Sign in with a passkey** button isn't visible at all                                 | Browser doesn't expose `navigator.credentials` — older browser, an embedded webview, or a non-HTTPS origin that isn't `localhost`           | Use Safari 16+ / Chrome 108+ / Firefox 119+ / Edge 108+. In production the admin must be served over HTTPS — WebAuthn refuses to run otherwise (localhost is exempt).                                                                                                     |
+| Browser shows `NotAllowedError` immediately                                            | Operator cancelled the system prompt, or the authenticator timed out                                                                        | This is treated as a quiet cancellation — no toast, no error. Click the button again and complete the biometric / hardware prompt before the system timeout (usually ~60s).                                                                                              |
+| Browser shows `SecurityError: The relying party ID is not a registrable domain suffix` | The admin SPA hostname doesn't match the registrable domain of `app.url` on the Laravel side                                                | Confirm `APP_URL` in `apps/api/.env` matches the production admin hostname. Passkeys are bound to the registrable domain (`effectinsight.com`), so moving the admin to a different apex requires every operator to re-enrol.                                              |
+| Sign-in succeeds in the browser prompt but `POST /api/passkeys/authenticate` returns 400 | Session challenge expired (operator paused mid-prompt) or the credential ID isn't recognised — passkey was revoked, or registered against a different relying party | Click **Sign in with a passkey** again to issue a fresh challenge. If it still fails, register a fresh passkey from Settings → Passkeys. The old credential is probably orphaned (e.g. an admin DB restore wiped the row).                                                |
+| Registration completes but the new row never appears in **Settings → Passkeys**         | `POST /api/passkeys` returned 400 — `passkey-register-options` wasn't called first, or the session cookie wasn't preserved                  | Reload the page, then click **Register a passkey** again. The two-step ceremony (`register-options` → `POST /api/passkeys`) shares the session, so anything that drops cookies between the two halves (third-party cookie blockers, incognito mode) breaks the flow.     |
+| Login works on one device but not another                                              | Passkey was registered on a non-syncing authenticator (e.g. a YubiKey) and that device doesn't have it                                       | Register a second passkey on each device that needs to sign in. iCloud Keychain / Google Password Manager passkeys sync across the user's devices automatically; hardware keys + Windows Hello don't.                                                                    |
+
+If a YubiKey or laptop with all the operator's passkeys is lost, see the
+"Revoking a passkey" section of the [Authentication guide](./auth#revoking-a-passkey)
+for the database-level removal procedure.
+
 ## Where to get more help
 
 - Check the [admin app](https://admin.effectinsight.com) for the latest status

@@ -37,6 +37,50 @@ If the browser doesn't support WebAuthn (older versions, some
 embedded webviews), the button is hidden and only the password
 form shows.
 
+## Requirements
+
+- **HTTPS in production.** WebAuthn refuses to run over plain HTTP.
+  Localhost is the only exception — `http://localhost:3001` works
+  for dev, anything else (including a LAN IP or a custom dev
+  hostname not pointing at loopback) needs TLS.
+- **Modern browser.** Safari 16+, Chrome 108+, Firefox 119+, Edge
+  108+. Older browsers don't expose `navigator.credentials.create`
+  with the conditional-UI features the package relies on. iOS and
+  Android Chrome / Safari pick up the platform authenticator
+  automatically (Face ID, fingerprint, Android biometric).
+- **One registrable domain.** A passkey registered against
+  `app.effectinsight.com` is bound to `effectinsight.com` and works
+  across every subdomain. Moving the admin to a different
+  registrable domain (e.g. a custom client subdomain on a different
+  apex) means every operator has to re-register.
+
+## Security posture
+
+What the server stores per passkey:
+
+- A label the operator picked (e.g. "MacBook TouchID").
+- The credential ID (a public identifier — *not* secret material).
+- The public key + algorithm + counter + transports, serialised as
+  JSON in the `data` column.
+
+We do **not** store anything that could let a thief forge an
+assertion. The private key never leaves the authenticator —
+that's the whole point of WebAuthn. A database leak gives an
+attacker public keys, which are useless without the matching
+hardware.
+
+The API never returns the `credential_id` or `data` fields. The
+list endpoint exposes only the label, last-used timestamp, and the
+row's own UUID (which is what the revoke endpoint accepts) —
+verified by the
+`list_response_does_not_leak_credential_id_or_public_key_data`
+feature test.
+
+The registration ceremony's challenge is stashed in the Laravel
+session and validated server-side on the follow-up POST, so a
+replay against a leaked browser response can't enrol a new key
+without the matching session cookie.
+
 ## Revoking a passkey
 
 Settings → Passkeys → ⋯ → **Revoke**. The credential is removed

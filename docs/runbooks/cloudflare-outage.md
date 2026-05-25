@@ -154,6 +154,16 @@ notice short outages at all.
 **Admin impact**: Operators can't log in or use the admin during the
 outage. New banner publishes can't happen, scans can't be triggered.
 
+**Passkey impact**: Both passkey registration and passkey sign-in go
+through Laravel (`POST /api/passkeys/authentication-options` →
+`POST /api/passkeys/authenticate`) so passkey login is offline for the
+duration of the outage. There's no edge fallback — the WebAuthn
+challenge is generated and validated server-side. Operators with an
+existing session cookie stay signed in (Sanctum sessions are stored
+in the Laravel-side DB; if MySQL is the failure mode they're logged
+out on the next API call). Password sign-in is also down — both auth
+methods share the same Laravel entrypoint.
+
 **Scheduled jobs**: If MySQL or Laravel is down at 02:00 / 03:00 /
 04:00 UTC:
 - `consent-events:purge` (02:00) — fails for that day. Retention is a
