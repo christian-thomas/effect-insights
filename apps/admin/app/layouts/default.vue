@@ -7,7 +7,6 @@ const toast = useToast();
 const nav = computed((): NavigationMenuItem[][] => {
   const platform: NavigationMenuItem[] = [
     { label: 'Platform', type: 'label' },
-    { label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' },
     { label: 'Domains', icon: 'i-lucide-globe', to: '/domains' },
   ];
 
@@ -32,6 +31,7 @@ const nav = computed((): NavigationMenuItem[][] => {
   ];
 
   return [
+    [{ label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' }],
     platform,
     consent,
     accessibility,
