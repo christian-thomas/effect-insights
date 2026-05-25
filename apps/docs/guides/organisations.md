@@ -12,15 +12,15 @@ operators don't see most of this.
 
 ## What lives on an Organisation
 
-| Column                     | Default            | Purpose                                                              |
-| -------------------------- | ------------------ | -------------------------------------------------------------------- |
-| `name`                     | required           | Display name (e.g. "Acme Corp")                                      |
-| `slug`                     | required, unique   | URL-safe identifier (e.g. `acme-corp`)                               |
-| `consent_retention_days`   | `NULL` (forever)   | Auto-purge consent events past this age. See [Consent records](./consent-records#configurable-retention-per-organisation). |
-| `notification_email`       | `NULL`             | Comma-separated alert recipients. Slack-only when blank. See [Notifications → Email recipients](./notifications#email-recipients). |
-| `a11y_alert_threshold`     | `NULL` (inherit)   | Per-org override of the global a11y alert impact threshold. See [Accessibility scans → Alert threshold](./accessibility-scans#alert-threshold). |
-| `a11y_alert_scope`         | `all`              | Which a11y rule categories count toward the threshold. See [Accessibility scans → Alert scope](./accessibility-scans#alert-scope-wcag-vs-best-practice). |
-| `settings`                 | `NULL`             | Reserved JSON column for future per-tenant config.                   |
+| Column                   | Default          | Purpose                                                                                                                                                  |
+| ------------------------ | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                   | required         | Display name (e.g. "Acme Corp")                                                                                                                          |
+| `slug`                   | required, unique | URL-safe identifier (e.g. `acme-corp`)                                                                                                                   |
+| `consent_retention_days` | `NULL` (forever) | Auto-purge consent events past this age. See [Consent records](./consent-records#configurable-retention-per-organisation).                               |
+| `notification_email`     | `NULL`           | Comma-separated alert recipients. Slack-only when blank. See [Notifications → Email recipients](./notifications#email-recipients).                       |
+| `a11y_alert_threshold`   | `NULL` (inherit) | Per-org override of the global a11y alert impact threshold. See [Accessibility scans → Alert threshold](./accessibility-scans#alert-threshold).          |
+| `a11y_alert_scope`       | `all`            | Which a11y rule categories count toward the threshold. See [Accessibility scans → Alert scope](./accessibility-scans#alert-scope-wcag-vs-best-practice). |
+| `settings`               | `NULL`           | Reserved JSON column for future per-tenant config.                                                                                                       |
 
 ## REST surface
 
@@ -71,10 +71,10 @@ curl -X POST https://api.effectinsight.com/api/organisations \
 
 Returns the created `Organisation` resource. From there:
 
-1. Attach a user (superusers can do this via the admin's user-management
-   page; today, do it via `php artisan tinker` and `$org->users()->attach($user, ['role' => OrganisationRole::Owner])`).
-2. The user logs in, switches into the new org, and starts adding
-   domains.
+1. Invite a user via **Organisations → Users & invitations** in the admin.
+   See [User management](./user-management) for the full invitation flow.
+2. The user accepts the invitation and logs in, then switches into the new
+   org and starts adding domains.
 
 ### Updating a tenant
 
@@ -128,10 +128,11 @@ Returns 204 No Content on success.
 
 Superusers see an **Organisations** entry in the admin sidebar
 (operators don't). The page lists every tenant in a table with edit
-+ delete actions. Click "New organisation" or the edit pencil to open
-the slideover, which has fields for every column above plus inline
-help explaining the trade-offs (e.g. "hard delete" warning on
-retention, "leave blank to inherit platform default" on thresholds).
+
+- delete actions. Click "New organisation" or the edit pencil to open
+  the slideover, which has fields for every column above plus inline
+  help explaining the trade-offs (e.g. "hard delete" warning on
+  retention, "leave blank to inherit platform default" on thresholds).
 
 The org-switcher itself lives in the sidebar header — clicking the
 current org name opens a menu of every org the current user belongs

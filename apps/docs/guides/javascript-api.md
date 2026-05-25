@@ -151,9 +151,7 @@ interface CmpApi {
 #### "Withdraw consent" footer link
 
 ```html
-<a href="#" onclick="window.cmp?.withdraw(); return false;">
-  Cookie preferences
-</a>
+<a href="#" onclick="window.cmp?.withdraw(); return false;"> Cookie preferences </a>
 ```
 
 If a visitor clicks this they get a `withdrawn` consent event recorded
@@ -162,9 +160,7 @@ in the audit log AND the banner re-opens so they can re-decide.
 #### Just re-opening the banner without withdrawing
 
 ```html
-<a href="#" onclick="window.cmp?.openBanner(); return false;">
-  Cookie preferences
-</a>
+<a href="#" onclick="window.cmp?.openBanner(); return false;"> Cookie preferences </a>
 ```
 
 Use this when you want the visitor to be able to fine-tune their

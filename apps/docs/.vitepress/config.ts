@@ -24,6 +24,8 @@ export default defineConfig({
             { text: 'Managing domains', link: '/guides/managing-domains' },
             { text: 'Organisations (multi-tenant)', link: '/guides/organisations' },
             { text: 'Authentication (passkeys + password)', link: '/guides/auth' },
+            { text: 'User management (invitations)', link: '/guides/user-management' },
+            { text: 'Personal account settings', link: '/guides/personal-account-settings' },
           ],
         },
         {
@@ -35,6 +37,7 @@ export default defineConfig({
             { text: 'Banner configuration', link: '/guides/banner-configuration' },
             { text: 'Triggering cookie scans', link: '/guides/triggering-scans' },
             { text: 'Cookie policy generation', link: '/guides/cookie-policy-generation' },
+            { text: 'Cookie database management', link: '/guides/cookie-management' },
             { text: 'Consent records + receipts', link: '/guides/consent-records' },
             { text: 'Blocking third-party scripts', link: '/guides/blocking-scripts' },
             { text: 'Cross-subdomain consent', link: '/guides/cross-subdomain-consent' },
@@ -44,9 +47,7 @@ export default defineConfig({
         },
         {
           text: 'Accessibility scanning',
-          items: [
-            { text: 'Accessibility scans', link: '/guides/accessibility-scans' },
-          ],
+          items: [{ text: 'Accessibility scans', link: '/guides/accessibility-scans' }],
         },
         {
           text: 'Operations',

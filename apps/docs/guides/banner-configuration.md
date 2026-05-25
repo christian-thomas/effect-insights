@@ -262,5 +262,6 @@ flow kicks in before anything goes live. Click Publish to commit.
 
 That gives reversibility without surprise: someone clicks "Roll back
 to v3" → draft swaps to v3's content → admin sees the diff highlighted
-+ a yellow "Publish (re-prompts visitors)" warning if applicable →
-they Publish to make it real.
+
+- a yellow "Publish (re-prompts visitors)" warning if applicable →
+  they Publish to make it real.

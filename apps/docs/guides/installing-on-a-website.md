@@ -244,7 +244,11 @@ possible:
 Same as React-Vite — paste in `index.html`:
 
 ```html
-<script src="https://assets.effectinsight.com/loader.js" data-domain-id="pk_REPLACE_ME" async></script>
+<script
+  src="https://assets.effectinsight.com/loader.js"
+  data-domain-id="pk_REPLACE_ME"
+  async
+></script>
 ```
 
 ---
@@ -310,7 +314,11 @@ In your base layout / template / `_layouts/default.html` — paste
 into `<head>`:
 
 ```html
-<script src="https://assets.effectinsight.com/loader.js" data-domain-id="pk_REPLACE_ME" async></script>
+<script
+  src="https://assets.effectinsight.com/loader.js"
+  data-domain-id="pk_REPLACE_ME"
+  async
+></script>
 ```
 
 ---

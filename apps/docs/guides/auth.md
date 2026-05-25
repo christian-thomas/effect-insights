@@ -14,7 +14,7 @@ and the password remains the break-glass recovery option.
 ## Registering a passkey
 
 1. Sign in to the admin with your existing email + password.
-2. Open **Settings → Passkeys**.
+2. Open **Profile → Passkeys** (click your name in the top-right, then Profile).
 3. Click **Register a passkey**.
 4. Give it a label (e.g. "MacBook TouchID", "YubiKey blue").
 5. The browser prompts your authenticator. Approve.
@@ -59,7 +59,7 @@ form shows.
 What the server stores per passkey:
 
 - A label the operator picked (e.g. "MacBook TouchID").
-- The credential ID (a public identifier — *not* secret material).
+- The credential ID (a public identifier — _not_ secret material).
 - The public key + algorithm + counter + transports, serialised as
   JSON in the `data` column.
 
@@ -80,7 +80,7 @@ session cookie.
 
 ## Revoking a passkey
 
-Settings → Passkeys → ⋯ → **Revoke**. The credential is removed
+Profile → Passkeys → ⋯ → **Revoke**. The credential is removed
 immediately; the next sign-in attempt with that authenticator fails.
 Existing sessions stay alive — revoking doesn't kick the operator
 out, it only prevents new sessions starting from that credential.
@@ -88,7 +88,7 @@ out, it only prevents new sessions starting from that credential.
 If an operator loses every authenticator they registered (lost
 laptop, broken YubiKey, all in the same wallet), they can still sign
 in with their email + password and revoke + re-register from
-**Settings → Passkeys**. If they don't remember their password
+**Profile → Passkeys**. If they don't remember their password
 either, a sysadmin with database access can clear their credentials
 out-of-band — see the API project README for the procedure.
 
@@ -107,6 +107,8 @@ POST   /api/passkeys/register-options          Registration challenge (auth)
 POST   /api/passkeys                           Register a new passkey (auth)
 DELETE /api/passkeys/{passkey}                 Revoke (auth, own only)
 GET    /api/me                                 Current session (auth)
+PATCH  /api/me                                 Update name + email (auth)
+POST   /api/me/password                        Change password (auth)
 POST   /api/logout                             End session (auth)
 ```
 
@@ -119,7 +121,7 @@ registration is:
 2. Browser calls `navigator.credentials.create()` with those
    options. The user's authenticator prompts.
 3. `POST /api/passkeys` with `{ passkey: <browser response JSON>,
-   name: "label" }` — server pulls the original challenge from the
+name: "label" }` — server pulls the original challenge from the
    session and validates the response against it.
 
 Authentication is the same shape but with `authentication-options` →
@@ -133,8 +135,7 @@ Sometimes the YubiKey is in a drawer in the office. Sometimes the
 biometric sensor decides to be uncooperative. In all these cases
 the email + password fallback gets them in.
 
-Passwordless-only setups (where a passkey is the *only* way to
+Passwordless-only setups (where a passkey is the _only_ way to
 sign in) are great for security but operationally fragile — one
 broken authenticator = one IT ticket per affected operator. The
 combined approach is the pragmatic middle ground.
-

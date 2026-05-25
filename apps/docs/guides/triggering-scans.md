@@ -99,8 +99,14 @@ The list endpoint accepts `?domain_id=<uuid>` and `?per_page=<n>`
       "createdAt": "..."
     }
   },
-  "findings": { "data": [/* ScanFinding[] */] },
-  "diff": { /* new/removed/categoryChanged vs previous completed scan, or null */ }
+  "findings": {
+    "data": [
+      /* ScanFinding[] */
+    ]
+  },
+  "diff": {
+    /* new/removed/categoryChanged vs previous completed scan, or null */
+  }
 }
 ```
 

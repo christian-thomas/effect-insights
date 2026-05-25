@@ -254,7 +254,7 @@ points.
 ## Alert scope (WCAG vs best-practice)
 
 Companion to [Alert threshold](#alert-threshold). The threshold
-controls *severity*; the scope controls *which kinds of rules* count.
+controls _severity_; the scope controls _which kinds of rules_ count.
 
 Two values, set per-org via `organisations.a11y_alert_scope`:
 
@@ -279,7 +279,7 @@ curl -X PATCH https://api.effectinsight.com/api/organisations/<uuid> \
   -d '{ "a11y_alert_scope": "wcag_only" }'
 ```
 
-The scope filter applies only to *alert dispatching*. The scan
+The scope filter applies only to _alert dispatching_. The scan
 detail UI still shows every finding (with WCAG / Best-practice /
 All tabs to filter visually) and the historical trend chart still
 includes everything axe found — only the Slack/email notification

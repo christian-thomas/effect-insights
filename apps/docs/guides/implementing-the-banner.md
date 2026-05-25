@@ -61,7 +61,7 @@ These go on the same `<script>` tag as the embed.
 
 | Attribute               | When to use it                                                                                                                                                      |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data-cmp-base`         | Override the config base URL. Defaults to `https://assets.effectinsight.com`. Used for staging / preview hosts.                                                         |
+| `data-cmp-base`         | Override the config base URL. Defaults to `https://assets.effectinsight.com`. Used for staging / preview hosts.                                                     |
 | `data-cmp-consent-base` | Override the consent POST target separately from the config base. Only relevant for local dev (`bun run dev`) where each Cloudflare Worker listens on its own port. |
 | `data-cmp-config`       | Inline a JSON config and skip the fetch. Used internally by the admin live-preview iframe — most embeds should ignore this.                                         |
 | `data-cmp-preview`      | Render the banner every page load (no cookie short-circuit, no `/consent` POST). Only for the admin preview iframe.                                                 |
