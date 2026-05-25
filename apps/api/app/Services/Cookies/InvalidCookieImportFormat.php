@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Cookies;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -33,5 +35,18 @@ final class InvalidCookieImportFormat extends RuntimeException
         return new self(
             "The uploaded file doesn't look like a CSV — couldn't read a header row. Make sure you're uploading the .csv export, not a binary or zipped file.",
         );
+    }
+
+    public static function allRowsSkipped(int $skipped): self
+    {
+        return new self(sprintf(
+            'No rows could be imported. %d row(s) were skipped — usually because the Category column uses values outside the recognised set (Functional, Analytics, Performance, Marketing, Advertising, Preferences, Personalization, Strictly Necessary).',
+            $skipped,
+        ));
+    }
+
+    public function render(Request $request): JsonResponse
+    {
+        return response()->json(['message' => $this->getMessage()], self::STATUS);
     }
 }

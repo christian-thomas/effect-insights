@@ -6,6 +6,7 @@ namespace App\Services\ConsentEvents;
 
 use App\Enums\BannerLayout;
 use App\Enums\ConsentEventType;
+use App\Exceptions\NoConsentEventsForVisitor;
 use App\Models\BannerConfig;
 use App\Models\ConsentEvent;
 use App\Models\Domain;
@@ -97,6 +98,31 @@ final readonly class ConsentReceiptBuilder
         $payload['signature'] = $this->signer->sign($payload);
 
         return $payload;
+    }
+
+    /**
+     * Convenience that pulls the events for an anonymous_id + domain
+     * pair, then delegates to {@see self::forVisitor}. Throws
+     * {@see NoConsentEventsForVisitor} (404) when nothing's on record.
+     *
+     * @return array<string, mixed>
+     */
+    public function forVisitorByDomain(
+        string $anonymousId,
+        Domain $domain,
+        ?User $generatedBy = null,
+    ): array {
+        $events = ConsentEvent::query()
+            ->where('anonymous_id', $anonymousId)
+            ->where('domain_id', $domain->getKey())
+            ->oldest('occurred_at')
+            ->get();
+
+        if ($events->isEmpty()) {
+            throw new NoConsentEventsForVisitor;
+        }
+
+        return $this->forVisitor($anonymousId, $domain, $events, $generatedBy);
     }
 
     /**

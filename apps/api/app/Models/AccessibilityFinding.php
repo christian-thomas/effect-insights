@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\A11yImpact;
 use App\Models\Concerns\BelongsToOrganisation;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -71,5 +72,26 @@ class AccessibilityFinding extends Model
     public function scan(): BelongsTo
     {
         return $this->belongsTo(AccessibilityScan::class, 'accessibility_scan_id');
+    }
+
+    /**
+     * Order findings most-severe-first (Critical → Serious → Moderate →
+     * Minor → unknown). CASE WHEN works in both MySQL (prod) and SQLite
+     * (tests). FIELD() would be MySQL-only.
+     *
+     * @param  Builder<AccessibilityFinding>  $query
+     * @return Builder<AccessibilityFinding>
+     */
+    protected function scopeOrderByImpact(Builder $query): Builder
+    {
+        $expression = sprintf(
+            "CASE impact WHEN '%s' THEN 1 WHEN '%s' THEN 2 WHEN '%s' THEN 3 WHEN '%s' THEN 4 ELSE 5 END",
+            A11yImpact::Critical->value,
+            A11yImpact::Serious->value,
+            A11yImpact::Moderate->value,
+            A11yImpact::Minor->value,
+        );
+
+        return $query->orderByRaw($expression);
     }
 }

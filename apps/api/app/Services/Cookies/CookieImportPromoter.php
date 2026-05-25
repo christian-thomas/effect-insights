@@ -8,7 +8,9 @@ use App\Enums\CookieImportStatus;
 use App\Models\Cookie;
 use App\Models\CookieImport;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Moves a pending {@see CookieImport} into the canonical {@see Cookie}
@@ -59,5 +61,42 @@ final class CookieImportPromoter
         ]);
 
         return $import->refresh();
+    }
+
+    /**
+     * Bulk-promote every pending row, processed in chunks of 200 so
+     * memory stays bounded across large OCD release imports. Per-row
+     * try/catch means a single collision doesn't abort the batch.
+     *
+     * @return array{promoted: int, failed: int, firstError: ?string}
+     */
+    public function promoteAllPending(?User $reviewer = null): array
+    {
+        $promoted = 0;
+        $failed = 0;
+        $firstError = null;
+
+        CookieImport::query()
+            ->where('status', CookieImportStatus::Pending)
+            ->oldest()
+            ->chunk(200, function (Collection $imports) use ($reviewer, &$promoted, &$failed, &$firstError): void {
+                foreach ($imports as $import) {
+                    try {
+                        $this->promote($import, $reviewer);
+                        $promoted++;
+                    } catch (Throwable $exception) {
+                        $failed++;
+                        if ($firstError === null) {
+                            $firstError = $exception->getMessage();
+                        }
+                    }
+                }
+            });
+
+        return [
+            'promoted' => $promoted,
+            'failed' => $failed,
+            'firstError' => $firstError,
+        ];
     }
 }

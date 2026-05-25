@@ -10,6 +10,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Organisation;
 use App\Models\User;
 use App\Support\CurrentOrganisation;
+use App\Support\OrganisationSession;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -38,7 +39,7 @@ class SwitchOrganisation extends Controller
 
         $organisation = Organisation::query()->whereKey($organisationId)->firstOrFail();
 
-        $request->session()->put('current_organisation_id', $organisationId);
+        OrganisationSession::bind($request, $organisationId);
         $currentOrganisation->set($organisation);
 
         return UserResource::make($user->load('organisations'))->response();

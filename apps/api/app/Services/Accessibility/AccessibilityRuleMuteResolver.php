@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Accessibility;
 
 use App\Http\Controllers\Api\AccessibilityScans\ShowAccessibilityScan;
+use App\Models\AccessibilityFinding;
 use App\Models\AccessibilityRuleOverride;
 use App\Models\Domain;
 use App\Services\Notifications\AccessibilityAlertService;
+use Illuminate\Support\Collection;
 
 /**
  * Checks whether a given (rule_id, domain) pair is muted by a current
@@ -68,5 +70,26 @@ final readonly class AccessibilityRuleMuteResolver
     public function isMutedForDomain(string $ruleId, Domain $domain): bool
     {
         return $this->isMuted($ruleId, (string) $domain->getKey());
+    }
+
+    /**
+     * Stamp the computed `muted` flag onto each finding in the collection
+     * as a non-DB attribute, so the resource layer can emit it without
+     * the controller orchestrating the loop. Mutates + returns the
+     * incoming collection.
+     *
+     * @template TKey of array-key
+     *
+     * @param  Collection<TKey, AccessibilityFinding>  $findings
+     * @return Collection<TKey, AccessibilityFinding>
+     */
+    public function muteFindings(Collection $findings, string $domainId): Collection
+    {
+        return $findings->each(function (AccessibilityFinding $finding) use ($domainId): void {
+            $finding->setAttribute(
+                'muted',
+                $this->isMuted((string) $finding->getAttribute('rule_id'), $domainId),
+            );
+        });
     }
 }

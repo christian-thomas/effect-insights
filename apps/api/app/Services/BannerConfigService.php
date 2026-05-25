@@ -195,6 +195,39 @@ class BannerConfigService
         return $draft->refresh();
     }
 
+    /**
+     * Restore a historic banner_configs row into the current draft.
+     * Doesn't publish — leaves the rollback in the draft so the operator
+     * can review (and the pending-changes panel can classify) before
+     * clicking Publish.
+     *
+     * Returns null when no historic row exists for the requested version.
+     */
+    public function rollbackTo(Domain $domain, int $version): ?BannerConfig
+    {
+        $historic = BannerConfig::query()
+            ->where('domain_id', $domain->getKey())
+            ->where('is_draft', false)
+            ->where('version', $version)
+            ->first();
+
+        if (! $historic instanceof BannerConfig) {
+            return null;
+        }
+
+        return $this->updateDraft($domain, [
+            'layout' => $historic->getAttribute('layout'),
+            'granularity' => $historic->getAttribute('granularity'),
+            'locale_default' => $historic->getAttribute('locale_default'),
+            'locales_enabled' => $historic->getAttribute('locales_enabled'),
+            'colors' => $historic->getAttribute('colors'),
+            'copy' => $historic->getAttribute('copy'),
+            'gcm_defaults' => $historic->getAttribute('gcm_defaults'),
+            'geo_rules' => $historic->getAttribute('geo_rules'),
+            'behaviour' => $historic->getAttribute('behaviour'),
+        ]);
+    }
+
     public function publish(Domain $domain, User $user): BannerConfig
     {
         return DB::transaction(function () use ($domain, $user): BannerConfig {

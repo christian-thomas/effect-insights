@@ -140,6 +140,13 @@ final class OpenCookieDatabaseImporter
             $import->wasRecentlyCreated ? $created++ : $existing++;
         }
 
+        if ($created === 0 && $existing === 0 && $skipped > 0) {
+            // Every row was skipped — likely an OCD release with category
+            // labels we don't understand. Tell the operator clearly rather
+            // than implying success with all-zero counts.
+            throw InvalidCookieImportFormat::allRowsSkipped($skipped);
+        }
+
         return new ImportResult($created, $existing, $skipped);
     }
 
