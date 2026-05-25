@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { credentialToJson, prepareRequestOptions } from '~/composables/webauthn';
 import type { AuthUser } from '~/types/auth';
 import type { Organisation } from '~/types/organisation';
 
@@ -50,6 +51,42 @@ export const useAuthStore = defineStore('auth', {
       const response = await $api<SessionPayload>('/api/login', {
         method: 'POST',
         body: { email, password },
+      });
+      this.hydrate(response);
+    },
+
+    /**
+     * Run the WebAuthn assertion ceremony end-to-end:
+     *
+     *   1. POST /api/passkeys/authentication-options → server stashes
+     *      the challenge in the session + returns the request options.
+     *   2. navigator.credentials.get() prompts the user's authenticator.
+     *   3. POST /api/passkeys/authenticate with the assertion JSON.
+     *      Server verifies the signature against the session challenge,
+     *      logs the user in, regenerates the session, returns the same
+     *      payload as /api/login.
+     */
+    async loginWithPasskey(): Promise<void> {
+      if (typeof navigator === 'undefined' || !('credentials' in navigator)) {
+        throw new Error('This browser does not support passkeys.');
+      }
+
+      const optionsJson = await $api<Record<string, unknown>>(
+        '/api/passkeys/authentication-options',
+        { method: 'POST' },
+      );
+      const requestOptions = prepareRequestOptions(optionsJson as never);
+
+      const credential = (await navigator.credentials.get({
+        publicKey: requestOptions,
+      })) as PublicKeyCredential | null;
+      if (credential === null) {
+        throw new Error('No passkey selected.');
+      }
+
+      const response = await $api<SessionPayload>('/api/passkeys/authenticate', {
+        method: 'POST',
+        body: { passkey: credentialToJson(credential) },
       });
       this.hydrate(response);
     },

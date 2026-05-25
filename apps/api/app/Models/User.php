@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys;
+use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -21,12 +23,12 @@ use Spatie\Permission\Traits\HasRoles;
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements HasPasskeys
 {
     public const ROLE_SUPERUSER = 'superuser';
 
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, HasUuids, InteractsWithPasskeys, Notifiable;
 
     /**
      * Get the attributes that should be cast.

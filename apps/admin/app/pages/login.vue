@@ -14,6 +14,7 @@ type LoginForm = z.infer<typeof schema>;
 const state = reactive<Partial<LoginForm>>({ email: '', password: '' });
 const error = ref<string | null>(null);
 const loading = ref(false);
+const passkeyLoading = ref(false);
 const auth = useAuthStore();
 const route = useRoute();
 
@@ -30,6 +31,31 @@ const onSubmit = async (event: FormSubmitEvent<LoginForm>) => {
     loading.value = false;
   }
 };
+
+const onPasskeyLogin = async (): Promise<void> => {
+  error.value = null;
+  passkeyLoading.value = true;
+  try {
+    await auth.loginWithPasskey();
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
+    await navigateTo(redirect);
+  } catch (caught) {
+    // Browser cancellation throws a DOMException with name NotAllowedError —
+    // surface as a quiet "cancelled" rather than a scary error.
+    if (caught instanceof DOMException && caught.name === 'NotAllowedError') {
+      error.value = null;
+    } else {
+      error.value = caught instanceof Error ? caught.message : 'Passkey sign-in failed';
+    }
+  } finally {
+    passkeyLoading.value = false;
+  }
+};
+
+const passkeySupported = computed((): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  return 'credentials' in navigator && typeof PublicKeyCredential !== 'undefined';
+});
 </script>
 
 <template>
@@ -40,6 +66,27 @@ const onSubmit = async (event: FormSubmitEvent<LoginForm>) => {
         <h1 class="text-lg font-semibold">Effect Insight</h1>
       </div>
     </template>
+
+    <UButton
+      v-if="passkeySupported"
+      block
+      color="neutral"
+      variant="soft"
+      icon="i-lucide-fingerprint"
+      :loading="passkeyLoading"
+      class="mb-4"
+      label="Sign in with a passkey"
+      @click="onPasskeyLogin"
+    />
+
+    <div
+      v-if="passkeySupported"
+      class="flex items-center gap-2 mb-4 text-xs text-gray-400 uppercase tracking-wide"
+    >
+      <span class="flex-1 h-px bg-gray-200 dark:bg-gray-800"></span>
+      or use a password
+      <span class="flex-1 h-px bg-gray-200 dark:bg-gray-800"></span>
+    </div>
 
     <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
       <UFormField label="Email" name="email">

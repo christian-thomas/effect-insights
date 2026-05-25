@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', Api\Auth\Login::class);
 
+// Passkey login flow — unauthenticated by design. Step 1 returns the
+// WebAuthn challenge (and stashes it in the session); step 2 verifies
+// the browser's assertion and starts a Sanctum session.
+Route::post('/passkeys/authentication-options', Api\Passkeys\GenerateAuthenticationOptions::class);
+Route::post('/passkeys/authenticate', Api\Passkeys\AuthenticateWithPasskey::class);
+
 // Internal mirror endpoint the edge consent worker posts to. No Sanctum
 // session — the worker is server-to-server. Guarded by a shared-secret
 // header (CONSENT_INGEST_SECRET).
@@ -23,6 +29,14 @@ Route::get('/cookie-policy/{publicKey}.html', Api\CookiePolicies\ShowPublicCooki
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/me', Api\Auth\Me::class);
     Route::post('/logout', Api\Auth\Logout::class);
+
+    // Passkey credential management — list + register + revoke for
+    // the current user. Distinct from the login flow above, which is
+    // unauthenticated; these all require an existing Sanctum session.
+    Route::get('/passkeys', Api\Passkeys\ListPasskeys::class);
+    Route::post('/passkeys/register-options', Api\Passkeys\GenerateRegisterOptions::class);
+    Route::post('/passkeys', Api\Passkeys\StorePasskey::class);
+    Route::delete('/passkeys/{passkey}', Api\Passkeys\DeletePasskey::class);
 
     Route::post('/organisations/switch', Api\Organisations\SwitchOrganisation::class);
 
