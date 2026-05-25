@@ -149,17 +149,9 @@ const columns: TableColumn<Domain>[] = [
   <USlideover
     v-model:open="slideoverOpen"
     :title="editing ? `Edit ${editing.fqdn}` : 'Add domain'"
-    :dismissible="true"
-    :close="true"
   >
     <template #body>
-      <UForm
-        id="domain-edit-form"
-        :schema="domainInputSchema"
-        :state="state"
-        class="space-y-4"
-        @submit="onSubmit"
-      >
+      <UForm :schema="domainInputSchema" :state="state" class="space-y-4" @submit="onSubmit">
         <UFormField
           label="FQDN"
           name="fqdn"
@@ -184,18 +176,16 @@ const columns: TableColumn<Domain>[] = [
             class="w-full"
           />
         </UFormField>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <UButton color="neutral" variant="ghost" label="Cancel" @click="slideoverOpen = false" />
+          <UButton
+            type="submit"
+            :loading="submitting"
+            :label="editing ? 'Save changes' : 'Add domain'"
+          />
+        </div>
       </UForm>
-    </template>
-    <template #footer="{ close }">
-      <div class="flex justify-end gap-2 w-full">
-        <UButton color="neutral" variant="ghost" label="Cancel" @click="close" />
-        <UButton
-          type="submit"
-          form="domain-edit-form"
-          :loading="submitting"
-          :label="editing ? 'Save changes' : 'Add domain'"
-        />
-      </div>
     </template>
   </USlideover>
 </template>

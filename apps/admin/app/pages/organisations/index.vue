@@ -194,17 +194,9 @@ const columns: TableColumn<Organisation>[] = [
   <USlideover
     v-model:open="slideoverOpen"
     :title="editing ? `Edit ${editing.name}` : 'New organisation'"
-    :dismissible="true"
-    :close="true"
   >
     <template #body>
-      <UForm
-        id="organisation-edit-form"
-        :schema="schema"
-        :state="state"
-        class="space-y-4"
-        @submit="onSubmit"
-      >
+      <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
         <UFormField label="Name" name="name">
           <UInput v-model="state.name" placeholder="Acme Corp" class="w-full" />
         </UFormField>
@@ -327,18 +319,15 @@ const columns: TableColumn<Organisation>[] = [
           </UFormField>
         </div>
 
+        <div class="flex justify-end gap-2 pt-2">
+          <UButton color="neutral" variant="ghost" label="Cancel" @click="slideoverOpen = false" />
+          <UButton
+            type="submit"
+            :loading="submitting"
+            :label="editing ? 'Save changes' : 'Create'"
+          />
+        </div>
       </UForm>
-    </template>
-    <template #footer="{ close }">
-      <div class="flex justify-end gap-2 w-full">
-        <UButton color="neutral" variant="ghost" label="Cancel" @click="close" />
-        <UButton
-          type="submit"
-          form="organisation-edit-form"
-          :loading="submitting"
-          :label="editing ? 'Save changes' : 'Create'"
-        />
-      </div>
     </template>
   </USlideover>
 </template>
