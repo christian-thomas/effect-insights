@@ -71,52 +71,6 @@ Cookies are resolved through:
 
 Anything that doesn't match lands in the [review queue](./troubleshooting/consent#unknown-cookies-in-the-review-queue).
 
-## REST surface
-
-For scripting and CI integrations the scanner is also reachable via
-the tenant-scoped REST API (Sanctum SPA auth or a bearer token).
-
-```
-GET    /api/scans                          List, paginated, ?domain_id= filter
-GET    /api/scans/{scan}                   Detail + findings + diff vs previous
-POST   /api/domains/{domain}/scans         Manual trigger, returns 202 + queued scan
-```
-
-The list endpoint accepts `?domain_id=<uuid>` and `?per_page=<n>`
-(default 25, capped at 100). The detail endpoint returns:
-
-```json
-{
-  "scan": {
-    "data": {
-      "id": "uuid",
-      "domainId": "uuid",
-      "status": "completed",
-      "urlsDiscovered": 12,
-      "urlsScanned": 12,
-      "startedAt": "...",
-      "finishedAt": "...",
-      "createdAt": "..."
-    }
-  },
-  "findings": {
-    "data": [
-      /* ScanFinding[] */
-    ]
-  },
-  "diff": {
-    /* new/removed/categoryChanged vs previous completed scan, or null */
-  }
-}
-```
-
-The trigger endpoint returns 202 Accepted with the queued `Scan`
-resource immediately — the crawl itself runs in the background via
-`RunScanJob`. Poll the detail endpoint until `status` transitions to
-`completed` or `failed`. The accessibility scanner exposes an
-identical-shaped surface at `/api/accessibility-scans*` — see
-[Accessibility scans → API](./accessibility-scans#api).
-
 ## Material vs cosmetic publishes
 
 Unrelated to scans but relevant when you're updating the banner config

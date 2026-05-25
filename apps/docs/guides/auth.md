@@ -56,12 +56,11 @@ form shows.
 
 ## Security posture
 
-What the server stores per passkey:
+What the platform stores per passkey:
 
 - A label the operator picked (e.g. "MacBook TouchID").
-- The credential ID (a public identifier — _not_ secret material).
-- The public key + algorithm + counter + transports, serialised as
-  JSON in the `data` column.
+- The credential ID — a public identifier, not secret material.
+- The credential's public key and associated metadata.
 
 We do **not** store anything that could let a thief forge an
 assertion. The private key never leaves the authenticator —
@@ -69,14 +68,13 @@ that's the whole point of WebAuthn. A database leak gives an
 attacker public keys, which are useless without the matching
 hardware.
 
-The API never returns the credential ID or public-key material.
-The list endpoint exposes only the label, last-used timestamp, and
-the row's own UUID (which is what the revoke endpoint accepts).
+The admin only ever exposes the label and last-used timestamp on the
+passkey list — credential identifiers and public-key material stay
+server-side.
 
-The registration ceremony's challenge is held server-side and
-validated on the follow-up POST, so a replay against a leaked
-browser response can't enrol a new key without the matching
-session cookie.
+Registration challenges are held server-side and validated on the
+follow-up step, so a replay against a leaked browser response can't
+enrol a new key without the matching session cookie.
 
 ## Revoking a passkey
 
@@ -89,43 +87,9 @@ If an operator loses every authenticator they registered (lost
 laptop, broken YubiKey, all in the same wallet), they can still sign
 in with their email + password and revoke + re-register from
 **Profile → Passkeys**. If they don't remember their password
-either, a sysadmin with database access can clear their credentials
-out-of-band — see the API project README for the procedure.
-
-## REST surface
-
-The admin SPA's auth + management endpoints. Tenant scope: the
-authentication endpoints are **unauthenticated** (the visitor
-hasn't logged in yet); the management endpoints require Sanctum.
-
-```
-POST   /api/login                              Email + password sign-in
-POST   /api/passkeys/authentication-options    Passkey login challenge (no auth)
-POST   /api/passkeys/authenticate              Passkey login verify (no auth)
-GET    /api/passkeys                           List current user's passkeys (auth)
-POST   /api/passkeys/register-options          Registration challenge (auth)
-POST   /api/passkeys                           Register a new passkey (auth)
-DELETE /api/passkeys/{passkey}                 Revoke (auth, own only)
-GET    /api/me                                 Current session (auth)
-PATCH  /api/me                                 Update name + email (auth)
-POST   /api/me/password                        Change password (auth)
-POST   /api/logout                             End session (auth)
-```
-
-All bodies + responses are JSON. The two-step ceremony for
-registration is:
-
-1. `POST /api/passkeys/register-options` — server generates the
-   WebAuthn `PublicKeyCredentialCreationOptions`, stashes them in
-   the session, returns as JSON.
-2. Browser calls `navigator.credentials.create()` with those
-   options. The user's authenticator prompts.
-3. `POST /api/passkeys` with `{ passkey: <browser response JSON>,
-name: "label" }` — server pulls the original challenge from the
-   session and validates the response against it.
-
-Authentication is the same shape but with `authentication-options` →
-`navigator.credentials.get()` → `authenticate`.
+either, contact [support@effectdigital.com](mailto:support@effectdigital.com)
+— a platform engineer can clear their credentials out-of-band so
+they can recover via password reset.
 
 ## Why both methods?
 

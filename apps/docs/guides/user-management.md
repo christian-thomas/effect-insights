@@ -36,84 +36,17 @@ Revoking an existing member doesn't log them out immediately — their current
 session stays alive until they refresh the page or log out manually. The next
 login attempt will fail (they're no longer a member of the org).
 
-## REST surface
+## The invitation email
 
-All user-management endpoints are **superuser-only**. Invite + accept flows
-mirror the passkey ceremonies — a two-step process to prevent confusion.
+The invitee receives a branded email containing:
 
-```
-POST   /api/organisations/{org}/invitations                 Create an invitation
-GET    /api/organisations/{org}/invitations                 List pending invitations
-DELETE /api/organisations/{org}/invitations/{invitation}    Revoke an unaccepted invitation
-
-GET    /api/organisations/{org}/users                       List active members
-DELETE /api/organisations/{org}/users/{user}                Remove a member
-
-GET    /api/invitations/{token}                              Show invitation (no auth)
-POST   /api/invitations/{token}/accept                       Accept invitation (no auth)
-```
-
-### Creating an invitation
-
-```bash
-curl -X POST https://api.effectinsight.com/api/organisations/<uuid>/invitations \
-  -H "Content-Type: application/json" \
-  -H "Cookie: <superuser sanctum session>" \
-  -d '{
-    "email": "jane@example.com"
-  }'
-```
-
-Returns the created `Invitation` resource with a `token` and `expiresAt` timestamp.
-
-### Accepting an invitation
-
-Two-step flow:
-
-1. `GET /api/invitations/{token}` — retrieve the invitation details (email + org name).
-2. `POST /api/invitations/{token}/accept` with `{ password, name }` — creates the user + session.
-
-```bash
-curl -X POST https://api.effectinsight.com/api/invitations/<token>/accept \
-  -H "Content-Type: application/json" \
-  -d '{
-    "password": "newpassword123",
-    "name": "Jane Doe"
-  }'
-```
-
-Returns the created user + a Sanctum session cookie.
-
-### Listing members
-
-```bash
-curl -X GET https://api.effectinsight.com/api/organisations/<uuid>/users \
-  -H "Cookie: <superuser sanctum session>"
-```
-
-Returns a paginated list of active members.
-
-### Removing a member
-
-```bash
-curl -X DELETE https://api.effectinsight.com/api/organisations/<uuid>/users/<user-uuid> \
-  -H "Cookie: <superuser sanctum session>"
-```
-
-Returns 204 No Content on success.
-
-## Invitation email
-
-The `UserInvited` notification sends a branded email with:
-
-- The invitee's name (if you entered it)
-- A link to `/invitations/{token}` on the admin
+- A magic link to accept the invitation
+- The organisation name and inviter
 - Expiry date (7 days from send)
-- Org name + superuser contact
 
-The email is sent via the same mail driver as other notifications
-(Cloudflare Email Routing by default — see [Notifications →
-Mail driver](./notifications#mail-driver)).
+If they don't receive it, check their spam folder, then verify the
+address on the **Users & invitations** tab. If still missing, revoke
+and re-send the invitation.
 
 ## Coming soon
 

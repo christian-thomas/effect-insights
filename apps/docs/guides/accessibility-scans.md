@@ -1,48 +1,43 @@
 # Accessibility scans
 
-Effect runs scheduled [axe-core](https://github.com/dequelabs/axe-core)
-accessibility audits against client websites — same Domain registry as
-the cookie scanner, separate cadence, separate findings, separate
-Slack alerts. Designed to sit alongside the CMP without forcing every
-client to opt in.
+Effect Insight runs scheduled axe-core accessibility audits against
+client websites alongside the cookie scanner. Same domain registry,
+separate cadence, separate findings, separate alerts. Opt-in per
+domain so clients who don't want a11y coverage aren't billed for it.
 
 ## Quick start
 
-1. Open a domain detail page in admin.
-2. Under **Scheduled scans** set **Accessibility scan cadence** to
-   `Weekly` or `Monthly`. Default is `Never` (opt-in).
-3. Either wait for the next 05:00 UTC scheduler run, or click
+1. Open the domain detail page in admin (`/domains/{id}`).
+2. Under **Scheduled scans**, set **Accessibility scan cadence** to
+   `Weekly` or `Monthly`. The default is `Never` (opt-in).
+3. Either wait for the next scheduled sweep, or click
    **Run scan now** on the per-domain Accessibility tab.
-4. The scan runs in the background (Horizon queue:
-   `accessibility-scans`). Refresh the page after a few minutes to
-   see the result — completed scans show violations grouped by
-   impact (Critical / Serious / Moderate / Minor).
+4. The scan runs in the background. Refresh after a few minutes —
+   completed scans show violations grouped by impact
+   (Critical / Serious / Moderate / Minor).
+
+<!-- TODO: screenshot of the per-domain Accessibility tab with completed scan + impact breakdown -->
 
 ## How it works
 
-The pipeline shares infrastructure with the cookie scanner but
-maintains its own data shape:
+For each enabled domain the platform:
 
-1. **URL discovery.** Same `SitemapDiscoveryService` as the cookie
-   scanner — fetches `/sitemap.xml`, falls back to `/robots.txt`
-   `Sitemap:` directives, falls back to apex-only. Same 150-URL
-   cap per scan.
-2. **Browser run.** The edge scanner worker exposes a `/scan-a11y`
-   route. For each URL it navigates with a headless browser
-   (`networkidle0`, 30s timeout), injects axe-core, runs it, and
-   returns the violations.
-3. **Persistence.** Each violation is stored as a row in the scan's
-   findings list. Aggregate counters (total violations + a
-   breakdown by impact level) are held against the parent scan so
-   the list view doesn't re-aggregate on every render.
-4. **Alerting.** When a scan completes, the impact threshold
-   (default `serious`) is checked and a Slack notification fires if
-   any violation at or above that level exists. Same channel as the
-   unknown-cookie + scan-failure alerts.
+1. **Discovers URLs.** Same approach as the cookie scanner — pull
+   `/sitemap.xml`, fall back to `/robots.txt` `Sitemap:` directives,
+   fall back to the apex page only. Capped at 150 URLs per scan.
+2. **Runs axe in a headless browser.** Each URL is loaded with a real
+   browser, axe-core is injected, and the resulting violations are
+   captured.
+3. **Stores findings.** Each violation lands in the scan's findings
+   list with its rule id, impact, description, help text, and the
+   specific HTML node that failed.
+4. **Alerts on threshold breach.** Findings at or above your
+   configured impact threshold trigger a Slack/email alert. The same
+   alerting channel as unknown-cookie and scan-failure alerts.
 
 ## Cadence
 
-Per-domain. Three options, same as the cookie scanner's cadence:
+Per-domain. Three options, same shape as the cookie scanner:
 
 | Cadence   | Interval | Stagger window |
 | --------- | -------- | -------------- |
@@ -50,142 +45,106 @@ Per-domain. Three options, same as the cookie scanner's cadence:
 | `monthly` | 30 days  | 28 days        |
 | `never`   | —        | —              |
 
-The 05:00 UTC `accessibility:dispatch-scheduled` command walks every
-domain whose cadence isn't `never` and dispatches a queued scan when
-the interval has elapsed since the last one. Never-scanned domains
-land on a deterministic day inside the cadence window (CRC32 of the
-domain UUID mod `staggerWindow`) so a fleet of weekly domains
-spreads across 7 days rather than all hammering Monday morning.
+The scheduler walks every domain whose cadence isn't `never` and
+dispatches a scan when the interval has elapsed since the last one.
+Never-scanned domains land on a deterministic day inside the cadence
+window so a portfolio of weekly domains spreads across the seven
+days rather than all hammering Monday morning.
 
-## API
+## Reading a finding
 
-All endpoints sit behind Sanctum SPA auth + the `org.current`
-middleware, same as the cookie scanner. Tenant-scoped.
+Each finding shows:
 
-```
-GET    /api/accessibility-scans                          List, paginated
-GET    /api/accessibility-scans/{accessibilityScan}      Detail + findings
-POST   /api/domains/{domain}/accessibility-scans         Manual trigger (202)
-```
+- **Rule id** (e.g. `color-contrast`) — the axe-core rule that fired.
+- **Impact** — one of Critical, Serious, Moderate, Minor. This is
+  axe-core's own taxonomy.
+- **Description + help text** — what's wrong, with a link to the
+  Deque University reference page for full remediation guidance.
+- **Tags** — WCAG levels (`wcag2aa`, `wcag143`, etc.) and/or
+  `best-practice`. See [WCAG vs best-practice](#wcag-vs-best-practice-findings)
+  below for why this matters.
+- **The offending HTML** — the specific node that failed and a CSS
+  selector pointing to it.
 
-The list endpoint accepts `?domain_id=…` to filter to a specific
-domain. The detail endpoint returns findings already ordered by
-impact severity (Critical first) so the admin renders without
-re-sorting.
-
-`PATCH /api/domains/{domain}` accepts `a11y_scan_cadence` so
-operators can flip cadence from the same form as the cookie cadence.
-
-## Finding shape
-
-```json
-{
-  "id": "uuid",
-  "accessibilityScanId": "uuid",
-  "ruleId": "color-contrast",
-  "impact": "serious",
-  "description": "Elements must have sufficient color contrast",
-  "helpText": "How to fix...",
-  "helpUrl": "https://dequeuniversity.com/rules/axe/4.x/color-contrast",
-  "url": "https://example.com/about",
-  "tags": ["wcag2aa", "wcag143"],
-  "nodes": [
-    {
-      "target": ["#main > p.subhead"],
-      "html": "<p class=\"subhead\" style=\"color: #ccc\">…</p>",
-      "failureSummary": "Fix any of the following: Element has insufficient color contrast..."
-    }
-  ]
-}
-```
-
-`impact` is one of `critical | serious | moderate | minor` —
-axe-core's own taxonomy.
+Findings are ordered by severity (Critical first) so you can triage
+without re-sorting.
 
 ## Alert threshold
 
-The alert fires when any violation at or above the configured impact
+The alert fires when any violation at or above your configured impact
 threshold exists in a completed scan. The platform default is
-`serious`, meaning Critical or Serious findings trigger an alert and
-Moderate or Minor stay quiet.
+**Serious**, which means Critical or Serious findings trigger an
+alert and Moderate or Minor stay quiet.
 
-Two override layers:
+To change the threshold for your organisation, open the
+**Organisations** page (superuser-only), click the edit pencil on
+your org, and pick a new value in the **Accessibility alert
+threshold** field:
 
-1. **Platform-wide** (env var) — applies to every org that doesn't set
-   their own override.
-2. **Per-organisation** (`organisations.a11y_alert_threshold` column) —
-   overrides the platform default for one tenant. Set via the admin's
-   organisation slideover or `PATCH /api/organisations/{id}`.
+- **Critical** — only Critical findings alert.
+- **Serious** — Critical or Serious findings alert (default).
+- **Moderate** — Moderate and worse alert.
+- **Minor** — every violation alerts.
 
-```bash
-# Platform default
-ACCESSIBILITY_ALERT_THRESHOLD=critical   # only Critical alerts
-ACCESSIBILITY_ALERT_THRESHOLD=serious    # default
-ACCESSIBILITY_ALERT_THRESHOLD=moderate   # Moderate and worse
-ACCESSIBILITY_ALERT_THRESHOLD=minor      # every violation
-
-# Per-org override (via API)
-PATCH /api/organisations/{uuid}
-{ "a11y_alert_threshold": "minor" }
-```
-
-Per-org override is `null` by default, meaning "inherit the platform
-default". Resolution order: per-org column → platform env →
-`serious`.
-
-Setting a threshold below `serious` is noisy — most axe runs find at
-least a handful of `minor` issues even on well-built sites.
-
-## Cost / quota considerations
-
-axe-core takes 2–5s per page versus &lt;2s for the cookie scanner.
-A 50-URL crawl is a ~3-minute job, comfortably inside the 600s
-Horizon timeout. The 05:00 UTC cron is offset 1h from the cookie
-scanner's 04:00 so the two don't fight for Cloudflare Browser
-Rendering quota.
-
-If client adoption grows and a11y scans start starving cookie scans,
-the next step is a dedicated `effectinsight-accessibility-scanner`
-worker on a separate Browser Rendering plan. Until then, the shared
-worker is the simpler operationally.
+Setting the threshold below Serious is noisy — most axe runs find at
+least a handful of Minor issues even on well-built sites.
 
 ## WCAG vs best-practice findings
 
-axe-core emits two categories of rule. **WCAG rules** (tagged
-`wcag2a`, `wcag2aa`, `wcag21aa`, `wcag143` etc.) are the legally-
-required conformance checks — what a regulator or accessibility
-auditor would flag. **Best-practice rules** (tagged `best-practice`)
-are advisory — useful, but not strictly required for WCAG
-conformance.
+axe-core emits two categories of rule:
+
+- **WCAG rules** (tagged `wcag2a`, `wcag2aa`, `wcag21aa`, etc.) are
+  the legally-required conformance checks — what a regulator or
+  accessibility auditor would flag.
+- **Best-practice rules** (tagged `best-practice`) are advisory —
+  useful, but not strictly required for WCAG conformance.
 
 The scan persists both. The scan detail page has a filter strip
 (All / WCAG / Best practice) so you can focus on legally-required
-findings at a glance. The Slack/email alert pipeline doesn't yet
-distinguish — a `serious` best-practice rule trips the same
-threshold as a `serious` WCAG rule. Tag-aware alert filtering is on
-the roadmap if that gets noisy.
+findings at a glance.
+
+## Alert scope (WCAG vs best-practice)
+
+Companion to the alert threshold. The threshold controls _severity_;
+the scope controls _which kinds of rules_ count.
+
+Two values, set per-org from the **Organisations** slideover:
+
+- **All** (default) — every finding above the impact threshold
+  counts.
+- **WCAG only** — best-practice findings drop out of the threshold
+  count. A scan that finds only best-practice issues stays silent
+  regardless of impact level.
+
+Rules tagged with both `wcag*` and `best-practice` (rare but real)
+count as WCAG, so legally-required findings are never accidentally
+suppressed.
+
+The scope filter applies only to _alert dispatching_. The scan
+detail page still shows every finding, and the trend chart still
+includes everything axe found — only the Slack/email notification
+decision is affected.
 
 ## Rule muting
 
 Some rules will never apply to your sites — accessibility is
 case-by-case, and a "violation" that legal has explicitly signed off
-as acceptable shouldn't keep paging on-call. The
-`accessibility_rule_overrides` table lets you mute a rule:
+as acceptable shouldn't keep paging on-call. Two scopes of mute:
 
 - **Org-wide** — applies across every domain in the organisation.
 - **Per-domain** — applies only to one domain's scans.
 
 Muting has two effects:
 
-1. The Slack/email alert pipeline skips findings for that rule when
-   computing the impact-threshold count. A scan that finds only
-   muted rules above the threshold won't fire an alert.
-2. The admin's scan detail page tags those findings with a "Muted"
-   badge and dims them so they're visually de-emphasised.
+1. Findings for that rule no longer count toward the alert
+   threshold. A scan that finds only muted rules above the threshold
+   won't fire an alert.
+2. The scan detail page tags those findings with a "Muted" badge
+   and dims them so they're visually de-emphasised.
 
-The audit trail stays intact — muted findings still land in
-`accessibility_findings` and the per-scan counters still reflect
-what axe actually found. Mute is a reporting layer, not a deletion.
+The audit trail stays intact — muted findings are still recorded and
+the per-scan counters still reflect what axe actually found. Mute is
+a reporting layer, not a deletion.
 
 ### Adding a mute
 
@@ -193,101 +152,34 @@ From the scan detail page, expand any finding card and click
 **Just this domain** or **Org-wide**. The prompt asks for a reason
 (helps the next person reading the audit trail know why).
 
-Or via the API:
+### Reviewing or removing mutes
 
-```bash
-curl -X POST https://api.effectinsight.com/api/accessibility-rule-overrides \
-  -H "Content-Type: application/json" \
-  -H "Cookie: <sanctum-session>" \
-  -d '{
-    "rule_id": "color-contrast",
-    "domain_id": null,
-    "reason": "Brand colours signed off by legal 2026-04-01 — ENG-123"
-  }'
-```
+Open `/accessibility-rule-overrides` in admin. The page lists every
+active override for the current org with rule id, scope, reason, and
+a delete button. Removing an override un-mutes immediately — the
+next scan and alert run treat the rule as active again.
 
-`domain_id: null` makes it org-wide; a domain UUID scopes it.
-
-### Reviewing + removing mutes
-
-`/accessibility-rule-overrides` in admin lists every active override
-for the current org with rule id, scope, reason, and a delete button.
-Removing an override un-mutes immediately — the next scan + alert run
-treats the rule as active again.
+<!-- TODO: screenshot of the rule-overrides admin page -->
 
 ## Historical trend
 
 Each domain detail page in the admin shows an **Accessibility trend**
 card with a stacked-bar chart of violations per completed scan in the
 selected window (7 / 30 / 90 / 365 days). Stack order from bottom to
-top: Critical → Serious → Moderate → Minor. Hover any bar to see the
+top: Critical → Serious → Moderate → Minor. Hover any bar for the
 exact counts.
 
-Backed by `GET /api/domains/{domain}/accessibility-trend?days=N` which
-returns:
+The trend reflects what axe actually found at each scan, so muting a
+rule after the fact doesn't retroactively rewrite history. That's
+the right reference point for "is this getting better or worse" even
+after you've muted noisy rules.
 
-```json
-{
-  "data": {
-    "domainId": "uuid",
-    "days": 90,
-    "points": [
-      {
-        "scanId": "uuid",
-        "finishedAt": "2026-04-12T...",
-        "total": 4,
-        "byImpact": { "critical": 1, "serious": 2, "moderate": 1, "minor": 0 }
-      }
-    ]
-  }
-}
-```
-
-Reads the stored `violations_by_impact` per scan rather than
-recomputing from findings, so mute changes don't retroactively rewrite
-history — the trend reflects what axe actually found at each scan,
-which is the right reference for "is this getting better or worse".
-
-Failed scans are excluded; only `completed` ones contribute data
+Failed scans are excluded; only completed scans contribute data
 points.
-
-## Alert scope (WCAG vs best-practice)
-
-Companion to [Alert threshold](#alert-threshold). The threshold
-controls _severity_; the scope controls _which kinds of rules_ count.
-
-Two values, set per-org via `organisations.a11y_alert_scope`:
-
-- **`all`** (default) — every finding above the impact threshold
-  counts.
-- **`wcag_only`** — best-practice findings drop out of the threshold
-  count. A scan that finds only best-practice issues stays silent
-  regardless of impact level.
-
-A finding counts as best-practice when it carries the
-`best-practice` axe tag AND has no `wcag*` tag. Rules tagged with
-both (rare but real) count as WCAG, so legally-required findings are
-never accidentally suppressed.
-
-Set via the admin's organisation slideover or
-`PATCH /api/organisations/{id}`:
-
-```bash
-curl -X PATCH https://api.effectinsight.com/api/organisations/<uuid> \
-  -H "Content-Type: application/json" \
-  -H "Cookie: <sanctum-session>" \
-  -d '{ "a11y_alert_scope": "wcag_only" }'
-```
-
-The scope filter applies only to _alert dispatching_. The scan
-detail UI still shows every finding (with WCAG / Best-practice /
-All tabs to filter visually) and the historical trend chart still
-includes everything axe found — only the Slack/email notification
-decision is affected.
 
 ## Related
 
-- [Notifications](./notifications) — Slack channel setup.
+- [Notifications](./notifications) — Slack channel and email recipient setup.
 - [Triggering scans](./triggering-scans) — cookie scanner's
   equivalent doc (most of the operational shape is the same).
 - [Troubleshooting → Accessibility](./troubleshooting/accessibility) — common scan failure modes.

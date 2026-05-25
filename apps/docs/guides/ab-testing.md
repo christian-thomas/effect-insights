@@ -34,13 +34,14 @@ isn't shown to a visitor in Germany.
 
 Two reasons:
 
-1. **Material-change cost.** Every banner config change today re-prompts
-   visitors. A/B requires holding two configs live for the same domain
-   simultaneously without re-prompting — which means the `materialVersion`
-   contract needs extending. Not hard but not trivial.
+1. **Material-change cost.** Every banner config change today re-
+   prompts visitors. A/B requires holding two configs live for the same
+   domain simultaneously without re-prompting — which means the
+   material-change classification needs extending. Not hard but not
+   trivial.
 2. **Statistical infrastructure.** Doing variant testing right means a
-   Bayesian / sequential-testing setup, not naïve p-value chasing.
-   We'd rather defer than ship a footgun.
+   proper sequential-testing setup, not naïve p-value chasing. We'd
+   rather defer than ship a footgun.
 
 ## ETA
 

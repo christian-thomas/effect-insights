@@ -1,8 +1,8 @@
 # Implementing the banner
 
 Paste a single script tag near the top of `<head>` on every page of your site.
-The loader fetches the latest published config from Cloudflare KV and renders
-the banner before any tracking scripts run.
+The loader fetches the latest published config from the platform edge and
+renders the banner before any tracking scripts run.
 
 ## The embed snippet
 
@@ -59,13 +59,13 @@ tag with a real `<script>` and the browser fetches + executes it. See
 
 These go on the same `<script>` tag as the embed.
 
-| Attribute               | When to use it                                                                                                                                                      |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data-cmp-base`         | Override the config base URL. Defaults to `https://assets.effectinsight.com`. Used for staging / preview hosts.                                                     |
-| `data-cmp-consent-base` | Override the consent POST target separately from the config base. Only relevant for local dev (`bun run dev`) where each Cloudflare Worker listens on its own port. |
-| `data-cmp-config`       | Inline a JSON config and skip the fetch. Used internally by the admin live-preview iframe — most embeds should ignore this.                                         |
-| `data-cmp-preview`      | Render the banner every page load (no cookie short-circuit, no `/consent` POST). Only for the admin preview iframe.                                                 |
-| `nonce="…"`             | Required if your site uses a strict CSP with a nonce allow-list. See [Content Security Policy](./csp).                                                              |
+| Attribute   | When to use it                                                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| `nonce="…"` | Required if your site uses a strict CSP with a nonce allow-list. See [Content Security Policy](./csp). |
+
+A handful of further attributes (`data-cmp-base`, `data-cmp-config`,
+`data-cmp-preview`) exist for internal preview tooling. They're not
+intended for production embeds — ignore them.
 
 ## What the visitor sees
 
@@ -85,12 +85,12 @@ and `onConsentChange()` are the most-used methods.
 
 ## How long until visitors see it?
 
-- **First publish on a domain**: instant. The edge worker reads from KV on
-  every request; the next page load anywhere on the embedded site picks up
-  the new config.
+- **First publish on a domain**: instant. The edge reads the latest
+  published config on every request; the next page load anywhere on the
+  embedded site picks up the new config.
 - **Subsequent publishes**: the same — there's no CDN warm-up, no
-  cache-bust step. The hashed cmp.js bundle is served immutably for a year;
-  the _config_ it loads is the freshest version available at request time.
+  cache-bust step. The cmp.js bundle is served immutably; the _config_
+  it loads is the freshest version available at request time.
 
 ## Troubleshooting
 

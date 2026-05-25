@@ -35,5 +35,6 @@ maintain this in a spreadsheet. Bringing it into the platform means:
 
 ## ETA
 
-Targeted for v1.1. Schema headroom has been left on the cookies table
-(see `vendor` column) so the migration when it lands will be additive.
+Targeted for v1.1. The platform already records which canonical cookie
+belongs to which vendor, so the data layer to support this is largely
+in place — what's needed is the operator surface in admin.

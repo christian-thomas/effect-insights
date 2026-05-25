@@ -36,10 +36,10 @@ button will swap to "Publish (re-prompts visitors)" so you can't miss it.
 
 ### Apex extraction is naïve
 
-cmp.js extracts the apex client-side by taking the last two dot-separated
-segments of the hostname (mirrors how the Laravel side does it). That's
-fine for `example.com`, `app.example.com`, `staging.example.com` — they
-all resolve to `example.com`.
+cmp.js extracts the apex client-side by taking the last two dot-
+separated segments of the hostname. That's fine for `example.com`,
+`app.example.com`, `staging.example.com` — they all resolve to
+`example.com`.
 
 It's **wrong** for public-suffix sites:
 
@@ -49,9 +49,9 @@ It's **wrong** for public-suffix sites:
 - `example.gov.au` → same problem.
 
 If you're operating on a public-suffix domain, [get in touch](mailto:support@effectdigital.com).
-We'll switch in the `tldts` library to handle this properly when we hit
-the first real case; until then, leave cross-subdomain consent off for
-these domains and the standard host-only cookie works fine.
+We'll switch in a proper public-suffix lookup when we hit the first
+real case; until then, leave cross-subdomain consent off for these
+domains and the standard host-only cookie works fine.
 
 ### Apex must be on Cloudflare DNS
 

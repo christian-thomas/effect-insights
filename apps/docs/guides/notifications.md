@@ -1,13 +1,13 @@
 # Notifications
 
-Effect Insight can ping Slack when something needs an operator's attention.
-Today there's one notification; more land here as we add them.
+Effect Insight can ping Slack — and optionally email — when something
+needs an operator's attention.
 
 ## Unknown cookies found
 
-After every completed scan, the platform checks for findings the resolver
-couldn't categorise (no canonical match, no override). If any exist, a
-single Slack message lands in your configured channel:
+After every completed scan, the platform checks for findings the
+resolver couldn't categorise (no canonical match, no override). If any
+exist, a single Slack message lands in your configured channel:
 
 > _3 unknown cookies_ found on `app.example.com` (Acme Ltd):
 >
@@ -18,14 +18,14 @@ single Slack message lands in your configured channel:
 > [Open the review queue →](https://admin.effectinsight.com/cookies?tab=review)
 
 Clicking the link drops you on the Cookie database admin page with the
-**Review queue** tab pre-selected — see [Troubleshooting →
-Unknown cookies](./troubleshooting/consent#unknown-cookies-in-the-review-queue) for
-how to triage from there.
+**Review queue** tab pre-selected — see
+[Troubleshooting → Unknown cookies](./troubleshooting/consent#unknown-cookies-in-the-review-queue)
+for how to triage from there.
 
-## Scan failures
+## Cookie scan failures
 
-When a scan transitions to `failed` (the scanner worker timed out, threw,
-or returned a malformed response) a Slack message lands in your
+When a cookie scan transitions to `failed` (the scanner timed out,
+threw, or returned a malformed response) a Slack message lands in your
 configured channel:
 
 > _Scan failed on `app.example.com` (Acme Ltd)_:
@@ -39,9 +39,9 @@ configured channel:
 > [Open scan in admin →](https://admin.effectinsight.com/scans/uuid-here)
 
 The alert fires regardless of how the scan was triggered (manual,
-scheduled, or API). The scan row stays at `failed` with the original
-exception in `error_log` even if the alerter itself errors — alert
-delivery is best-effort and never overwrites the canonical record.
+scheduled, or external). The scan row stays at `failed` with the
+original exception captured even if alert delivery itself errors —
+alerts are best-effort and never overwrite the canonical record.
 
 ## Accessibility violations
 
@@ -55,144 +55,66 @@ configured impact threshold, a Slack message lands in your channel:
 > [Open scan in admin →](https://admin.effectinsight.com/accessibility-scans/uuid-here)
 
 The default threshold is **`serious`** — Critical or Serious violations
-alert; Moderate or Minor stay quiet. Override per-deploy via
-`ACCESSIBILITY_ALERT_THRESHOLD` (one of `critical | serious | moderate
-| minor`) in `apps/api/.env`.
+alert; Moderate or Minor stay quiet. Override per-organisation from the
+organisation slideover (superuser-only) — see
+[Accessibility scans → Alert threshold](./accessibility-scans#alert-threshold).
 
-Failed accessibility scans also alert separately via the
-`AccessibilityScanFailed` notification — same block-kit shape as the
-cookie scanner's `ScanFailed`, just with a link to the accessibility
-scan detail page. During a Cloudflare Browser Rendering outage you'll
-see one Slack message per failed scan; **expected, ignore** — the
-alerts stop on their own once Browser Rendering recovers.
+Failed accessibility scans alert separately — same look, just with a
+link to the accessibility scan detail page. During a Cloudflare Browser
+Rendering outage you'll see one Slack message per failed scan;
+**expected, ignore** — the alerts stop on their own once Browser
+Rendering recovers.
 
 See [Accessibility scans](./accessibility-scans) for the full setup.
 
 ## Email recipients
 
-Each organisation has a `notification_email` field (comma-separated)
-that fires the same notifications to email alongside Slack. When set,
-every one of the four alert types (unknown cookies, cookie scan
-failures, accessibility violations, accessibility scan failures)
-delivers to:
+Each organisation has a **Notification email** field (comma-separated)
+on its slideover. When set, every one of the four alert types (unknown
+cookies, cookie scan failures, accessibility violations, accessibility
+scan failures) delivers to:
 
-- The Slack channel from `services.slack.notifications.channel` (if
-  set), AND
-- Each address in `organisations.notification_email` (if set).
+- The shared Slack channel (if configured), AND
+- Each address in **Notification email** (if set).
 
 Either channel can be configured independently — Slack-only, email-
 only, both, or neither (silent).
 
-Set via the admin's organisation slideover (superuser) or
-`PATCH /api/organisations/{id}` with a `notification_email` field:
+Set via the organisation slideover (**Organisations → edit →
+Notification email** — superuser-only). Each address is validated;
+malformed entries are silently dropped on read. To confirm delivery,
+trigger a fresh accessibility scan on a domain with known violations
+and check both Slack and the configured inbox.
 
-```bash
-curl -X PATCH https://api.effectinsight.com/api/organisations/<uuid> \
-  -H "Content-Type: application/json" \
-  -H "Cookie: <sanctum-session>" \
-  -d '{ "notification_email": "alerts@client.com, ops@client.com" }'
-```
+## Configuring Slack
 
-Each address is validated server-side via PHP's
-`FILTER_VALIDATE_EMAIL`; malformed entries are silently dropped on
-read (the splitter in `Organisation::notificationEmails()`). Send
-yourself a test alert via `php artisan accessibility:dispatch-scheduled`
-on a domain with known violations to confirm delivery.
+Slack notifications are configured platform-wide — a single workspace
+and channel handle alerts for every organisation today. If your
+organisation needs Slack alerts wired up, ask support — it's a one-time
+platform-side setup, not something an operator flips in admin.
 
-### Mail driver
-
-Outbound email goes through Laravel 13's native **Cloudflare** mail
-transport — the same provider that backs every other edge of the
-platform, so there's one set of API tokens to manage rather than
-mixing in SES or Mailgun.
-
-Set on the API server:
-
-```bash
-MAIL_MAILER=cloudflare
-CF_ACCOUNT_ID=...                 # same as the existing KV / D1 work
-CLOUDFLARE_MAIL_API_KEY=...       # dedicated token scoped to Email Routing Send
-```
-
-Use a **dedicated** API token scoped to Email Routing Send rather
-than re-using `CF_API_TOKEN` (which has KV / D1 / Workers scopes).
-Principle of least privilege — if the mail token leaks, an attacker
-can send email from your domain but can't tamper with banner configs
-or the consent log.
-
-`CLOUDFLARE_MAIL_API_KEY` falls back to `CF_API_TOKEN` if unset, so a
-single combined token still works for simpler setups.
-
-For local development keep `MAIL_MAILER=log` — every outbound message
-just lands in `storage/logs/laravel.log` with full headers and body,
-no real send.
-
-## Configuration
-
-Slack notifications are configured platform-wide via two environment
-variables on the Laravel API:
-
-| Variable                         | What it does                                             |
-| -------------------------------- | -------------------------------------------------------- |
-| `SLACK_BOT_USER_OAUTH_TOKEN`     | Bot user OAuth token (`xoxb-…`) for your Slack workspace |
-| `SLACK_BOT_USER_DEFAULT_CHANNEL` | Channel name (e.g. `#cmp-ops`) or channel id             |
-
-To get the token:
-
-1. Create a Slack app at https://api.slack.com/apps → **From scratch**.
-2. Add the **chat:write** + **chat:write.public** OAuth scopes under
-   _OAuth & Permissions_.
-3. Install the app to your workspace; copy the **Bot User OAuth Token**.
-4. Invite the bot to the channel: `/invite @{your-bot}`.
-5. Set the two env vars on the API server (in `apps/api/.env`) and restart
-   the queue worker (`php artisan horizon:terminate`).
-
-If either env var is empty, the alert simply doesn't fire — local dev and
-CI stay quiet by default.
+If Slack is unconfigured for the platform, alerts simply don't fire to
+Slack. Email recipients still work independently.
 
 ## Per-org channels (not yet)
 
-Today the channel is global — every org's alerts land in the same place.
-Per-organisation channel routing is on the roadmap; for now the alert
-message includes the org name so you can tell whose site triggered it.
+Today the Slack channel is global — every organisation's alerts land in
+the same place. Per-organisation channel routing is on the roadmap; for
+now the alert message includes the organisation name so you can tell
+whose site triggered it.
 
-## RUM telemetry
+## Real-user monitoring
 
-The banner fires a real-user-monitoring beacon to the edge `/rum`
-endpoint on every render with paint-time + browser context. This is
-**not a notification** and there's no dashboard yet — each beacon
-becomes a single structured JSON log line emitted by the consent
-worker, which can be queried via:
-
-- `wrangler tail effectinsight-consent --format=json | grep cmp_rum` for
-  live tailing during incidents.
-- Cloudflare Logpush → your data warehouse for aggregated analysis.
-
-The beacon shape:
-
-```json
-{
-  "type": "cmp_rum",
-  "domainPublicKey": "pk_…",
-  "paintMs": 23,
-  "hadStoredConsent": false,
-  "effectiveConnectionType": "4g",
-  "deviceMemoryGb": 8
-}
-```
-
-`hadStoredConsent: true` means cmp.js short-circuited via an existing
-valid cookie (the fast path, typically <10ms). `false` means it rendered
-the banner from a cold start. Track both p95s separately when you
-build the dashboard.
-
-A first-class RUM dashboard is on the roadmap. Until it lands, the
-logs are the source of truth.
+The banner emits a performance beacon on every render so we can track
+first-paint speed in the wild. A first-class operator dashboard for this
+data is on the roadmap; until it ships, ask support if you need a
+snapshot for a specific domain.
 
 ## Coming soon
 
-- **Per-org Slack channels** — route an org's alerts to a tenant-specific
-  channel.
-- **Email notifications** — same alerts via email for orgs without Slack.
+- **Per-org Slack channels** — route an organisation's alerts to a
+  tenant-specific channel.
 - **Banner-publish notifications** — heads-up to ops when a material
   change goes live.
+- **RUM dashboard** — first-paint and short-circuit-rate visualised
+  per-domain in admin.
