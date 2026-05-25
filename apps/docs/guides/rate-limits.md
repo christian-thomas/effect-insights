@@ -49,21 +49,15 @@ shape legitimate traffic.
 - RUM beacons are fire-and-forget; a 429 just drops the beacon. No
   visible impact on the visitor.
 
-## Where the limits live
+## Adjusting the limits
 
-Configured in `apps/edge/wrangler.consent.toml`:
-
-```toml
-[[unsafe.bindings]]
-name = "CONSENT_RATE_LIMITER"
-type = "ratelimit"
-namespace_id = "1100"
-simple = { limit = 60, period = 60 }
-```
-
-Different limits per environment can be set by overriding in
-`wrangler.consent.{env}.toml`. Hot-reload via `wrangler deploy` — no
-downtime, no cache to drain.
+The limits are bound to the consent worker via Cloudflare's rate
+limit primitive. Per-environment overrides are supported, and
+changes deploy via `wrangler deploy` with no cache drain. If a
+sustained legitimate spike (a shared-egress IP from a customer VPN,
+say) needs the ceiling raised, ask the platform team — it's a
+worker-side config change rather than something an operator flips
+in the admin.
 
 ## Fail-open behaviour
 

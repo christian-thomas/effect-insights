@@ -101,8 +101,8 @@ You hit **Download receipt → JSON/PDF** on a consent event and get an error.
 | ---------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | 401 Unauthorized                   | Session expired                                                | Log in again.                                                                           |
 | 404 Not Found                      | The event you're trying to download isn't in your organisation | Check the URL — `event_id` must be one of _your_ events.                                |
-| 500 with `signature` related error | `CONSENT_RECEIPT_SIGNING_KEY` not set on the API server        | Set it in `apps/api/.env` (`openssl rand -hex 32`) and restart the queue.               |
-| PDF downloads but is blank         | dompdf can't render the Blade template                         | Check `apps/api/storage/logs/laravel.log` — usually a missing dependency or font issue. |
+| 500 with `signature` related error | `CONSENT_RECEIPT_SIGNING_KEY` not set on the API server        | Set the env var on the API server (`openssl rand -hex 32`) and restart the queue worker. |
+| PDF downloads but is blank         | The PDF renderer hit an error                                  | Check the API server logs — usually a missing dependency or font issue.                 |
 
 ## Passkey sign-in or registration fails
 

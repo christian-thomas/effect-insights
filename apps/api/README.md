@@ -142,6 +142,8 @@ app/
 │                       CookieCategory, DomainStatus, ScanStatus, ...
 ├── Http/
 │   ├── Controllers/Api/
+│   │   ├── AccessibilityRuleOverrides/ List + Upsert + Delete (per-domain rule muting)
+│   │   ├── AccessibilityScans/   List + Show + Trigger
 │   │   ├── Auth/                Login, Logout, Me
 │   │   ├── BannerConfigs/       Show + Diff + History + Rollback + Draft + Publish
 │   │   ├── BannerPreview/       ShowBannerPreview (HTML iframe for admin preview)
@@ -154,18 +156,25 @@ app/
 │   │   ├── Domains/             CRUD
 │   │   ├── Internal/            IngestConsentEvent (edge-worker-only)
 │   │   ├── Organisations/       CRUD + SwitchOrganisation
+│   │   ├── Passkeys/            6 endpoints — WebAuthn register + authenticate + manage
 │   │   ├── ScanFindings/        ListReviewQueue
 │   │   └── Scans/               List + Show + TriggerScan
 │   ├── Requests/                FormRequests with persist() helpers
 │   ├── Resources/               JSON resources mirroring packages/types
 │   └── Middleware/              consent.ingest, org.current, superuser
 ├── Jobs/
-│   └── RunScanJob.php           Pinned to the scans queue
-├── Models/                      Eloquent — all UUID keys, all enum-casted
+│   ├── RunAccessibilityScanJob.php  Pinned to the accessibility-scans queue
+│   └── RunScanJob.php               Pinned to the scans queue
+├── Models/                      Eloquent — all UUID keys, all enum-casted.
+│                                Passkey subclasses spatie's with HasUuids.
 ├── Notifications/
-│   ├── ScanFailed.php           Slack on scan failure
-│   └── UnknownCookieFound.php   Slack on uncategorised scan findings
+│   ├── AccessibilityIssuesFound.php  Slack on a11y violations above threshold
+│   ├── AccessibilityScanFailed.php   Slack on a11y scan failure
+│   ├── ScanFailed.php           Slack on cookie scan failure
+│   └── UnknownCookieFound.php   Slack on uncategorised cookie scan findings
 ├── Services/
+│   ├── Accessibility/           AccessibilityScanRunner + HttpA11yScanner +
+│   │                            Array fake — mirrors the cookie scanner stack
 │   ├── BannerConfig/            Signer (HMAC-SHA-256)
 │   ├── BannerConfigService.php  Draft/publish/rollback + edge KV sync
 │   ├── Cloudflare/              HttpCloudflareKvClient + Array fake
@@ -174,6 +183,7 @@ app/
 │   ├── Cookies/                 CookieCategoryResolver + CookiePolicyBuilder
 │   │                            + OpenCookieDatabaseImporter
 │   ├── Notifications/           UnknownCookieAlertService + ScanFailureAlertService
+│   │                            + AccessibilityAlertService
 │   └── Scanner/                 ScanRunner + HttpCfBrowserRenderingScanner
 │                                + SitemapDiscoveryService + Array fakes
 └── Support/                     BannerConfigPayloadBuilder, BannerConfigDiffer,
@@ -182,6 +192,63 @@ app/
 
 `routes/api.php` is namespace-aliased — every route reads as
 `Api\Feature\Action` so the file stays scannable.
+
+## Passkeys (WebAuthn)
+
+Wired via `spatie/laravel-passkeys` ^1.7 (which itself wraps
+`web-auth/webauthn-lib`). The package's stub migration uses
+`$table->id()` so we ship our own UUID-keyed migration in
+`database/migrations/2026_05_25_090000_create_passkeys_table.php`
+to match the project rule.
+
+- `App\Models\Passkey` subclasses the package's model and adds
+  `HasUuids`. Registered under `config/passkeys.php` so the
+  package's actions resolve it.
+- `App\Models\User` implements
+  `Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys` and uses the
+  `InteractsWithPasskeys` trait.
+- The six controllers under `app/Http/Controllers/Api/Passkeys/`
+  drive the two-step ceremony (server stashes the WebAuthn
+  challenge in the session; the browser response is validated
+  against it on the follow-up POST).
+- Resource: `PasskeyResource` exposes only `id` + `name` +
+  `lastUsedAt` + `createdAt`. The `credential_id` + `data`
+  columns are verification material and never serialised.
+- Relying party: `app.url`'s host. Use the registrable domain (not
+  a subdomain) so a passkey registered against
+  `app.effectinsight.com` works across `api.` + `assets.` too.
+
+### Lost-authenticator recovery
+
+If an operator loses every authenticator they registered:
+
+1. **Preferred**: have them sign in with their email + password
+   and revoke / re-register from **Settings → Passkeys** in the
+   admin SPA.
+2. **Last resort** (no password remembered either): a sysadmin
+   with DB access can clear their credentials:
+
+   ```sql
+   DELETE FROM passkeys WHERE authenticatable_id = '<user-uuid>';
+   ```
+
+   The next sign-in attempts with any of those credentials will
+   fail; password sign-in still works (the row in `users` is
+   untouched).
+
+## Mail driver
+
+`config/mail.php` declares the `cloudflare` mailer (transport:
+`cloudflare`), and `config/services.php` provides the `account_id`
++ `key` pair Laravel's native transport needs.
+`CLOUDFLARE_MAIL_API_KEY` is read first, falling back to
+`CF_API_TOKEN` if unset so a single combined token still works in
+simpler setups.
+
+In production prefer a **dedicated** Cloudflare API token scoped
+to Email Routing Send only — principle of least privilege so a
+leaked mail token can't tamper with banner configs (KV) or the
+consent log (D1).
 
 ## Out of scope (deferred)
 

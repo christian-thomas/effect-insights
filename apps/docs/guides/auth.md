@@ -69,17 +69,14 @@ that's the whole point of WebAuthn. A database leak gives an
 attacker public keys, which are useless without the matching
 hardware.
 
-The API never returns the `credential_id` or `data` fields. The
-list endpoint exposes only the label, last-used timestamp, and the
-row's own UUID (which is what the revoke endpoint accepts) —
-verified by the
-`list_response_does_not_leak_credential_id_or_public_key_data`
-feature test.
+The API never returns the credential ID or public-key material.
+The list endpoint exposes only the label, last-used timestamp, and
+the row's own UUID (which is what the revoke endpoint accepts).
 
-The registration ceremony's challenge is stashed in the Laravel
-session and validated server-side on the follow-up POST, so a
-replay against a leaked browser response can't enrol a new key
-without the matching session cookie.
+The registration ceremony's challenge is held server-side and
+validated on the follow-up POST, so a replay against a leaked
+browser response can't enrol a new key without the matching
+session cookie.
 
 ## Revoking a passkey
 
@@ -88,25 +85,12 @@ immediately; the next sign-in attempt with that authenticator fails.
 Existing sessions stay alive — revoking doesn't kick the operator
 out, it only prevents new sessions starting from that credential.
 
-If an operator loses their authenticator (lost laptop, broken
-YubiKey), a superuser can sign in to admin and delete the row from
-their behalf via the API:
-
-```bash
-# Find their passkeys
-curl https://api.effectinsight.com/api/passkeys \
-  -H 'Cookie: <superuser sanctum session>' \
-  -X GET
-
-# Tenant scope: a superuser logged into the user's org can list/
-# delete on their behalf via the same endpoint while acting as them.
-```
-
-Or remove the row directly from the database:
-
-```sql
-DELETE FROM passkeys WHERE authenticatable_id = '<user-uuid>';
-```
+If an operator loses every authenticator they registered (lost
+laptop, broken YubiKey, all in the same wallet), they can still sign
+in with their email + password and revoke + re-register from
+**Settings → Passkeys**. If they don't remember their password
+either, a sysadmin with database access can clear their credentials
+out-of-band — see the API project README for the procedure.
 
 ## REST surface
 
@@ -154,17 +138,3 @@ sign in) are great for security but operationally fragile — one
 broken authenticator = one IT ticket per affected operator. The
 combined approach is the pragmatic middle ground.
 
-## Implementation reference
-
-- Package: `spatie/laravel-passkeys` ^1.7. Picks up WebAuthn via
-  `web-auth/webauthn-lib`. Surgical addition — no scaffolding
-  beyond the credentials table.
-- Migrations: `passkeys` table (UUID PKs to match the project rule
-  — the package's stub uses `$table->id()` so we ship our own).
-- Subclassed model: `App\Models\Passkey` extends Spatie's with
-  `HasUuids`; configured under `config/passkeys.php`.
-- User model: implements `Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys`,
-  uses the `InteractsWithPasskeys` trait.
-- Relying party: `app.url`'s host. Use the registrable domain (not a
-  subdomain) so a passkey registered on `app.effectinsight.com`
-  works across `api.` and `assets.` too.

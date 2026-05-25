@@ -27,23 +27,18 @@ maintains its own data shape:
    scanner — fetches `/sitemap.xml`, falls back to `/robots.txt`
    `Sitemap:` directives, falls back to apex-only. Same 150-URL
    cap per scan.
-2. **Browser run.** `apps/edge/src/scanner-worker.ts` exposes a
-   `/scan-a11y` route. For each URL it:
-   - Navigates via `@cloudflare/puppeteer` (`waitUntil:
-     networkidle0`, 30s timeout).
-   - Injects the bundled `axe-core` source (no network round-trip)
-     via `page.addScriptTag({ content })`.
-   - Runs `axe.run()` in the page context.
-   - Collects `violations[]` and returns them.
-3. **Persistence.** `App\Services\Accessibility\AccessibilityScanRunner`
-   stores one row per violation in `accessibility_findings`, with
-   aggregate counters denormalised onto the parent
-   `accessibility_scans` row (`violations_total`,
-   `violations_by_impact`).
-4. **Alerting.** When a scan completes, `AccessibilityAlertService`
-   checks the impact threshold (default `serious`) and fires a Slack
-   notification if any violation at or above that level exists. Same
-   channel as the unknown-cookie + scan-failure alerts.
+2. **Browser run.** The edge scanner worker exposes a `/scan-a11y`
+   route. For each URL it navigates with a headless browser
+   (`networkidle0`, 30s timeout), injects axe-core, runs it, and
+   returns the violations.
+3. **Persistence.** Each violation is stored as a row in the scan's
+   findings list. Aggregate counters (total violations + a
+   breakdown by impact level) are held against the parent scan so
+   the list view doesn't re-aggregate on every render.
+4. **Alerting.** When a scan completes, the impact threshold
+   (default `serious`) is checked and a Slack notification fires if
+   any violation at or above that level exists. Same channel as the
+   unknown-cookie + scan-failure alerts.
 
 ## Cadence
 
@@ -135,9 +130,8 @@ PATCH /api/organisations/{uuid}
 ```
 
 Per-org override is `null` by default, meaning "inherit the platform
-default". Resolution order in
-{@see App\Services\Notifications\AccessibilityAlertService}:
-per-org column → platform env → `serious`.
+default". Resolution order: per-org column → platform env →
+`serious`.
 
 Setting a threshold below `serious` is noisy — most axe runs find at
 least a handful of `minor` issues even on well-built sites.

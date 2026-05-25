@@ -106,9 +106,7 @@ transport — the same provider that backs every other edge of the
 platform, so there's one set of API tokens to manage rather than
 mixing in SES or Mailgun.
 
-`apps/api/config/mail.php` declares the `cloudflare` mailer
-(transport: `cloudflare`); `apps/api/config/services.php` provides
-`account_id` + `key`; the env vars are:
+Set on the API server:
 
 ```bash
 MAIL_MAILER=cloudflare

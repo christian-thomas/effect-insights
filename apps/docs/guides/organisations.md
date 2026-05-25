@@ -24,8 +24,7 @@ operators don't see most of this.
 
 ## REST surface
 
-All organisation endpoints are **superuser-only** (gated by the
-`superuser` middleware in `apps/api/routes/api.php`). Regular
+All organisation endpoints are **superuser-only**. Regular
 operators get 403 even when authed.
 
 ```
