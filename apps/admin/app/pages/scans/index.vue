@@ -46,8 +46,8 @@ const domainFqdn = (id: string): string =>
 <template>
   <UContainer class="py-6">
     <UPageHeader
-      title="Scans"
-      description="Triggered scans across the active organisation's domains."
+      title="Cookie scans"
+      description="Cookie scanner runs across the active organisation's domains. For axe-core accessibility audits see Accessibility scans."
     />
 
     <UCard class="mt-4">

@@ -1,29 +1,42 @@
 <script setup lang="ts">
+import type { NavigationMenuItem } from '@nuxt/ui';
+
 const auth = useAuthStore();
 const toast = useToast();
 
-const nav = computed(() => {
-  const items: Array<Array<{ label: string; icon: string; to: string }>> = [
-    [
-      { label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' },
-      { label: 'Domains', icon: 'i-lucide-globe', to: '/domains' },
-      { label: 'Scans', icon: 'i-lucide-radar', to: '/scans' },
-      { label: 'Accessibility', icon: 'i-lucide-accessibility', to: '/accessibility-scans' },
-      { label: 'Consent log', icon: 'i-lucide-file-check', to: '/consent' },
-      { label: 'Cookie database', icon: 'i-lucide-database', to: '/cookies' },
-    ],
-    [{ label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }],
+const nav = computed((): NavigationMenuItem[][] => {
+  const platform: NavigationMenuItem[] = [
+    { label: 'Platform', type: 'label' },
+    { label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' },
+    { label: 'Domains', icon: 'i-lucide-globe', to: '/domains' },
   ];
 
   if (auth.user?.isSuperuser) {
-    items[0]!.splice(1, 0, {
+    platform.push({
       label: 'Organisations',
       icon: 'i-lucide-building',
       to: '/organisations',
     });
   }
 
-  return items;
+  const consent: NavigationMenuItem[] = [
+    { label: 'Consent management', type: 'label' },
+    { label: 'Cookie scans', icon: 'i-lucide-radar', to: '/scans' },
+    { label: 'Consent log', icon: 'i-lucide-file-check', to: '/consent' },
+    { label: 'Cookie database', icon: 'i-lucide-database', to: '/cookies' },
+  ];
+
+  const accessibility: NavigationMenuItem[] = [
+    { label: 'Accessibility', type: 'label' },
+    { label: 'Accessibility scans', icon: 'i-lucide-accessibility', to: '/accessibility-scans' },
+  ];
+
+  return [
+    platform,
+    consent,
+    accessibility,
+    [{ label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }],
+  ];
 });
 
 const switchTo = async (organisationId: string): Promise<void> => {
@@ -42,7 +55,7 @@ const switchTo = async (organisationId: string): Promise<void> => {
 const orgItems = computed(() =>
   auth.organisations.map((organisation) => ({
     label: organisation.name,
-    onSelect: () => switchTo(organisation.id),
+    onSelect: (): Promise<void> => switchTo(organisation.id),
   })),
 );
 
