@@ -100,7 +100,8 @@ const muteRuleOrgWide = async (finding: AccessibilityFinding): Promise<void> => 
     await scansStore.show(scanId.value);
     toast.add({
       title: `Muted ${finding.ruleId}`,
-      description: 'Future scans (and this view) will treat this rule as muted across every domain.',
+      description:
+        'Future scans (and this view) will treat this rule as muted across every domain.',
       color: 'success',
       icon: 'i-lucide-volume-x',
     });
@@ -178,7 +179,7 @@ const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> =
         </template>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div
-            v-for="impact in (['critical', 'serious', 'moderate', 'minor'] as A11yImpact[])"
+            v-for="impact in ['critical', 'serious', 'moderate', 'minor'] as A11yImpact[]"
             :key="impact"
             class="rounded border border-gray-200 dark:border-gray-800 p-3"
           >
@@ -251,7 +252,9 @@ const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> =
           <UBadge :color="impactColor[impact as A11yImpact] ?? 'neutral'" variant="soft">
             {{ impactLabel[impact as A11yImpact] ?? impact }}
           </UBadge>
-          <span class="text-sm text-gray-500">{{ group.length }} violation{{ group.length === 1 ? '' : 's' }}</span>
+          <span class="text-sm text-gray-500"
+            >{{ group.length }} violation{{ group.length === 1 ? '' : 's' }}</span
+          >
         </div>
 
         <div class="space-y-2">
@@ -288,12 +291,17 @@ const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> =
                 </p>
               </div>
               <UIcon
-                :name="expandedRule === finding.id ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                :name="
+                  expandedRule === finding.id ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+                "
                 class="text-gray-400 mt-1 flex-shrink-0"
               />
             </div>
 
-            <div v-if="expandedRule === finding.id" class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 space-y-3">
+            <div
+              v-if="expandedRule === finding.id"
+              class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 space-y-3"
+            >
               <div>
                 <p class="text-xs font-medium text-gray-500 mb-1">Help</p>
                 <p class="text-sm">{{ finding.helpText }}</p>
@@ -328,7 +336,10 @@ const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> =
                     <p v-if="node.target" class="font-mono mb-1">
                       {{ node.target.join(' ') }}
                     </p>
-                    <pre v-if="node.html" class="whitespace-pre-wrap break-all text-gray-700 dark:text-gray-300"><code>{{ node.html }}</code></pre>
+                    <pre
+                      v-if="node.html"
+                      class="whitespace-pre-wrap break-all text-gray-700 dark:text-gray-300"
+                    ><code>{{ node.html }}</code></pre>
                     <p v-if="node.failureSummary" class="text-gray-500 mt-1">
                       {{ node.failureSummary }}
                     </p>
@@ -364,8 +375,8 @@ const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> =
                 <span class="text-xs text-gray-400 ml-2">
                   Stops this rule from counting toward alert thresholds. Manage overrides in
                   <NuxtLink to="/accessibility-rule-overrides" class="underline">
-                    settings
-                  </NuxtLink>.
+                    settings </NuxtLink
+                  >.
                 </span>
               </div>
             </div>

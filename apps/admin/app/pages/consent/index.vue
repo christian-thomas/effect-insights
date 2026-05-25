@@ -211,7 +211,11 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
 </script>
 
 <template>
-  <UDashboardNavbar title="Consent log" />
+  <UDashboardNavbar title="Consent log">
+    <template #right>
+      <OrgSwitcher />
+    </template>
+  </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-4">
     <UCard>

@@ -62,10 +62,9 @@ export const usePasskeysStore = defineStore('passkeys', {
 
       this.registering = true;
       try {
-        const optionsJson = await $api<Record<string, unknown>>(
-          '/api/passkeys/register-options',
-          { method: 'POST' },
-        );
+        const optionsJson = await $api<Record<string, unknown>>('/api/passkeys/register-options', {
+          method: 'POST',
+        });
         const createOptions = prepareCreateOptions(optionsJson as never);
 
         const credential = (await navigator.credentials.create({

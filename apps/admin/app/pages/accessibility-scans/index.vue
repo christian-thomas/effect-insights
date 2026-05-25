@@ -113,7 +113,7 @@ const domainFqdn = (id: string): string =>
           <span class="font-medium tabular-nums">{{ row.original.violationsTotal }}</span>
           <div v-if="row.original.violationsByImpact" class="flex items-center gap-1">
             <UBadge
-              v-for="impact in (['critical', 'serious', 'moderate', 'minor'] as A11yImpact[])"
+              v-for="impact in ['critical', 'serious', 'moderate', 'minor'] as A11yImpact[]"
               :key="impact"
               :color="impactColor[impact]"
               variant="subtle"

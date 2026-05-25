@@ -124,6 +124,8 @@ const copyEmbed = async (): Promise<void> => {
         icon="i-lucide-palette"
         label="Banner config"
       />
+      <div class="mx-1 h-6 w-px bg-accented" aria-hidden="true" />
+      <OrgSwitcher />
     </template>
   </UDashboardNavbar>
 
@@ -203,7 +205,9 @@ const copyEmbed = async (): Promise<void> => {
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end pt-4 border-t border-gray-200 dark:border-gray-800">
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end pt-4 border-t border-gray-200 dark:border-gray-800"
+          >
             <div>
               <label class="text-gray-500 text-sm block mb-1">Accessibility scan cadence</label>
               <USelectMenu
@@ -214,8 +218,8 @@ const copyEmbed = async (): Promise<void> => {
                 @update:model-value="onA11yCadenceChange"
               />
               <p class="text-xs text-gray-500 mt-1">
-                axe-core WCAG audit. Runs at 05:00 UTC (1h offset from the cookie scanner so the
-                two don't fight for browser-rendering quota). Default
+                axe-core WCAG audit. Runs at 05:00 UTC (1h offset from the cookie scanner so the two
+                don't fight for browser-rendering quota). Default
                 <code>never</code> — opt-in per domain.
               </p>
             </div>

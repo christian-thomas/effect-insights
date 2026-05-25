@@ -49,7 +49,15 @@ const removeOverride = async (row: AccessibilityRuleOverride): Promise<void> => 
 <template>
   <UDashboardNavbar title="Accessibility rule overrides">
     <template #leading>
-      <UButton color="neutral" variant="ghost" icon="i-lucide-arrow-left" to="/accessibility-scans" />
+      <UButton
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-arrow-left"
+        to="/accessibility-scans"
+      />
+    </template>
+    <template #right>
+      <OrgSwitcher />
     </template>
   </UDashboardNavbar>
 

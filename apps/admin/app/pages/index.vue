@@ -17,8 +17,6 @@ interface DashboardTile {
   moduleLabel: string;
 }
 
-const auth = useAuthStore();
-
 const counts = ref<DashboardCounts | null>(null);
 const loading = ref(true);
 const error = ref<Error | null>(null);
@@ -83,27 +81,28 @@ const moduleStyles: Record<
 > = {
   platform: {
     iconClass: 'text-gray-500 dark:text-gray-400',
-    badgeClass:
-      'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    badgeClass: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     accentClass: 'bg-gray-300 dark:bg-gray-700',
   },
   consent: {
     iconClass: 'text-emerald-600 dark:text-emerald-400',
-    badgeClass:
-      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
     accentClass: 'bg-emerald-500',
   },
   accessibility: {
     iconClass: 'text-violet-600 dark:text-violet-400',
-    badgeClass:
-      'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+    badgeClass: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
     accentClass: 'bg-violet-500',
   },
 };
 </script>
 
 <template>
-  <UDashboardNavbar :title="`Dashboard · ${auth.currentOrganisation?.name ?? ''}`" />
+  <UDashboardNavbar title="Dashboard">
+    <template #right>
+      <OrgSwitcher />
+    </template>
+  </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-6">
     <UAlert
@@ -124,9 +123,7 @@ const moduleStyles: Record<
           class="relative h-full overflow-hidden transition-all group-hover:shadow-md group-hover:-translate-y-0.5"
           :ui="{ body: 'p-5' }"
         >
-          <div
-            :class="['absolute inset-x-0 top-0 h-1', moduleStyles[tile.module].accentClass]"
-          />
+          <div :class="['absolute inset-x-0 top-0 h-1', moduleStyles[tile.module].accentClass]" />
 
           <div class="flex items-start justify-between gap-3">
             <UIcon
@@ -175,7 +172,9 @@ const moduleStyles: Record<
           </li>
           <li>
             Watch
-            <NuxtLink to="/consent" class="text-primary-500 hover:underline">consent events</NuxtLink>
+            <NuxtLink to="/consent" class="text-primary-500 hover:underline"
+              >consent events</NuxtLink
+            >
             land as visitors interact with the banner.
           </li>
         </ol>

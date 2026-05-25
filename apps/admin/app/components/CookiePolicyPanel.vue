@@ -149,7 +149,9 @@ const refresh = async (): Promise<void> => {
           <div v-for="bucket in policy.categories" :key="bucket.category">
             <p class="text-sm font-medium capitalize">{{ bucket.label }}</p>
             <p class="text-xs text-gray-500 mb-2">{{ bucket.description }}</p>
-            <ul class="text-sm border border-gray-200 dark:border-gray-800 rounded divide-y divide-gray-200 dark:divide-gray-800">
+            <ul
+              class="text-sm border border-gray-200 dark:border-gray-800 rounded divide-y divide-gray-200 dark:divide-gray-800"
+            >
               <li
                 v-for="cookie in bucket.cookies"
                 :key="`${bucket.category}-${cookie.name}`"
@@ -176,8 +178,8 @@ const refresh = async (): Promise<void> => {
         </div>
         <p class="text-xs text-gray-500 mb-2">
           Drop into the client's privacy page. The iframe renders the public HTML at
-          <code class="break-all">{{ publicUrl }}</code> — keyed off the domain's public key so
-          no tenant data is leaked.
+          <code class="break-all">{{ publicUrl }}</code> — keyed off the domain's public key so no
+          tenant data is leaked.
         </p>
         <pre
           class="rounded bg-gray-50 dark:bg-gray-900 p-3 text-xs overflow-x-auto whitespace-pre-wrap break-all"

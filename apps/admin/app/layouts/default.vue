@@ -2,7 +2,6 @@
 import type { NavigationMenuItem } from '@nuxt/ui';
 
 const auth = useAuthStore();
-const toast = useToast();
 
 const nav = computed((): NavigationMenuItem[][] => {
   const platform: NavigationMenuItem[] = [
@@ -39,26 +38,6 @@ const nav = computed((): NavigationMenuItem[][] => {
   ];
 });
 
-const switchTo = async (organisationId: string): Promise<void> => {
-  try {
-    await auth.switchOrganisation(organisationId);
-  } catch (caught) {
-    toast.add({
-      color: 'error',
-      icon: 'i-lucide-triangle-alert',
-      title: 'Could not switch organisation',
-      description: caught instanceof Error ? caught.message : 'Please try again',
-    });
-  }
-};
-
-const orgItems = computed(() =>
-  auth.organisations.map((organisation) => ({
-    label: organisation.name,
-    onSelect: (): Promise<void> => switchTo(organisation.id),
-  })),
-);
-
 const signOut = async (): Promise<void> => {
   await auth.logout();
   await navigateTo('/login');
@@ -85,24 +64,12 @@ const userItems = computed(() => [
         </div>
       </template>
 
-      <!-- Org switcher sits in the sidebar body — the header slot is fixed-
-           height (--ui-header-height) so brand + dropdown would crash there. -->
-      <UDropdownMenu
-        v-if="auth.currentOrganisation"
-        :items="orgItems"
-        :ui="{ content: 'w-(--reka-dropdown-menu-trigger-width)' }"
-        class="w-full"
-      >
-        <UButton
-          color="neutral"
-          variant="ghost"
-          block
-          class="justify-between"
-          :label="auth.currentOrganisation.name"
-          trailing-icon="i-lucide-chevrons-up-down"
-        />
-      </UDropdownMenu>
-
+      <!-- The org switcher lives in each page's UDashboardNavbar #right slot
+           (see components/OrgSwitcher.vue). It was previously a ghost-button
+           dropdown here in the sidebar body, but that gave it no visual
+           anchor and made the current tenant hard to spot. Moving it to the
+           navbar puts it next to the page title where users actually look
+           for "what context am I in?". -->
       <UNavigationMenu :items="nav" orientation="vertical" />
 
       <template #footer>

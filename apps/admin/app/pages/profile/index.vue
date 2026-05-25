@@ -107,7 +107,11 @@ const links: ProfileLink[] = [
 </script>
 
 <template>
-  <UDashboardNavbar title="Profile" />
+  <UDashboardNavbar title="Profile">
+    <template #right>
+      <OrgSwitcher />
+    </template>
+  </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 max-w-3xl space-y-6">
     <UCard>
@@ -129,12 +133,7 @@ const links: ProfileLink[] = [
           <UBadge color="primary" variant="subtle" label="Superuser" />
         </div>
         <div class="flex justify-end">
-          <UButton
-            type="submit"
-            icon="i-lucide-save"
-            label="Save"
-            :loading="savingProfile"
-          />
+          <UButton type="submit" icon="i-lucide-save" label="Save" :loading="savingProfile" />
         </div>
       </UForm>
     </UCard>
@@ -171,8 +170,8 @@ const links: ProfileLink[] = [
           />
         </UFormField>
         <p class="text-xs text-gray-500">
-          Changing your password doesn't sign you out of other sessions — revoke them by signing
-          out from those browsers, or sign out and back in here to refresh the active session.
+          Changing your password doesn't sign you out of other sessions — revoke them by signing out
+          from those browsers, or sign out and back in here to refresh the active session.
         </p>
         <div class="flex justify-end">
           <UButton

@@ -74,6 +74,8 @@ const formatTime = (iso: string | null): string => {
         label="Run scan now"
         @click="triggerScan"
       />
+      <div class="mx-1 h-6 w-px bg-accented" aria-hidden="true" />
+      <OrgSwitcher />
     </template>
   </UDashboardNavbar>
 
@@ -118,7 +120,7 @@ const formatTime = (iso: string | null): string => {
           <span class="font-medium tabular-nums">{{ row.original.violationsTotal }}</span>
           <div v-if="row.original.violationsByImpact" class="flex items-center gap-1">
             <UBadge
-              v-for="impact in (['critical', 'serious'] as A11yImpact[])"
+              v-for="impact in ['critical', 'serious'] as A11yImpact[]"
               :key="impact"
               :color="impactColor[impact]"
               variant="subtle"

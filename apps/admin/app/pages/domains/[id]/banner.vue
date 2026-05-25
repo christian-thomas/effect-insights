@@ -263,6 +263,8 @@ const gcmSignals = [
         Published v{{ published.version }}
       </UBadge>
       <UBadge v-else color="neutral" variant="subtle">Not yet published</UBadge>
+      <div class="mx-1 h-6 w-px bg-accented" aria-hidden="true" />
+      <OrgSwitcher />
     </template>
   </UDashboardNavbar>
 
@@ -297,8 +299,8 @@ const gcmSignals = [
             <p class="text-xs text-gray-500">
               Categorised gives the visitor per-category toggles (necessary / preferences /
               statistics / marketing). Basic collapses to a binary Accept / Reject and omits the
-              customise button — useful when you only run one analytics tool and don't want to
-              add UI friction for a meaningful choice.
+              customise button — useful when you only run one analytics tool and don't want to add
+              UI friction for a meaningful choice.
             </p>
             <URadioGroup
               v-model="state.granularity"

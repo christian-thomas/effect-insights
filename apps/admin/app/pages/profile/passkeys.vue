@@ -26,10 +26,7 @@ const formatTime = (iso: string | null): string => {
 };
 
 const onRegister = async (): Promise<void> => {
-  const name = window.prompt(
-    'Label this passkey (e.g. "MacBook TouchID", "YubiKey").',
-    '',
-  );
+  const name = window.prompt('Label this passkey (e.g. "MacBook TouchID", "YubiKey").', '');
   if (name === null || name.trim() === '') return;
 
   try {
@@ -88,6 +85,8 @@ const onRemove = async (passkey: Passkey): Promise<void> => {
         label="Register a passkey"
         @click="onRegister"
       />
+      <div class="mx-1 h-6 w-px bg-accented" aria-hidden="true" />
+      <OrgSwitcher />
     </template>
   </UDashboardNavbar>
 
@@ -137,7 +136,10 @@ const onRemove = async (passkey: Passkey): Promise<void> => {
         <span class="text-xs text-gray-500">{{ formatTime(row.original.createdAt) }}</span>
       </template>
       <template #lastUsedAt-cell="{ row }">
-        <span class="text-xs" :class="row.original.lastUsedAt ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400'">
+        <span
+          class="text-xs"
+          :class="row.original.lastUsedAt ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400'"
+        >
           {{ formatTime(row.original.lastUsedAt) }}
         </span>
       </template>

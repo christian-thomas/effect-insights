@@ -132,9 +132,7 @@ export const useBannerConfigsStore = defineStore('bannerConfigs', {
       const slot = this.ensureSlot(domainId);
       slot.historyLoading = true;
       try {
-        const response = await $api<ListResponse>(
-          `/api/domains/${domainId}/banner-config/history`,
-        );
+        const response = await $api<ListResponse>(`/api/domains/${domainId}/banner-config/history`);
         slot.history = response.data;
       } finally {
         slot.historyLoading = false;
@@ -142,13 +140,10 @@ export const useBannerConfigsStore = defineStore('bannerConfigs', {
     },
 
     async rollback(domainId: string, version: number): Promise<BannerConfig> {
-      const response = await $api<ItemResponse>(
-        `/api/domains/${domainId}/banner-config/rollback`,
-        {
-          method: 'POST',
-          body: { version },
-        },
-      );
+      const response = await $api<ItemResponse>(`/api/domains/${domainId}/banner-config/rollback`, {
+        method: 'POST',
+        body: { version },
+      });
       const slot = this.ensureSlot(domainId);
       // The endpoint returns the new draft — slot it in and refresh the
       // diff so the pending-changes panel reflects the rollback.

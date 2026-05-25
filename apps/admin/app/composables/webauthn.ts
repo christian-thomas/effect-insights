@@ -56,7 +56,9 @@ interface ServerRequestOptions {
  * Decode the JSON the server gave us into a PublicKeyCredentialCreationOptions
  * the browser will accept.
  */
-export const prepareCreateOptions = (options: ServerCreateOptions): PublicKeyCredentialCreationOptions => {
+export const prepareCreateOptions = (
+  options: ServerCreateOptions,
+): PublicKeyCredentialCreationOptions => {
   return {
     ...options,
     challenge: base64urlToBuffer(options.challenge),
@@ -71,7 +73,9 @@ export const prepareCreateOptions = (options: ServerCreateOptions): PublicKeyCre
   };
 };
 
-export const prepareRequestOptions = (options: ServerRequestOptions): PublicKeyCredentialRequestOptions => {
+export const prepareRequestOptions = (
+  options: ServerRequestOptions,
+): PublicKeyCredentialRequestOptions => {
   return {
     ...options,
     challenge: base64urlToBuffer(options.challenge),

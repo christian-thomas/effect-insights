@@ -46,25 +46,25 @@ seeded via `php artisan tinker` or the relevant seeder.
 
 Single runtime variable, exposed via `nuxt.config.ts`:
 
-| Var                    | Default                 | Notes                                                  |
-| ---------------------- | ----------------------- | ------------------------------------------------------ |
-| `NUXT_PUBLIC_API_BASE` | `http://localhost:8000` | Laravel base URL. Override for staging/production.     |
+| Var                    | Default                 | Notes                                              |
+| ---------------------- | ----------------------- | -------------------------------------------------- |
+| `NUXT_PUBLIC_API_BASE` | `http://localhost:8000` | Laravel base URL. Override for staging/production. |
 
 Set as either an env var or in `.env.local` (gitignored).
 
 ## Scripts
 
-| Command            | Notes                                                       |
-| ------------------ | ----------------------------------------------------------- |
-| `bun run dev`      | Dev server with HMR on :3001.                               |
-| `bun run build`    | Production SPA build to `.output/`.                         |
-| `bun run preview`  | Boot the built bundle locally.                              |
-| `bun run typecheck`| `nuxt typecheck` — Vue + TS.                                |
-| `bun run lint`     | oxlint.                                                     |
-| `bun run format`   | oxfmt.                                                      |
-| `bun run check`    | format:check + lint + typecheck. **Run before every push.** |
-| `bun run fix`      | Auto-format + auto-fix lint.                                |
-| `bun run test`     | Vitest in `environment: 'nuxt'` with `mockNuxtImport`.      |
+| Command             | Notes                                                       |
+| ------------------- | ----------------------------------------------------------- |
+| `bun run dev`       | Dev server with HMR on :3001.                               |
+| `bun run build`     | Production SPA build to `.output/`.                         |
+| `bun run preview`   | Boot the built bundle locally.                              |
+| `bun run typecheck` | `nuxt typecheck` — Vue + TS.                                |
+| `bun run lint`      | oxlint.                                                     |
+| `bun run format`    | oxfmt.                                                      |
+| `bun run check`     | format:check + lint + typecheck. **Run before every push.** |
+| `bun run fix`       | Auto-format + auto-fix lint.                                |
+| `bun run test`      | Vitest in `environment: 'nuxt'` with `mockNuxtImport`.      |
 
 ## Project layout
 

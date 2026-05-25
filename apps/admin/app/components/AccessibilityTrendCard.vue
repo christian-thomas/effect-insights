@@ -47,9 +47,9 @@ watch(days, load);
 // scan; segments stack Critical → Serious → Moderate → Minor.
 const impactColors: Record<A11yImpact, string> = {
   critical: '#dc2626', // red-600
-  serious: '#f59e0b',  // amber-500
+  serious: '#f59e0b', // amber-500
   moderate: '#3b82f6', // blue-500
-  minor: '#9ca3af',    // gray-400
+  minor: '#9ca3af', // gray-400
 };
 
 const maxTotal = computed((): number => {
@@ -73,7 +73,14 @@ const yScale = (value: number): number => {
 const segmentsForPoint = (
   point: TrendPoint,
   index: number,
-): Array<{ x: number; y: number; height: number; color: string; impact: A11yImpact; count: number }> => {
+): Array<{
+  x: number;
+  y: number;
+  height: number;
+  color: string;
+  impact: A11yImpact;
+  count: number;
+}> => {
   const x = index * (barWidth.value + barGap);
   let yCursor = chartHeight;
   const segments: ReturnType<typeof segmentsForPoint> = [];
@@ -109,7 +116,7 @@ const formatTip = (point: TrendPoint): string => {
         </div>
         <UButtonGroup size="xs">
           <UButton
-            v-for="window in ([7, 30, 90, 365] as const)"
+            v-for="window in [7, 30, 90, 365] as const"
             :key="window"
             :variant="days === window ? 'solid' : 'soft'"
             color="neutral"
@@ -162,7 +169,7 @@ const formatTip = (point: TrendPoint): string => {
 
       <div class="flex items-center gap-4 mt-2 text-xs flex-wrap">
         <span
-          v-for="impact in (['critical', 'serious', 'moderate', 'minor'] as A11yImpact[])"
+          v-for="impact in ['critical', 'serious', 'moderate', 'minor'] as A11yImpact[]"
           :key="impact"
           class="flex items-center gap-1.5"
         >
@@ -172,7 +179,9 @@ const formatTip = (point: TrendPoint): string => {
           />
           <span class="capitalize">{{ impact }}</span>
         </span>
-        <span class="text-gray-400 ml-auto">{{ points.length }} scan{{ points.length === 1 ? '' : 's' }}</span>
+        <span class="text-gray-400 ml-auto"
+          >{{ points.length }} scan{{ points.length === 1 ? '' : 's' }}</span
+        >
       </div>
     </template>
   </UCard>

@@ -20,8 +20,8 @@ const onRollback = (version: number): void => {
   emit('rollback', version);
 };
 
-const currentPublished = computed(
-  (): BannerConfig | undefined => props.history.find((entry) => entry.isPublished),
+const currentPublished = computed((): BannerConfig | undefined =>
+  props.history.find((entry) => entry.isPublished),
 );
 </script>
 
@@ -44,11 +44,7 @@ const currentPublished = computed(
     </p>
 
     <ul v-else class="divide-y divide-gray-200 dark:divide-gray-800">
-      <li
-        v-for="entry in history"
-        :key="entry.id"
-        class="flex items-start gap-3 py-3"
-      >
+      <li v-for="entry in history" :key="entry.id" class="flex items-start gap-3 py-3">
         <div class="flex flex-col items-center gap-1 min-w-[3rem]">
           <UBadge :color="entry.isPublished ? 'success' : 'neutral'" variant="subtle">
             v{{ entry.version }}

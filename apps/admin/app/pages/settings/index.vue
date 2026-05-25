@@ -2,7 +2,6 @@
 import type { A11yAlertScope, A11yAlertThreshold } from '~/types/organisation';
 
 const store = useCurrentOrganisationStore();
-const auth = useAuthStore();
 const { organisation, loading, saving } = storeToRefs(store);
 const toast = useToast();
 
@@ -60,13 +59,17 @@ const onSubmit = async (): Promise<void> => {
 </script>
 
 <template>
-  <UDashboardNavbar :title="`Settings · ${auth.currentOrganisation?.name ?? ''}`" />
+  <UDashboardNavbar title="Settings">
+    <template #right>
+      <OrgSwitcher />
+    </template>
+  </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 max-w-3xl space-y-6">
     <p class="text-sm text-gray-500">
-      Runtime preferences for the active organisation. Changes apply to every member of this org
-      and take effect immediately. The org's name + slug are managed by a superuser on the
-      Organisations page.
+      Runtime preferences for the active organisation. Changes apply to every member of this org and
+      take effect immediately. The org's name + slug are managed by a superuser on the Organisations
+      page.
     </p>
 
     <USkeleton v-if="loading && !organisation" class="h-64 w-full" />

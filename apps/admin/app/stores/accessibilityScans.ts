@@ -1,8 +1,5 @@
 import { defineStore } from 'pinia';
-import type {
-  AccessibilityFinding,
-  AccessibilityScan,
-} from '~/types/accessibility';
+import type { AccessibilityFinding, AccessibilityScan } from '~/types/accessibility';
 
 interface ListResponse {
   data: AccessibilityScan[];
@@ -73,10 +70,9 @@ export const useAccessibilityScansStore = defineStore('accessibilityScans', {
     async trigger(domainId: string): Promise<AccessibilityScan> {
       this.triggering = true;
       try {
-        const response = await $api<ItemResponse>(
-          `/api/domains/${domainId}/accessibility-scans`,
-          { method: 'POST' },
-        );
+        const response = await $api<ItemResponse>(`/api/domains/${domainId}/accessibility-scans`, {
+          method: 'POST',
+        });
         // Endpoint returns the queued scan (status=queued). The runner
         // promotes it to completed/failed asynchronously via the
         // accessibility-scans Horizon queue. Caller polls show() for

@@ -68,6 +68,8 @@ const formatTime = (iso: string | null): string => {
         label="Run scan now"
         @click="triggerScan"
       />
+      <div class="mx-1 h-6 w-px bg-accented" aria-hidden="true" />
+      <OrgSwitcher />
     </template>
   </UDashboardNavbar>
 
