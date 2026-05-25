@@ -134,9 +134,16 @@ const goBack = (): void => {
   <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl">
     <UCard>
       <template #header>
-        <h3 class="font-semibold">Invite a user</h3>
+        <div>
+          <h2 class="text-base font-semibold">Invite a user</h2>
+          <p class="text-sm text-gray-500 mt-0.5">
+            The invitee receives an email with a magic link that expires in 7 days. They set
+            their own name + password during sign-up. If the email already belongs to a user
+            they're attached to this organisation without changing their existing credentials.
+          </p>
+        </div>
       </template>
-      <UForm :state="inviteForm" class="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 items-end" @submit="onInvite">
+      <UForm :state="inviteForm" class="space-y-4 max-w-xl" @submit="onInvite">
         <UFormField label="Email" name="email" required>
           <UInput
             v-model="inviteForm.email"
@@ -151,22 +158,19 @@ const goBack = (): void => {
             v-model="inviteForm.role"
             :items="roleOptions"
             value-key="value"
-            class="w-40"
+            class="w-full sm:w-48"
           />
         </UFormField>
-        <UButton
-          type="submit"
-          icon="i-lucide-send"
-          label="Send invitation"
-          :loading="saving"
-          :disabled="loading"
-        />
+        <div class="pt-2">
+          <UButton
+            type="submit"
+            icon="i-lucide-send"
+            label="Send invitation"
+            :loading="saving"
+            :disabled="loading"
+          />
+        </div>
       </UForm>
-      <p class="mt-3 text-xs text-gray-500">
-        The invitee receives an email with a magic link that expires in 7 days. They set their own
-        name + password during sign-up. If the email already belongs to a user they just get
-        attached to this organisation — no password reset.
-      </p>
     </UCard>
 
     <UCard>

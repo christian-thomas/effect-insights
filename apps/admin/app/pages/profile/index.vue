@@ -1,11 +1,4 @@
 <script setup lang="ts">
-interface ProfileLink {
-  to: string;
-  label: string;
-  description: string;
-  icon: string;
-}
-
 const auth = useAuthStore();
 const toast = useToast();
 
@@ -94,16 +87,6 @@ const onSubmitPassword = async (): Promise<void> => {
     savingPassword.value = false;
   }
 };
-
-const links: ProfileLink[] = [
-  {
-    to: '/profile/passkeys',
-    label: 'Passkeys',
-    description:
-      'Register TouchID / Windows Hello / YubiKey credentials and use them to sign in without a password.',
-    icon: 'i-lucide-fingerprint',
-  },
-];
 </script>
 
 <template>
@@ -113,94 +96,131 @@ const links: ProfileLink[] = [
     </template>
   </UDashboardNavbar>
 
-  <div class="p-4 sm:p-6 lg:p-8 max-w-3xl space-y-6">
+  <div class="p-4 sm:p-6 lg:p-8 max-w-4xl">
     <UCard>
       <template #header>
-        <h3 class="font-semibold">Account</h3>
+        <div>
+          <h2 class="text-base font-semibold">Your profile</h2>
+          <p class="text-sm text-gray-500 mt-0.5">
+            Account details and sign-in methods. Profile changes apply immediately.
+          </p>
+        </div>
       </template>
-      <UForm :state="profileForm" class="space-y-4" @submit="onSubmitProfile">
-        <UFormField label="Name" name="name">
-          <UInput v-model="profileForm.name" type="text" required />
-        </UFormField>
-        <UFormField
-          label="Email"
-          name="email"
-          help="Changing your email immediately becomes your new sign-in identifier."
-        >
-          <UInput v-model="profileForm.email" type="email" required />
-        </UFormField>
-        <div v-if="auth.user?.isSuperuser">
-          <UBadge color="primary" variant="subtle" label="Superuser" />
-        </div>
-        <div class="flex justify-end">
-          <UButton type="submit" icon="i-lucide-save" label="Save" :loading="savingProfile" />
-        </div>
-      </UForm>
-    </UCard>
 
-    <UCard>
-      <template #header>
-        <h3 class="font-semibold">Change password</h3>
-      </template>
-      <UForm :state="passwordForm" class="space-y-4" @submit="onSubmitPassword">
-        <UFormField label="Current password" name="current_password" required>
-          <UInput
-            v-model="passwordForm.current_password"
-            type="password"
-            autocomplete="current-password"
-            required
-          />
-        </UFormField>
-        <UFormField label="New password" name="password" required>
-          <UInput
-            v-model="passwordForm.password"
-            type="password"
-            autocomplete="new-password"
-            required
-            minlength="8"
-          />
-        </UFormField>
-        <UFormField label="Confirm new password" name="password_confirmation" required>
-          <UInput
-            v-model="passwordForm.password_confirmation"
-            type="password"
-            autocomplete="new-password"
-            required
-            minlength="8"
-          />
-        </UFormField>
-        <p class="text-xs text-gray-500">
-          Changing your password doesn't sign you out of other sessions — revoke them by signing out
-          from those browsers, or sign out and back in here to refresh the active session.
-        </p>
-        <div class="flex justify-end">
-          <UButton
-            type="submit"
-            icon="i-lucide-key"
-            label="Change password"
-            :loading="savingPassword"
-          />
-        </div>
-      </UForm>
-    </UCard>
-
-    <div>
-      <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
-        Sign-in methods
-      </h3>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="group">
-          <UCard class="transition-shadow group-hover:shadow-md h-full">
-            <div class="flex items-start gap-3">
-              <UIcon :name="link.icon" class="text-2xl text-primary-500" />
-              <div>
-                <p class="font-semibold">{{ link.label }}</p>
-                <p class="text-sm text-gray-500 mt-1">{{ link.description }}</p>
-              </div>
+      <div class="divide-y divide-gray-200 dark:divide-gray-800">
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 py-6 first:pt-0">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-medium">Account</h3>
+              <UBadge
+                v-if="auth.user?.isSuperuser"
+                color="primary"
+                variant="subtle"
+                size="sm"
+                label="Superuser"
+              />
             </div>
-          </UCard>
-        </NuxtLink>
+            <p class="text-sm text-gray-500 mt-1">
+              Your name and email. Changing the email updates your sign-in identifier.
+            </p>
+          </div>
+          <div class="md:col-span-2">
+            <UForm :state="profileForm" class="space-y-4" @submit="onSubmitProfile">
+              <UFormField label="Name" name="name" required>
+                <UInput v-model="profileForm.name" type="text" required class="w-full sm:max-w-md" />
+              </UFormField>
+              <UFormField label="Email" name="email" required>
+                <UInput v-model="profileForm.email" type="email" required class="w-full sm:max-w-md" />
+              </UFormField>
+              <div class="flex justify-end">
+                <UButton type="submit" icon="i-lucide-save" label="Save" :loading="savingProfile" />
+              </div>
+            </UForm>
+          </div>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 py-6">
+          <div>
+            <h3 class="font-medium">Password</h3>
+            <p class="text-sm text-gray-500 mt-1">
+              Set a new password. Existing sessions stay signed in — sign out manually if you want
+              to invalidate other browsers.
+            </p>
+          </div>
+          <div class="md:col-span-2">
+            <UForm :state="passwordForm" class="space-y-4" @submit="onSubmitPassword">
+              <UFormField label="Current password" name="current_password" required>
+                <UInput
+                  v-model="passwordForm.current_password"
+                  type="password"
+                  autocomplete="current-password"
+                  required
+                  class="w-full sm:max-w-md"
+                />
+              </UFormField>
+              <UFormField label="New password" name="password" required>
+                <UInput
+                  v-model="passwordForm.password"
+                  type="password"
+                  autocomplete="new-password"
+                  required
+                  minlength="8"
+                  class="w-full sm:max-w-md"
+                />
+              </UFormField>
+              <UFormField label="Confirm new password" name="password_confirmation" required>
+                <UInput
+                  v-model="passwordForm.password_confirmation"
+                  type="password"
+                  autocomplete="new-password"
+                  required
+                  minlength="8"
+                  class="w-full sm:max-w-md"
+                />
+              </UFormField>
+              <div class="flex justify-end">
+                <UButton
+                  type="submit"
+                  icon="i-lucide-key"
+                  label="Change password"
+                  :loading="savingPassword"
+                />
+              </div>
+            </UForm>
+          </div>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 py-6">
+          <div>
+            <h3 class="font-medium">Passkeys</h3>
+            <p class="text-sm text-gray-500 mt-1">
+              Sign in without a password using TouchID, Windows Hello, a YubiKey, or any
+              WebAuthn-compatible authenticator.
+            </p>
+          </div>
+          <div class="md:col-span-2">
+            <NuxtLink
+              to="/profile/passkeys"
+              class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-primary-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors group"
+            >
+              <UIcon
+                name="i-lucide-fingerprint"
+                class="text-2xl text-primary-500 shrink-0"
+              />
+              <div class="flex-1 min-w-0">
+                <p class="font-medium">Manage passkeys</p>
+                <p class="text-sm text-gray-500">
+                  Register, label, and revoke credentials.
+                </p>
+              </div>
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 shrink-0"
+              />
+            </NuxtLink>
+          </div>
+        </section>
       </div>
-    </div>
+    </UCard>
   </div>
 </template>
