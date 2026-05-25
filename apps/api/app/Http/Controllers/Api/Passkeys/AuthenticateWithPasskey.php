@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Spatie\LaravelPasskeys\Actions\FindPasskeyToAuthenticateAction;
 use Spatie\LaravelPasskeys\Events\PasskeyUsedToAuthenticateEvent;
+use Spatie\LaravelPasskeys\Http\Requests\AuthenticateUsingPasskeysRequest;
 
 /**
  * Step 2 of WebAuthn authentication. Receives the
@@ -73,7 +74,12 @@ class AuthenticateWithPasskey extends Controller
             $request->session()->put('current_organisation_id', $defaultOrganisationId);
         }
 
-        event(new PasskeyUsedToAuthenticateEvent($passkey, $request));
+        // Spatie's event requires its own FormRequest subtype, but we
+        // deliberately bypass spatie's controller to serve JSON rather
+        // than redirects. Wrap the incoming request in the expected type
+        // so any third-party listeners receive the correct object shape.
+        $spatieRequest = AuthenticateUsingPasskeysRequest::createFrom($request);
+        event(new PasskeyUsedToAuthenticateEvent($passkey, $spatieRequest));
 
         return UserResource::make($user->load('organisations'))->response();
     }
