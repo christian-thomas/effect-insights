@@ -1,9 +1,5 @@
 import { defineStore } from 'pinia';
-import type {
-  InviteInput,
-  OrganisationMember,
-  PendingInvitation,
-} from '~/types/userManagement';
+import type { InviteInput, OrganisationMember, PendingInvitation } from '~/types/userManagement';
 
 interface OrganisationMembersState {
   members: OrganisationMember[];
@@ -35,12 +31,8 @@ export const useOrganisationMembersStore = defineStore('organisationMembers', {
       this.loading = true;
       try {
         const [membersResponse, invitationsResponse] = await Promise.all([
-          $api<{ data: OrganisationMember[] }>(
-            `/api/organisations/${organisationId}/users`,
-          ),
-          $api<{ data: PendingInvitation[] }>(
-            `/api/organisations/${organisationId}/invitations`,
-          ),
+          $api<{ data: OrganisationMember[] }>(`/api/organisations/${organisationId}/users`),
+          $api<{ data: PendingInvitation[] }>(`/api/organisations/${organisationId}/invitations`),
         ]);
         this.members = membersResponse.data;
         this.invitations = invitationsResponse.data;

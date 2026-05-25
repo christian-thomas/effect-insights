@@ -108,22 +108,20 @@ const copyEmbed = async (): Promise<void> => {
         color="neutral"
         variant="soft"
         icon="i-lucide-radar"
-        label="Scans"
-      />
+        label="Scans" />
       <UButton
         v-if="domain"
         :to="`/domains/${domain.id}/accessibility-scans`"
         color="neutral"
         variant="soft"
         icon="i-lucide-accessibility"
-        label="A11y"
-      />
+        label="A11y" />
       <UButton
         v-if="domain"
         :to="`/domains/${domain.id}/banner`"
         icon="i-lucide-palette"
         label="Banner config"
-      /></template>
+    /></template>
   </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-6">

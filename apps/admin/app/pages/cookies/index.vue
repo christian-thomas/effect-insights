@@ -13,7 +13,16 @@ type BadgeColor = NonNullable<BadgeProps['color']>;
 
 const cookiesStore = useCookiesStore();
 const domainsStore = useDomainsStore();
-const { cookies, imports, overrides, reviewQueue, loading } = storeToRefs(cookiesStore);
+const {
+  cookies,
+  imports,
+  overrides,
+  reviewQueue,
+  cookiesPagination,
+  importsPagination,
+  overridesPagination,
+  loading,
+} = storeToRefs(cookiesStore);
 const auth = useAuthStore();
 const toast = useToast();
 const route = useRoute();
@@ -37,11 +46,26 @@ onMounted(async () => {
   ]);
 });
 
+const cookiesPage = usePaginationBinding(
+  cookiesPagination,
+  (page: number): Promise<void> => cookiesStore.listCookies(undefined, page),
+);
+
+const importsPage = usePaginationBinding(
+  importsPagination,
+  (page: number): Promise<void> => cookiesStore.listImports(page),
+);
+
+const overridesPage = usePaginationBinding(
+  overridesPagination,
+  (page: number): Promise<void> => cookiesStore.listOverrides(page),
+);
+
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 watch(search, (value: string): void => {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout((): void => {
-    void cookiesStore.listCookies(value);
+    void cookiesStore.listCookies(value, 1);
   }, 250);
 });
 
@@ -87,15 +111,14 @@ const reject = async (importId: string): Promise<void> => {
 };
 
 const promotingAll = ref(false);
-const onPromoteAll = async (): Promise<void> => {
-  if (imports.value.length === 0) return;
-  if (
-    !window.confirm(
-      `Promote all ${imports.value.length} pending row(s) into the canonical DB? Each one is added as if you clicked Promote individually — duplicates against existing canonical entries fail silently.`,
-    )
-  ) {
-    return;
-  }
+const promoteAllOpen = ref(false);
+
+const onPromoteAll = (): void => {
+  if (importsPagination.value.total === 0) return;
+  promoteAllOpen.value = true;
+};
+
+const confirmPromoteAll = async (close: () => void): Promise<void> => {
   promotingAll.value = true;
   try {
     const result = await cookiesStore.promoteAll();
@@ -108,6 +131,7 @@ const onPromoteAll = async (): Promise<void> => {
       icon: result.failed > 0 ? 'i-lucide-triangle-alert' : 'i-lucide-check',
       color: result.failed > 0 ? 'warning' : 'success',
     });
+    close();
   } catch (caught) {
     toast.add({
       title: 'Could not promote all',
@@ -129,10 +153,12 @@ const importForm = reactive<ImportFormState>({ file: null, sourceVersion: '' });
 const uploading = ref(false);
 const importSlideoverOpen = ref(false);
 const importError = ref<string | null>(null);
-const lastResult = ref<
-  | { created: number; existing: number; skipped: number; sourceVersion: string }
-  | null
->(null);
+const lastResult = ref<{
+  created: number;
+  existing: number;
+  skipped: number;
+  sourceVersion: string;
+} | null>(null);
 
 // Reset transient feedback whenever the slideover opens / closes so the
 // next attempt starts on a clean slate.
@@ -157,10 +183,12 @@ const onFileChange = (event: Event): void => {
  */
 const extractError = (caught: unknown): string => {
   if (caught instanceof Error) {
-    const data = (caught as Error & {
-      status?: number;
-      data?: { message?: string; errors?: Record<string, string[]> };
-    }).data;
+    const data = (
+      caught as Error & {
+        status?: number;
+        data?: { message?: string; errors?: Record<string, string[]> };
+      }
+    ).data;
     if (data?.message) return data.message;
     if (data?.errors) {
       const firstFieldErrors = Object.values(data.errors)[0];
@@ -168,7 +196,7 @@ const extractError = (caught: unknown): string => {
     }
     const status = (caught as Error & { status?: number }).status;
     if (status === undefined || status >= 500) {
-      return "Something went wrong on the server while parsing the file. Try again, and if it keeps failing share the file with the platform team.";
+      return 'Something went wrong on the server while parsing the file. Try again, and if it keeps failing share the file with the platform team.';
     }
   }
   return 'The upload failed. Please try again.';
@@ -179,10 +207,7 @@ const onUpload = async (): Promise<void> => {
   uploading.value = true;
   importError.value = null;
   try {
-    lastResult.value = await cookiesStore.uploadImport(
-      importForm.file,
-      importForm.sourceVersion,
-    );
+    lastResult.value = await cookiesStore.uploadImport(importForm.file, importForm.sourceVersion);
     toast.add({
       title: 'Cookie list imported',
       description: `${lastResult.value.created} new row(s) staged for review.`,
@@ -301,10 +326,35 @@ const submitOverride = async (): Promise<void> => {
   }
 };
 
-const removeOverride = async (row: CookieOverride): Promise<void> => {
-  if (!window.confirm(`Delete override for ${row.namePattern}?`)) return;
-  await cookiesStore.deleteOverride(row.id);
-  toast.add({ title: 'Override deleted', color: 'neutral' });
+const deleteOverrideOpen = ref(false);
+const deleteOverrideTarget = ref<CookieOverride | null>(null);
+const deletingOverride = ref(false);
+
+const removeOverride = (row: CookieOverride): void => {
+  deleteOverrideTarget.value = row;
+  deleteOverrideOpen.value = true;
+};
+
+const confirmDeleteOverride = async (close: () => void): Promise<void> => {
+  const target = deleteOverrideTarget.value;
+  if (target === null) {
+    close();
+    return;
+  }
+  deletingOverride.value = true;
+  try {
+    await cookiesStore.deleteOverride(target.id);
+    toast.add({ title: 'Override deleted', color: 'neutral' });
+    close();
+  } catch (caught) {
+    toast.add({
+      title: 'Could not delete override',
+      description: caught instanceof Error ? caught.message : 'Please try again',
+      color: 'error',
+    });
+  } finally {
+    deletingOverride.value = false;
+  }
 };
 
 const categoryOptions: { value: CookieCategory; label: string }[] = [
@@ -318,7 +368,7 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
 <template>
   <PageHeader
     title="Cookie database"
-    :description="`Canonical catalogue (${cookies.length}), per-org overrides (${overrides.length})${auth.user?.isSuperuser ? `, plus pending imports (${imports.length})` : ''}.`"
+    :description="`Canonical catalogue (${cookiesPagination.total}), per-org overrides (${overridesPagination.total})${auth.user?.isSuperuser ? `, plus pending imports (${importsPagination.total})` : ''}.`"
   >
     <template #right>
       <UButton
@@ -331,13 +381,12 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
   </PageHeader>
 
   <div class="px-4 sm:px-6 lg:px-8 pt-4 pb-6">
-
     <div class="mt-4 flex flex-wrap gap-2">
       <UButton :variant="tab === 'canonical' ? 'solid' : 'soft'" @click="tab = 'canonical'">
-        Canonical ({{ cookies.length }})
+        Canonical ({{ cookiesPagination.total }})
       </UButton>
       <UButton :variant="tab === 'overrides' ? 'solid' : 'soft'" @click="tab = 'overrides'">
-        Overrides ({{ overrides.length }})
+        Overrides ({{ overridesPagination.total }})
       </UButton>
       <UButton
         :variant="tab === 'review' ? 'solid' : 'soft'"
@@ -351,11 +400,11 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
         :variant="tab === 'imports' ? 'solid' : 'soft'"
         @click="tab = 'imports'"
       >
-        Pending imports ({{ imports.length }})
+        Pending imports ({{ importsPagination.total }})
       </UButton>
     </div>
 
-    <div v-if="tab === 'canonical'" class="mt-6">
+    <div v-if="tab === 'canonical'" class="mt-6 space-y-4">
       <UInput
         v-model="search"
         placeholder="Search by name or vendor…"
@@ -372,9 +421,14 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
           <span class="text-gray-500">{{ row.original.expiryHint ?? '—' }}</span>
         </template>
       </UTable>
+      <PaginatedTableFooter
+        v-model:page="cookiesPage"
+        :pagination="cookiesPagination"
+        noun="cookie"
+      />
     </div>
 
-    <div v-else-if="tab === 'overrides'" class="mt-6">
+    <div v-else-if="tab === 'overrides'" class="mt-6 space-y-4">
       <div class="flex items-center justify-between mb-4">
         <p class="text-sm text-gray-500">
           Override the canonical categorisation for your organisation. Domain-scoped overrides win
@@ -423,6 +477,11 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
           </div>
         </template>
       </UTable>
+      <PaginatedTableFooter
+        v-model:page="overridesPage"
+        :pagination="overridesPagination"
+        noun="override"
+      />
     </div>
 
     <div v-else-if="tab === 'review'" class="mt-6">
@@ -482,21 +541,21 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
       </UTable>
     </div>
 
-    <div v-else class="mt-6">
+    <div v-else class="mt-6 space-y-4">
       <div class="flex items-start justify-between gap-3 mb-4">
         <p class="text-sm text-gray-500">
           Rows staged from CSV uploads via the
-          <strong>Import cookies</strong> button above. Promote each row into
-          the canonical DB or reject it.
+          <strong>Import cookies</strong> button above. Promote each row into the canonical DB or
+          reject it.
         </p>
         <UButton
-          v-if="imports.length > 0"
+          v-if="importsPagination.total > 0"
           icon="i-lucide-check-check"
           color="success"
           variant="soft"
           size="sm"
           :loading="promotingAll"
-          :label="`Promote all (${imports.length})`"
+          :label="`Promote all (${importsPagination.total})`"
           @click="onPromoteAll"
         />
       </div>
@@ -515,6 +574,11 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
           </div>
         </template>
       </UTable>
+      <PaginatedTableFooter
+        v-model:page="importsPage"
+        :pagination="importsPagination"
+        noun="pending row"
+      />
     </div>
 
     <USlideover v-model:open="importSlideoverOpen" title="Import cookies">
@@ -527,11 +591,12 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
               target="_blank"
               rel="noopener"
               class="text-primary-500 hover:underline"
-            >Open-Cookie-Database</a>
+              >Open-Cookie-Database</a
+            >
             CSV (or any file matching the same column layout) to stage rows for review. Rows are
             parsed into the queue on the <strong>Pending imports</strong> tab — promote each one
-            into the canonical DB or reject. Re-uploading the same dataset is safe; duplicates
-            count as <em>existing</em> rather than re-staging.
+            into the canonical DB or reject. Re-uploading the same dataset is safe; duplicates count
+            as <em>existing</em> rather than re-staging.
           </p>
 
           <UFormField
@@ -695,5 +760,31 @@ const categoryOptions: { value: CookieCategory; label: string }[] = [
         </UCard>
       </template>
     </USlideover>
+
+    <ConfirmModal
+      v-model:open="promoteAllOpen"
+      :title="`Promote all ${importsPagination.total} pending row(s)?`"
+      description="Single bulk request — the server promotes everything in one transaction per row. Duplicates against existing canonical entries are silently skipped."
+      confirm-label="Promote all"
+      confirm-color="success"
+      confirm-icon="i-lucide-check-check"
+      :loading="promotingAll"
+      @confirm="confirmPromoteAll"
+    />
+
+    <ConfirmModal
+      v-model:open="deleteOverrideOpen"
+      :title="
+        deleteOverrideTarget
+          ? `Delete override for ${deleteOverrideTarget.namePattern}?`
+          : 'Delete override?'
+      "
+      description="The canonical categorisation will apply again. Future scans against this name pattern will fall back to whatever the canonical DB (or no entry) says."
+      confirm-label="Delete override"
+      confirm-icon="i-lucide-trash-2"
+      cancel-label="Keep"
+      :loading="deletingOverride"
+      @confirm="confirmDeleteOverride"
+    />
   </div>
 </template>

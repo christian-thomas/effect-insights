@@ -1,15 +1,11 @@
 import { defineStore } from 'pinia';
 import type { Cookie, CookieImport, CookieOverride, CookieOverrideInput } from '~/types/cookies';
-
-interface PaginatedResponse<T> {
-  data: T[];
-  meta?: {
-    total: number;
-    per_page: number;
-    current_page: number;
-    last_page: number;
-  };
-}
+import {
+  emptyPagination,
+  metaToPagination,
+  type PaginatedResponse,
+  type Pagination,
+} from '~/types/pagination';
 
 interface ItemResponse<T> {
   data: T;
@@ -29,9 +25,28 @@ interface CookiesState {
   imports: CookieImport[];
   overrides: CookieOverride[];
   reviewQueue: ReviewQueueItem[];
+  cookiesPagination: Pagination;
+  importsPagination: Pagination;
+  overridesPagination: Pagination;
+  cookiesSearch: string;
+  cookiesPage: number;
+  importsPage: number;
+  overridesPage: number;
   loading: boolean;
   error: Error | null;
 }
+
+const PER_PAGE = 50;
+
+const buildQuery = (params: Record<string, string | number | null | undefined>): string => {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === null || value === undefined || value === '') continue;
+    search.set(key, String(value));
+  }
+  const query = search.toString();
+  return query ? `?${query}` : '';
+};
 
 export const useCookiesStore = defineStore('cookies', {
   state: (): CookiesState => ({
@@ -39,18 +54,33 @@ export const useCookiesStore = defineStore('cookies', {
     imports: [],
     overrides: [],
     reviewQueue: [],
+    cookiesPagination: emptyPagination(PER_PAGE),
+    importsPagination: emptyPagination(PER_PAGE),
+    overridesPagination: emptyPagination(PER_PAGE),
+    cookiesSearch: '',
+    cookiesPage: 1,
+    importsPage: 1,
+    overridesPage: 1,
     loading: false,
     error: null,
   }),
 
   actions: {
-    async listCookies(search: string = ''): Promise<void> {
+    async listCookies(search?: string, page?: number): Promise<void> {
+      if (search !== undefined && search !== this.cookiesSearch) {
+        this.cookiesSearch = search;
+        this.cookiesPage = 1;
+      }
+      if (page !== undefined) {
+        this.cookiesPage = page;
+      }
       this.loading = true;
       this.error = null;
       try {
-        const query = search ? `?search=${encodeURIComponent(search)}` : '';
+        const query = buildQuery({ search: this.cookiesSearch, page: this.cookiesPage });
         const response = await $api<PaginatedResponse<Cookie>>(`/api/cookies${query}`);
         this.cookies = response.data;
+        this.cookiesPagination = metaToPagination(response, PER_PAGE);
       } catch (caught) {
         this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
@@ -58,12 +88,17 @@ export const useCookiesStore = defineStore('cookies', {
       }
     },
 
-    async listImports(): Promise<void> {
+    async listImports(page?: number): Promise<void> {
+      if (page !== undefined) {
+        this.importsPage = page;
+      }
       this.loading = true;
       this.error = null;
       try {
-        const response = await $api<PaginatedResponse<CookieImport>>('/api/cookie-imports');
+        const query = buildQuery({ page: this.importsPage });
+        const response = await $api<PaginatedResponse<CookieImport>>(`/api/cookie-imports${query}`);
         this.imports = response.data;
+        this.importsPagination = metaToPagination(response, PER_PAGE);
       } catch (caught) {
         this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
@@ -101,16 +136,24 @@ export const useCookiesStore = defineStore('cookies', {
       const response = await $api<{
         data: { created: number; existing: number; skipped: number; sourceVersion: string };
       }>('/api/cookie-imports', { method: 'POST', body: formData });
+      this.importsPage = 1;
       await this.listImports();
       return response.data;
     },
 
-    async listOverrides(): Promise<void> {
+    async listOverrides(page?: number): Promise<void> {
+      if (page !== undefined) {
+        this.overridesPage = page;
+      }
       this.loading = true;
       this.error = null;
       try {
-        const response = await $api<PaginatedResponse<CookieOverride>>('/api/cookie-overrides');
+        const query = buildQuery({ page: this.overridesPage });
+        const response = await $api<PaginatedResponse<CookieOverride>>(
+          `/api/cookie-overrides${query}`,
+        );
         this.overrides = response.data;
+        this.overridesPagination = metaToPagination(response, PER_PAGE);
       } catch (caught) {
         this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {

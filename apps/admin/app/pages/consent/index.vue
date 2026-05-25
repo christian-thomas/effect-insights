@@ -310,17 +310,7 @@ const categoryDots = (categories: ConsentEvent['categories']): string => {
       </template>
     </UTable>
 
-    <div v-if="pagination.lastPage > 1" class="flex justify-between items-center">
-      <p class="text-xs text-gray-500">
-        {{ pagination.total.toLocaleString() }} event{{ pagination.total === 1 ? '' : 's' }} · page
-        {{ pagination.currentPage }} of {{ pagination.lastPage }}
-      </p>
-      <UPagination
-        v-model:page="currentPage"
-        :total="pagination.total"
-        :items-per-page="pagination.perPage"
-      />
-    </div>
+    <PaginatedTableFooter v-model:page="currentPage" :pagination="pagination" noun="event" />
 
     <USlideover
       v-model:open="detailOpen"

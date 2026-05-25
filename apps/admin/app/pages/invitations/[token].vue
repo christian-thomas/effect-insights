@@ -122,9 +122,10 @@ const onSubmit = async (): Promise<void> => {
             You're invited to {{ invitation.organisation.name }}
           </h2>
           <p class="text-sm text-gray-500 mt-1">
-            Set up your account to accept the invitation. After sign-up you'll land in the admin
-            for <strong>{{ invitation.organisation.name }}</strong> as a
-            <strong class="capitalize">{{ invitation.role }}</strong>.
+            Set up your account to accept the invitation. After sign-up you'll land in the admin for
+            <strong>{{ invitation.organisation.name }}</strong> as a
+            <strong class="capitalize">{{ invitation.role }}</strong
+            >.
           </p>
         </div>
 

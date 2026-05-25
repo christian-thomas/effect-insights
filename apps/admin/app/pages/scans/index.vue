@@ -6,12 +6,17 @@ type BadgeColor = NonNullable<BadgeProps['color']>;
 
 const scansStore = useScansStore();
 const domainsStore = useDomainsStore();
-const { scans, loading, triggering } = storeToRefs(scansStore);
+const { scans, pagination, loading, triggering } = storeToRefs(scansStore);
 const toast = useToast();
 
 await Promise.all([scansStore.list(), domainsStore.list()]);
 
 const selectedDomain = ref<string>('');
+
+const currentPage = usePaginationBinding(
+  pagination,
+  (page: number): Promise<void> => scansStore.list(undefined, page),
+);
 
 const columns: TableColumn<Scan>[] = [
   { accessorKey: 'createdAt', header: 'Triggered' },
@@ -48,7 +53,9 @@ const domainFqdn = (id: string): string =>
     <template #description>
       Cookie scanner runs across the active organisation's domains. For axe-core accessibility
       audits see
-      <NuxtLink to="/accessibility-scans" class="text-primary-500 hover:underline">Accessibility scans</NuxtLink>.
+      <NuxtLink to="/accessibility-scans" class="text-primary-500 hover:underline"
+        >Accessibility scans</NuxtLink
+      >.
     </template>
   </PageHeader>
 
@@ -94,5 +101,7 @@ const domainFqdn = (id: string): string =>
         <UButton size="xs" variant="soft" :to="`/scans/${row.original.id}`">View</UButton>
       </template>
     </UTable>
+
+    <PaginatedTableFooter v-model:page="currentPage" :pagination="pagination" noun="scan" />
   </div>
 </template>

@@ -50,13 +50,26 @@ const onSubmit = async (event: FormSubmitEvent<DomainInput>): Promise<void> => {
   }
 };
 
-const confirmDelete = async (domain: Domain): Promise<void> => {
-  if (!window.confirm(`Remove ${domain.fqdn}? Consent records will be retained.`)) {
+const deleteOpen = ref(false);
+const deleteTarget = ref<Domain | null>(null);
+const deleting = ref(false);
+
+const openDelete = (domain: Domain): void => {
+  deleteTarget.value = domain;
+  deleteOpen.value = true;
+};
+
+const confirmDelete = async (close: () => void): Promise<void> => {
+  const target = deleteTarget.value;
+  if (target === null) {
+    close();
     return;
   }
+  deleting.value = true;
   try {
-    await domainsStore.remove(domain.id);
-    toast.add({ title: `Removed ${domain.fqdn}`, color: 'success', icon: 'i-lucide-check' });
+    await domainsStore.remove(target.id);
+    toast.add({ title: `Removed ${target.fqdn}`, color: 'success', icon: 'i-lucide-check' });
+    close();
   } catch (caught) {
     toast.add({
       title: 'Could not remove domain',
@@ -64,6 +77,8 @@ const confirmDelete = async (domain: Domain): Promise<void> => {
       color: 'error',
       icon: 'i-lucide-triangle-alert',
     });
+  } finally {
+    deleting.value = false;
   }
 };
 
@@ -84,7 +99,8 @@ const columns: TableColumn<Domain>[] = [
 <template>
   <UDashboardNavbar title="Domains">
     <template #right>
-      <UButton icon="i-lucide-plus" label="Add domain" @click="openCreate" /></template>
+      <UButton icon="i-lucide-plus" label="Add domain" @click="openCreate"
+    /></template>
   </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8">
@@ -139,17 +155,14 @@ const columns: TableColumn<Domain>[] = [
             variant="ghost"
             icon="i-lucide-trash-2"
             size="xs"
-            @click="confirmDelete(row.original)"
+            @click="openDelete(row.original)"
           />
         </div>
       </template>
     </UTable>
   </div>
 
-  <USlideover
-    v-model:open="slideoverOpen"
-    :title="editing ? `Edit ${editing.fqdn}` : 'Add domain'"
-  >
+  <USlideover v-model:open="slideoverOpen" :title="editing ? `Edit ${editing.fqdn}` : 'Add domain'">
     <template #body>
       <UForm :schema="domainInputSchema" :state="state" class="space-y-4" @submit="onSubmit">
         <UFormField
@@ -188,4 +201,15 @@ const columns: TableColumn<Domain>[] = [
       </UForm>
     </template>
   </USlideover>
+
+  <ConfirmModal
+    v-model:open="deleteOpen"
+    :title="deleteTarget ? `Remove ${deleteTarget.fqdn}?` : 'Remove domain?'"
+    description="Consent records will be retained. The domain itself, its banner config, and any pending scans will be removed."
+    confirm-label="Remove"
+    confirm-icon="i-lucide-trash-2"
+    cancel-label="Keep"
+    :loading="deleting"
+    @confirm="confirmDelete"
+  />
 </template>

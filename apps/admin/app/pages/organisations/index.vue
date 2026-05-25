@@ -92,15 +92,26 @@ const onSubmit = async (event: FormSubmitEvent<OrganisationInput>): Promise<void
   }
 };
 
-const confirmDelete = async (organisation: Organisation): Promise<void> => {
-  if (
-    !window.confirm(`Delete "${organisation.name}"? Its domains and consent log will be removed.`)
-  ) {
+const deleteOpen = ref(false);
+const deleteTarget = ref<Organisation | null>(null);
+const deleting = ref(false);
+
+const openDelete = (organisation: Organisation): void => {
+  deleteTarget.value = organisation;
+  deleteOpen.value = true;
+};
+
+const confirmDelete = async (close: () => void): Promise<void> => {
+  const target = deleteTarget.value;
+  if (target === null) {
+    close();
     return;
   }
+  deleting.value = true;
   try {
-    await organisationsStore.remove(organisation.id);
+    await organisationsStore.remove(target.id);
     toast.add({ title: 'Organisation deleted', color: 'success', icon: 'i-lucide-check' });
+    close();
   } catch (caught) {
     toast.add({
       title: 'Could not delete',
@@ -108,6 +119,8 @@ const confirmDelete = async (organisation: Organisation): Promise<void> => {
       color: 'error',
       icon: 'i-lucide-triangle-alert',
     });
+  } finally {
+    deleting.value = false;
   }
 };
 
@@ -122,7 +135,8 @@ const columns: TableColumn<Organisation>[] = [
 <template>
   <UDashboardNavbar title="Organisations">
     <template #right>
-      <UButton icon="i-lucide-plus" label="New organisation" @click="openCreate" /></template>
+      <UButton icon="i-lucide-plus" label="New organisation" @click="openCreate"
+    /></template>
   </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8">
@@ -184,7 +198,7 @@ const columns: TableColumn<Organisation>[] = [
             variant="ghost"
             icon="i-lucide-trash-2"
             size="xs"
-            @click="confirmDelete(row.original)"
+            @click="openDelete(row.original)"
           />
         </div>
       </template>
@@ -330,4 +344,14 @@ const columns: TableColumn<Organisation>[] = [
       </UForm>
     </template>
   </USlideover>
+
+  <ConfirmModal
+    v-model:open="deleteOpen"
+    :title="deleteTarget ? `Delete “${deleteTarget.name}”?` : 'Delete organisation?'"
+    description="This cannot be undone. Every domain, banner config, consent log entry, accessibility scan, cookie override, and member attached to this organisation will be removed."
+    confirm-label="Delete organisation"
+    confirm-icon="i-lucide-trash-2"
+    :loading="deleting"
+    @confirm="confirmDelete"
+  />
 </template>

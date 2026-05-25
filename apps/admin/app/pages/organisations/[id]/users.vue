@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { OrganisationMember, OrganisationRole, PendingInvitation } from '~/types/userManagement';
+import type {
+  OrganisationMember,
+  OrganisationRole,
+  PendingInvitation,
+} from '~/types/userManagement';
 
 const auth = useAuthStore();
 
@@ -17,8 +21,8 @@ const organisationId = route.params.id as string;
 
 const { members, invitations, loading, saving } = storeToRefs(store);
 
-const organisation = computed(() =>
-  orgsStore.items.find((row) => row.id === organisationId) ?? null,
+const organisation = computed(
+  () => orgsStore.items.find((row) => row.id === organisationId) ?? null,
 );
 
 const fetchAll = async (): Promise<void> => {
@@ -54,7 +58,9 @@ const inviteForm = reactive<InviteFormState>({
  */
 const apiErrorMessage = (caught: unknown, fallback: string): string => {
   if (caught instanceof Error) {
-    const data = (caught as Error & { data?: { message?: string; errors?: Record<string, string[]> } }).data;
+    const data = (
+      caught as Error & { data?: { message?: string; errors?: Record<string, string[]> } }
+    ).data;
     if (data?.message) return data.message;
     if (data?.errors) {
       const firstFieldErrors = Object.values(data.errors)[0];
@@ -88,11 +94,26 @@ const onInvite = async (): Promise<void> => {
   }
 };
 
-const onRevoke = async (invitation: PendingInvitation): Promise<void> => {
-  if (!window.confirm(`Revoke the pending invitation for ${invitation.email}?`)) return;
+const revokeOpen = ref(false);
+const revokeTarget = ref<PendingInvitation | null>(null);
+const revoking = ref(false);
+
+const onRevoke = (invitation: PendingInvitation): void => {
+  revokeTarget.value = invitation;
+  revokeOpen.value = true;
+};
+
+const confirmRevoke = async (close: () => void): Promise<void> => {
+  const target = revokeTarget.value;
+  if (target === null) {
+    close();
+    return;
+  }
+  revoking.value = true;
   try {
-    await store.revokeInvitation(organisationId, invitation.id);
+    await store.revokeInvitation(organisationId, target.id);
     toast.add({ title: 'Invitation revoked', icon: 'i-lucide-check', color: 'success' });
+    close();
   } catch (caught) {
     toast.add({
       title: 'Could not revoke invitation',
@@ -100,24 +121,56 @@ const onRevoke = async (invitation: PendingInvitation): Promise<void> => {
       icon: 'i-lucide-triangle-alert',
       color: 'error',
     });
+  } finally {
+    revoking.value = false;
   }
 };
 
-const onRemoveMember = async (member: OrganisationMember): Promise<void> => {
-  const isSelf = member.id === auth.user?.id;
-  const prompt = isSelf
-    ? `Remove yourself from this organisation? You'll lose access to its domains, scans, and consent log via the org switcher.`
-    : `Remove ${member.name} (${member.email}) from this organisation? Their user account is preserved and any other organisations they belong to stay intact.`;
+const removeMemberOpen = ref(false);
+const removeMemberTarget = ref<OrganisationMember | null>(null);
+const removingMember = ref(false);
 
-  if (!window.confirm(prompt)) return;
+const removeIsSelf = computed((): boolean => removeMemberTarget.value?.id === auth.user?.id);
 
+const removeMessage = computed((): string => {
+  const target = removeMemberTarget.value;
+  if (target === null) return '';
+  if (removeIsSelf.value) {
+    return `Remove yourself from this organisation? You'll lose access to its domains, scans, and consent log via the org switcher.`;
+  }
+  return `Remove ${target.name} (${target.email}) from this organisation? Their user account is preserved and any other organisations they belong to stay intact.`;
+});
+
+const removeTitle = computed((): string => {
+  const target = removeMemberTarget.value;
+  if (target === null) return 'Remove member?';
+  if (removeIsSelf.value) return 'Leave this organisation?';
+  return `Remove ${target.name}?`;
+});
+
+const removeConfirmLabel = computed((): string => (removeIsSelf.value ? 'Leave' : 'Remove'));
+
+const onRemoveMember = (member: OrganisationMember): void => {
+  removeMemberTarget.value = member;
+  removeMemberOpen.value = true;
+};
+
+const confirmRemoveMember = async (close: () => void): Promise<void> => {
+  const target = removeMemberTarget.value;
+  if (target === null) {
+    close();
+    return;
+  }
+  const isSelf = target.id === auth.user?.id;
+  removingMember.value = true;
   try {
-    await store.removeMember(organisationId, member.id);
+    await store.removeMember(organisationId, target.id);
     toast.add({
-      title: isSelf ? 'Left organisation' : `Removed ${member.name}`,
+      title: isSelf ? 'Left organisation' : `Removed ${target.name}`,
       icon: 'i-lucide-check',
       color: 'success',
     });
+    close();
   } catch (caught) {
     toast.add({
       title: 'Could not remove member',
@@ -125,6 +178,8 @@ const onRemoveMember = async (member: OrganisationMember): Promise<void> => {
       icon: 'i-lucide-triangle-alert',
       color: 'error',
     });
+  } finally {
+    removingMember.value = false;
   }
 };
 
@@ -147,8 +202,8 @@ const goBack = (): void => {
         variant="ghost"
         size="xs"
         @click="goBack"
-      />
-    </template></UDashboardNavbar>
+      /> </template
+  ></UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl">
     <UCard>
@@ -156,9 +211,9 @@ const goBack = (): void => {
         <div>
           <h2 class="text-base font-semibold">Invite a user</h2>
           <p class="text-sm text-gray-500 mt-0.5">
-            The invitee receives an email with a magic link that expires in 7 days. They set
-            their own name + password during sign-up. If the email already belongs to a user
-            they're attached to this organisation without changing their existing credentials.
+            The invitee receives an email with a magic link that expires in 7 days. They set their
+            own name + password during sign-up. If the email already belongs to a user they're
+            attached to this organisation without changing their existing credentials.
           </p>
         </div>
       </template>
@@ -202,13 +257,18 @@ const goBack = (): void => {
       <div v-if="invitations.length === 0" class="text-sm text-gray-500 py-2">
         No pending invitations.
       </div>
-      <UTable v-else :data="invitations" :columns="[
-        { accessorKey: 'email', header: 'Email' },
-        { accessorKey: 'role', header: 'Role' },
-        { accessorKey: 'expiresAt', header: 'Expires' },
-        { accessorKey: 'createdAt', header: 'Sent' },
-        { id: 'actions', header: '' },
-      ]" class="w-full">
+      <UTable
+        v-else
+        :data="invitations"
+        :columns="[
+          { accessorKey: 'email', header: 'Email' },
+          { accessorKey: 'role', header: 'Role' },
+          { accessorKey: 'expiresAt', header: 'Expires' },
+          { accessorKey: 'createdAt', header: 'Sent' },
+          { id: 'actions', header: '' },
+        ]"
+        class="w-full"
+      >
         <template #email-cell="{ row }">
           <span class="text-sm">{{ row.original.email }}</span>
         </template>
@@ -238,16 +298,22 @@ const goBack = (): void => {
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold">Members</h3>
-          <span class="text-sm text-gray-500">{{ members.length }} {{ members.length === 1 ? 'member' : 'members' }}</span>
+          <span class="text-sm text-gray-500"
+            >{{ members.length }} {{ members.length === 1 ? 'member' : 'members' }}</span
+          >
         </div>
       </template>
-      <UTable :data="members" :columns="[
-        { accessorKey: 'name', header: 'Name' },
-        { accessorKey: 'email', header: 'Email' },
-        { accessorKey: 'role', header: 'Role' },
-        { accessorKey: 'joinedAt', header: 'Joined' },
-        { id: 'actions', header: '' },
-      ]" class="w-full">
+      <UTable
+        :data="members"
+        :columns="[
+          { accessorKey: 'name', header: 'Name' },
+          { accessorKey: 'email', header: 'Email' },
+          { accessorKey: 'role', header: 'Role' },
+          { accessorKey: 'joinedAt', header: 'Joined' },
+          { id: 'actions', header: '' },
+        ]"
+        class="w-full"
+      >
         <template #name-cell="{ row }">
           <div class="flex items-center gap-2">
             <span class="text-sm font-medium">{{ row.original.name }}</span>
@@ -261,7 +327,9 @@ const goBack = (): void => {
           </div>
         </template>
         <template #email-cell="{ row }">
-          <span class="text-sm font-mono text-gray-700 dark:text-gray-300">{{ row.original.email }}</span>
+          <span class="text-sm font-mono text-gray-700 dark:text-gray-300">{{
+            row.original.email
+          }}</span>
         </template>
         <template #role-cell="{ row }">
           <UBadge :label="row.original.role" variant="subtle" color="neutral" class="capitalize" />
@@ -296,4 +364,25 @@ const goBack = (): void => {
       </UTable>
     </UCard>
   </div>
+
+  <ConfirmModal
+    v-model:open="revokeOpen"
+    :title="revokeTarget ? `Revoke invitation for ${revokeTarget.email}?` : 'Revoke invitation?'"
+    description="The pending magic link will stop working. You can re-invite this email at any time."
+    confirm-label="Revoke"
+    confirm-icon="i-lucide-x"
+    cancel-label="Keep invitation"
+    :loading="revoking"
+    @confirm="confirmRevoke"
+  />
+
+  <ConfirmModal
+    v-model:open="removeMemberOpen"
+    :title="removeTitle"
+    :description="removeMessage"
+    :confirm-label="removeConfirmLabel"
+    confirm-icon="i-lucide-user-x"
+    :loading="removingMember"
+    @confirm="confirmRemoveMember"
+  />
 </template>

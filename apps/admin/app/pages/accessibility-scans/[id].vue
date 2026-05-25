@@ -84,60 +84,75 @@ const overridesStore = useAccessibilityRuleOverridesStore();
 const toast = useToast();
 const muting = ref<string | null>(null);
 
-const muteRuleOrgWide = async (finding: AccessibilityFinding): Promise<void> => {
-  const reason = window.prompt(
-    `Mute rule "${finding.ruleId}" org-wide? Add a reason (e.g. tracked in Linear ENG-…).`,
-    '',
-  );
-  if (reason === null) return; // cancelled
-  muting.value = finding.id;
-  try {
-    await overridesStore.create({
-      rule_id: finding.ruleId,
-      domain_id: null,
-      reason: reason || null,
-    });
-    await scansStore.show(scanId.value);
-    toast.add({
-      title: `Muted ${finding.ruleId}`,
-      description:
-        'Future scans (and this view) will treat this rule as muted across every domain.',
-      color: 'success',
-      icon: 'i-lucide-volume-x',
-    });
-  } catch (caught) {
-    toast.add({
-      title: 'Failed to mute rule',
-      description: caught instanceof Error ? caught.message : 'Please try again',
-      color: 'error',
-      icon: 'i-lucide-triangle-alert',
-    });
-  } finally {
-    muting.value = null;
-  }
+type MuteScope = 'domain' | 'org';
+
+const muteOpen = ref(false);
+const muteFinding = ref<AccessibilityFinding | null>(null);
+const muteScope = ref<MuteScope>('domain');
+const muteReason = ref('');
+
+const openMute = (finding: AccessibilityFinding, scope: MuteScope): void => {
+  if (scope === 'domain' && !scan.value?.domainId) return;
+  muteFinding.value = finding;
+  muteScope.value = scope;
+  muteReason.value = '';
+  muteOpen.value = true;
 };
 
-const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> => {
-  const domainId = scan.value?.domainId;
-  if (!domainId) return;
-  const reason = window.prompt(
-    `Mute rule "${finding.ruleId}" for this domain only? Add a reason.`,
-    '',
-  );
-  if (reason === null) return;
+const muteRuleForDomain = (finding: AccessibilityFinding): void => {
+  openMute(finding, 'domain');
+};
+
+const muteRuleOrgWide = (finding: AccessibilityFinding): void => {
+  openMute(finding, 'org');
+};
+
+const muteTitle = computed((): string => {
+  const finding = muteFinding.value;
+  if (finding === null) return 'Mute rule?';
+  if (muteScope.value === 'org') return `Mute “${finding.ruleId}” org-wide?`;
+  return `Mute “${finding.ruleId}” for this domain?`;
+});
+
+const muteDescription = computed((): string => {
+  if (muteScope.value === 'org') {
+    return 'Future scans (and this view) will treat this rule as muted across every domain in this organisation.';
+  }
+  return 'Future scans of this domain will treat this rule as muted. Other domains in the organisation are unaffected.';
+});
+
+const muteHelp = 'Optional but recommended — e.g. tracked in Linear ENG-…';
+
+const confirmMute = async (close: () => void): Promise<void> => {
+  const finding = muteFinding.value;
+  if (finding === null) {
+    close();
+    return;
+  }
+  const isOrgWide = muteScope.value === 'org';
+  const domainId = isOrgWide ? null : (scan.value?.domainId ?? null);
+  if (!isOrgWide && domainId === null) {
+    close();
+    return;
+  }
+  const reason = muteReason.value.trim();
   muting.value = finding.id;
   try {
     await overridesStore.create({
       rule_id: finding.ruleId,
       domain_id: domainId,
-      reason: reason || null,
+      reason: reason === '' ? null : reason,
     });
     await scansStore.show(scanId.value);
     toast.add({
-      title: `Muted ${finding.ruleId} on this domain`,
+      title: isOrgWide ? `Muted ${finding.ruleId}` : `Muted ${finding.ruleId} on this domain`,
+      description: isOrgWide
+        ? 'Future scans (and this view) will treat this rule as muted across every domain.'
+        : undefined,
       color: 'success',
       icon: 'i-lucide-volume-x',
     });
+    close();
   } catch (caught) {
     toast.add({
       title: 'Failed to mute rule',
@@ -154,7 +169,11 @@ const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> =
 <template>
   <PageHeader
     :title="scan ? `Accessibility scan ${scan.id.slice(0, 8)}…` : 'Accessibility scan'"
-    :description="scan ? `Status: ${scan.status} · ${scan.urlsScanned} URLs scanned · ${scan.violationsTotal} violations` : undefined"
+    :description="
+      scan
+        ? `Status: ${scan.status} · ${scan.urlsScanned} URLs scanned · ${scan.violationsTotal} violations`
+        : undefined
+    "
   >
     <template v-if="scan" #right>
       <UBadge :color="statusColor[scan.status] ?? 'neutral'" variant="soft">
@@ -385,4 +404,27 @@ const muteRuleForDomain = async (finding: AccessibilityFinding): Promise<void> =
       </div>
     </div>
   </div>
+
+  <ConfirmModal
+    v-model:open="muteOpen"
+    :title="muteTitle"
+    :description="muteDescription"
+    confirm-label="Mute rule"
+    confirm-color="primary"
+    confirm-icon="i-lucide-volume-x"
+    :loading="muting !== null"
+    @confirm="confirmMute"
+  >
+    <template #body>
+      <UFormField label="Reason" name="reason" :help="muteHelp">
+        <UTextarea
+          v-model="muteReason"
+          :rows="3"
+          autofocus
+          placeholder="e.g. Tracked in Linear ENG-1234, accepted by accessibility lead."
+          class="w-full"
+        />
+      </UFormField>
+    </template>
+  </ConfirmModal>
 </template>

@@ -69,17 +69,13 @@ const onSubmit = async (): Promise<void> => {
         <div>
           <h2 class="text-base font-semibold">Organisation settings</h2>
           <p class="text-sm text-gray-500 mt-0.5">
-            Runtime preferences for the active organisation. Changes apply to every member of
-            this org and take effect immediately.
+            Runtime preferences for the active organisation. Changes apply to every member of this
+            org and take effect immediately.
           </p>
         </div>
       </template>
 
-      <UForm
-        :state="form"
-        class="divide-y divide-gray-200 dark:divide-gray-800"
-        @submit="onSubmit"
-      >
+      <UForm :state="form" class="divide-y divide-gray-200 dark:divide-gray-800" @submit="onSubmit">
         <section class="grid grid-cols-1 md:grid-cols-3 gap-6 py-6 first:pt-0">
           <div>
             <h3 class="font-medium">Consent retention</h3>
@@ -144,8 +140,8 @@ const onSubmit = async (): Promise<void> => {
                 class="w-full sm:w-72"
               />
               <template #help>
-                The minimum severity that triggers an alert. 'Inherit platform default' falls
-                back to the env-configured threshold.
+                The minimum severity that triggers an alert. 'Inherit platform default' falls back
+                to the env-configured threshold.
               </template>
             </UFormField>
             <UFormField label="Counted findings" name="a11y_alert_scope">

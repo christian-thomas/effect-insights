@@ -24,17 +24,26 @@ const domainFqdn = (id: string | null): string => {
 
 const formatTime = (iso: string): string => new Date(iso).toLocaleString();
 
-const removeOverride = async (row: AccessibilityRuleOverride): Promise<void> => {
-  if (
-    !window.confirm(
-      `Unmute "${row.ruleId}"? Future scans will start counting it toward alert thresholds again.`,
-    )
-  ) {
+const unmuteOpen = ref(false);
+const unmuteTarget = ref<AccessibilityRuleOverride | null>(null);
+const unmuting = ref(false);
+
+const removeOverride = (row: AccessibilityRuleOverride): void => {
+  unmuteTarget.value = row;
+  unmuteOpen.value = true;
+};
+
+const confirmUnmute = async (close: () => void): Promise<void> => {
+  const target = unmuteTarget.value;
+  if (target === null) {
+    close();
     return;
   }
+  unmuting.value = true;
   try {
-    await overridesStore.remove(row.id);
+    await overridesStore.remove(target.id);
     toast.add({ title: 'Override removed', color: 'success', icon: 'i-lucide-check' });
+    close();
   } catch (caught) {
     toast.add({
       title: 'Could not remove override',
@@ -42,6 +51,8 @@ const removeOverride = async (row: AccessibilityRuleOverride): Promise<void> => 
       color: 'error',
       icon: 'i-lucide-triangle-alert',
     });
+  } finally {
+    unmuting.value = false;
   }
 };
 </script>
@@ -54,8 +65,8 @@ const removeOverride = async (row: AccessibilityRuleOverride): Promise<void> => 
         variant="ghost"
         icon="i-lucide-arrow-left"
         to="/accessibility-scans"
-      />
-    </template></UDashboardNavbar>
+      /> </template
+  ></UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-4">
     <UAlert
@@ -119,4 +130,15 @@ const removeOverride = async (row: AccessibilityRuleOverride): Promise<void> => 
       </template>
     </UTable>
   </div>
+
+  <ConfirmModal
+    v-model:open="unmuteOpen"
+    :title="unmuteTarget ? `Unmute “${unmuteTarget.ruleId}”?` : 'Unmute rule?'"
+    description="Future scans will start counting this rule toward alert thresholds again."
+    confirm-label="Unmute"
+    confirm-icon="i-lucide-trash-2"
+    cancel-label="Keep muted"
+    :loading="unmuting"
+    @confirm="confirmUnmute"
+  />
 </template>

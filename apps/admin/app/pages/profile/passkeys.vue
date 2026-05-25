@@ -113,7 +113,7 @@ const submitRevoke = async (close: () => void): Promise<void> => {
         :loading="registering"
         label="Register a passkey"
         @click="openRegister"
-      /></template>
+    /></template>
   </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-4">
@@ -217,22 +217,14 @@ const submitRevoke = async (close: () => void): Promise<void> => {
     </template>
   </UModal>
 
-  <UModal
+  <ConfirmModal
     v-model:open="revokeOpen"
     :title="revokeTarget ? `Revoke “${revokeTarget.name}”?` : 'Revoke passkey?'"
     description="Your other registered passkeys (and your email + password) will still work."
-  >
-    <template #footer="{ close }">
-      <div class="flex justify-end gap-2 w-full">
-        <UButton color="neutral" variant="ghost" label="Keep" @click="close" />
-        <UButton
-          color="error"
-          icon="i-lucide-trash-2"
-          label="Revoke"
-          :loading="revoking"
-          @click="submitRevoke(close)"
-        />
-      </div>
-    </template>
-  </UModal>
+    confirm-label="Revoke"
+    confirm-icon="i-lucide-trash-2"
+    cancel-label="Keep"
+    :loading="revoking"
+    @confirm="submitRevoke"
+  />
 </template>

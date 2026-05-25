@@ -27,12 +27,18 @@ const history = computed(() => slot.value.history);
 const historyLoading = computed(() => slot.value.historyLoading);
 const rollingBackVersion = ref<number | null>(null);
 
-const onRollback = async (version: number): Promise<void> => {
-  if (
-    !window.confirm(
-      `Roll back the draft to version ${version}? This loads the historic content into the draft — you'll still need to click Publish to make it live.`,
-    )
-  ) {
+const rollbackOpen = ref(false);
+const rollbackTargetVersion = ref<number | null>(null);
+
+const onRollback = (version: number): void => {
+  rollbackTargetVersion.value = version;
+  rollbackOpen.value = true;
+};
+
+const confirmRollback = async (close: () => void): Promise<void> => {
+  const version = rollbackTargetVersion.value;
+  if (version === null) {
+    close();
     return;
   }
   rollingBackVersion.value = version;
@@ -46,6 +52,7 @@ const onRollback = async (version: number): Promise<void> => {
       color: 'success',
       icon: 'i-lucide-check',
     });
+    close();
   } catch (caught) {
     toast.add({
       title: 'Rollback failed',
@@ -203,10 +210,13 @@ const onSave = async (event: FormSubmitEvent<BannerDraftInput>): Promise<void> =
   }
 };
 
-const onPublish = async (): Promise<void> => {
-  if (!window.confirm('Publish this draft? The currently-published version will be archived.')) {
-    return;
-  }
+const publishOpen = ref(false);
+
+const onPublish = (): void => {
+  publishOpen.value = true;
+};
+
+const confirmPublish = async (close: () => void): Promise<void> => {
   publishing.value = true;
   try {
     await bannerStore.saveDraft(domainId, state);
@@ -217,6 +227,7 @@ const onPublish = async (): Promise<void> => {
       color: 'success',
       icon: 'i-lucide-rocket',
     });
+    close();
   } catch (caught) {
     toast.add({
       title: 'Publish failed',
@@ -262,7 +273,8 @@ const gcmSignals = [
       <UBadge v-if="published" color="success" variant="subtle">
         Published v{{ published.version }}
       </UBadge>
-      <UBadge v-else color="neutral" variant="subtle">Not yet published</UBadge></template>
+      <UBadge v-else color="neutral" variant="subtle">Not yet published</UBadge></template
+    >
   </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-6">
@@ -731,4 +743,34 @@ const gcmSignals = [
       </div>
     </aside>
   </div>
+
+  <ConfirmModal
+    v-model:open="rollbackOpen"
+    :title="
+      rollbackTargetVersion !== null
+        ? `Roll back draft to v${rollbackTargetVersion}?`
+        : 'Roll back draft?'
+    "
+    description="This loads the historic content into the draft — you'll still need to click Publish to make it live."
+    confirm-label="Roll back"
+    confirm-color="warning"
+    confirm-icon="i-lucide-history"
+    :loading="rollingBackVersion !== null"
+    @confirm="confirmRollback"
+  />
+
+  <ConfirmModal
+    v-model:open="publishOpen"
+    title="Publish this draft?"
+    :description="
+      diff?.isMaterial && !diff?.isFirstPublish
+        ? 'The currently-published version will be archived and visitors will be re-prompted on next page load.'
+        : 'The currently-published version will be archived. Edge will pick up the new config on next request.'
+    "
+    confirm-label="Publish"
+    :confirm-color="diff?.isMaterial && !diff?.isFirstPublish ? 'warning' : 'primary'"
+    confirm-icon="i-lucide-rocket"
+    :loading="publishing"
+    @confirm="confirmPublish"
+  />
 </template>

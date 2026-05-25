@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia';
 import type { Scan, ScanFinding } from '~/types/scans';
-
-interface PaginatedResponse<T> {
-  data: T[];
-}
+import {
+  emptyPagination,
+  metaToPagination,
+  type PaginatedResponse,
+  type Pagination,
+} from '~/types/pagination';
 
 export interface ScanDiffEntry {
   name: string;
@@ -36,6 +38,9 @@ interface ScansState {
   selected: Scan | null;
   findings: ScanFinding[];
   diff: ScanDiff | null;
+  pagination: Pagination;
+  domainFilter: string | undefined;
+  currentPage: number;
   loading: boolean;
   triggering: boolean;
   error: Error | null;
@@ -47,19 +52,35 @@ export const useScansStore = defineStore('scans', {
     selected: null,
     findings: [],
     diff: null,
+    pagination: emptyPagination(25),
+    domainFilter: undefined,
+    currentPage: 1,
     loading: false,
     triggering: false,
     error: null,
   }),
 
   actions: {
-    async list(domainId?: string): Promise<void> {
+    async list(domainId?: string, page?: number): Promise<void> {
+      if (domainId !== undefined && domainId !== this.domainFilter) {
+        this.domainFilter = domainId;
+        this.currentPage = 1;
+      }
+      if (page !== undefined) {
+        this.currentPage = page;
+      }
       this.loading = true;
       this.error = null;
       try {
-        const query = domainId ? `?domain_id=${encodeURIComponent(domainId)}` : '';
-        const response = await $api<PaginatedResponse<Scan>>(`/api/scans${query}`);
+        const params = new URLSearchParams();
+        if (this.domainFilter) params.set('domain_id', this.domainFilter);
+        if (this.currentPage > 1) params.set('page', String(this.currentPage));
+        const query = params.toString();
+        const response = await $api<PaginatedResponse<Scan>>(
+          `/api/scans${query ? `?${query}` : ''}`,
+        );
         this.scans = response.data;
+        this.pagination = metaToPagination(response, 25);
       } catch (caught) {
         this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
@@ -88,6 +109,7 @@ export const useScansStore = defineStore('scans', {
         const response = await $api<{ data: Scan }>(`/api/domains/${domainId}/scans`, {
           method: 'POST',
         });
+        this.currentPage = 1;
         await this.list();
         return response.data;
       } finally {

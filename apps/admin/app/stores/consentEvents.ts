@@ -1,22 +1,11 @@
 import { defineStore } from 'pinia';
 import type { ConsentEvent, ConsentEventFilters } from '~/types/consent';
-
-interface Pagination {
-  total: number;
-  perPage: number;
-  currentPage: number;
-  lastPage: number;
-}
-
-interface ListResponse {
-  data: ConsentEvent[];
-  meta: {
-    total: number;
-    per_page: number;
-    current_page: number;
-    last_page: number;
-  };
-}
+import {
+  emptyPagination,
+  metaToPagination,
+  type PaginatedResponse,
+  type Pagination,
+} from '~/types/pagination';
 
 interface ConsentEventsState {
   items: ConsentEvent[];
@@ -25,13 +14,6 @@ interface ConsentEventsState {
   loading: boolean;
   error: Error | null;
 }
-
-const emptyPagination = (): Pagination => ({
-  total: 0,
-  perPage: 25,
-  currentPage: 1,
-  lastPage: 1,
-});
 
 const toQueryString = (filters: ConsentEventFilters): string => {
   const params = new URLSearchParams();
@@ -49,7 +31,7 @@ const toQueryString = (filters: ConsentEventFilters): string => {
 export const useConsentEventsStore = defineStore('consentEvents', {
   state: (): ConsentEventsState => ({
     items: [],
-    pagination: emptyPagination(),
+    pagination: emptyPagination(25),
     filters: {},
     loading: false,
     error: null,
@@ -61,14 +43,11 @@ export const useConsentEventsStore = defineStore('consentEvents', {
       this.error = null;
       this.filters = filters;
       try {
-        const response = await $api<ListResponse>(`/api/consent-events${toQueryString(filters)}`);
+        const response = await $api<PaginatedResponse<ConsentEvent>>(
+          `/api/consent-events${toQueryString(filters)}`,
+        );
         this.items = response.data;
-        this.pagination = {
-          total: response.meta.total,
-          perPage: response.meta.per_page,
-          currentPage: response.meta.current_page,
-          lastPage: response.meta.last_page,
-        };
+        this.pagination = metaToPagination(response, 25);
       } catch (caught) {
         this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
@@ -78,7 +57,7 @@ export const useConsentEventsStore = defineStore('consentEvents', {
 
     reset(): void {
       this.items = [];
-      this.pagination = emptyPagination();
+      this.pagination = emptyPagination(25);
       this.filters = {};
       this.error = null;
     },

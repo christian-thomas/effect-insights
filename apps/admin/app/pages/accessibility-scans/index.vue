@@ -6,12 +6,17 @@ type BadgeColor = NonNullable<BadgeProps['color']>;
 
 const scansStore = useAccessibilityScansStore();
 const domainsStore = useDomainsStore();
-const { scans, loading, triggering } = storeToRefs(scansStore);
+const { scans, pagination, loading, triggering } = storeToRefs(scansStore);
 const toast = useToast();
 
 await Promise.all([scansStore.list(), domainsStore.list()]);
 
 const selectedDomain = ref<string>('');
+
+const currentPage = usePaginationBinding(
+  pagination,
+  (page: number): Promise<void> => scansStore.list(undefined, page),
+);
 
 const columns: TableColumn<AccessibilityScan>[] = [
   { accessorKey: 'createdAt', header: 'Triggered' },
@@ -39,7 +44,10 @@ const impactColor: Record<A11yImpact, BadgeColor> = {
 const triggerScan = async (): Promise<void> => {
   if (!selectedDomain.value) return;
   const scan = await scansStore.trigger(selectedDomain.value);
-  await scansStore.list();
+  // Accessibility trigger() doesn't refresh internally (the queued scan
+  // promotes asynchronously via Horizon), so kick off one explicit list
+  // to surface the new queued row at the top.
+  await scansStore.list(undefined, 1);
   toast.add({
     title: `Scan ${scan.status}`,
     description: `Queued — refresh shortly to see results.`,
@@ -129,5 +137,7 @@ const domainFqdn = (id: string): string =>
         </UButton>
       </template>
     </UTable>
+
+    <PaginatedTableFooter v-model:page="currentPage" :pagination="pagination" noun="scan" />
   </div>
 </template>

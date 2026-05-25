@@ -123,10 +123,20 @@ const onSubmitPassword = async (): Promise<void> => {
           <div class="md:col-span-2">
             <UForm :state="profileForm" class="space-y-4" @submit="onSubmitProfile">
               <UFormField label="Name" name="name" required>
-                <UInput v-model="profileForm.name" type="text" required class="w-full sm:max-w-md" />
+                <UInput
+                  v-model="profileForm.name"
+                  type="text"
+                  required
+                  class="w-full sm:max-w-md"
+                />
               </UFormField>
               <UFormField label="Email" name="email" required>
-                <UInput v-model="profileForm.email" type="email" required class="w-full sm:max-w-md" />
+                <UInput
+                  v-model="profileForm.email"
+                  type="email"
+                  required
+                  class="w-full sm:max-w-md"
+                />
               </UFormField>
               <div class="flex justify-end">
                 <UButton type="submit" icon="i-lucide-save" label="Save" :loading="savingProfile" />
@@ -199,15 +209,10 @@ const onSubmitPassword = async (): Promise<void> => {
               to="/profile/passkeys"
               class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-primary-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors group"
             >
-              <UIcon
-                name="i-lucide-fingerprint"
-                class="text-2xl text-primary-500 shrink-0"
-              />
+              <UIcon name="i-lucide-fingerprint" class="text-2xl text-primary-500 shrink-0" />
               <div class="flex-1 min-w-0">
                 <p class="font-medium">Manage passkeys</p>
-                <p class="text-sm text-gray-500">
-                  Register, label, and revoke credentials.
-                </p>
+                <p class="text-sm text-gray-500">Register, label, and revoke credentials.</p>
               </div>
               <UIcon
                 name="i-lucide-chevron-right"

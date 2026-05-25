@@ -45,7 +45,11 @@ const categoryLabel = (key: string): string =>
 <template>
   <PageHeader
     :title="scan ? `Scan ${scan.id.slice(0, 8)}…` : 'Scan'"
-    :description="scan ? `Status: ${scan.status} · ${scan.urlsScanned} URLs scanned · ${findings.length} findings` : undefined"
+    :description="
+      scan
+        ? `Status: ${scan.status} · ${scan.urlsScanned} URLs scanned · ${findings.length} findings`
+        : undefined
+    "
   />
 
   <div class="px-4 sm:px-6 lg:px-8 pt-4 pb-6 space-y-4">

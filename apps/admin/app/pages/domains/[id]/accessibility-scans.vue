@@ -73,7 +73,7 @@ const formatTime = (iso: string | null): string => {
         :loading="triggering"
         label="Run scan now"
         @click="triggerScan"
-      /></template>
+    /></template>
   </UDashboardNavbar>
 
   <div class="p-4 sm:p-6 lg:p-8 space-y-4">
