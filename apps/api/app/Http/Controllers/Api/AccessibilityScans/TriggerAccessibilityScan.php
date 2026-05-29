@@ -35,9 +35,9 @@ class TriggerAccessibilityScan extends Controller
 
         $urls = $discovery->discover($domain);
 
-        // Returns immediately with the queued scan; the actual axe-core
-        // crawl runs in the background via RunAccessibilityScanJob. The
-        // admin polls /api/accessibility-scans/{id} for status updates.
+        // Returns immediately with the running scan; the actual axe
+        // crawl fans out into ScanAccessibilityUrlsJob chunks via
+        // Bus::batch so the admin sees `urls_scanned` tick up live.
         $scan = $runner->dispatch($domain, $urls, ScanTrigger::Manual, $user);
 
         return AccessibilityScanResource::make($scan)

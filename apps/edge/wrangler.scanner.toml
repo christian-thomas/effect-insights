@@ -25,6 +25,15 @@ ENVIRONMENT = "production"
 [browser]
 binding = "BROWSER"
 
+# A11y screenshot storage. The worker uploads element PNGs straight to R2
+# (rather than base64-inlining them in the response body, which was blowing
+# Laravel's PHP memory limit on dense pages). Laravel reads the same bucket
+# via its s3-driver `a11y_screenshots` disk to serve them to the admin.
+[[r2_buckets]]
+binding = "A11Y_SCREENSHOTS"
+bucket_name = "effectinsight-a11y-screenshots"
+remote = true
+
 # SCANNER_SECRET is set via `wrangler secret put SCANNER_SECRET` rather than
 # [vars] — it must match the SCANNER_WORKER_SECRET env var on the Laravel side.
 # Generate with `openssl rand -hex 32`.

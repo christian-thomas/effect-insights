@@ -60,6 +60,30 @@ return [
             'report' => false,
         ],
 
+        // Storage for accessibility-scan element screenshots. The
+        // scanner worker uploads PNGs straight to R2 with flat keys
+        // shaped `<orgId>/<scanId>/<uuid>.png`; Laravel reads from the
+        // same bucket via the s3 driver to serve them through
+        // ShowFindingScreenshot.
+        //
+        // NOTE: do NOT set `root` on this disk. Laravel's s3 driver
+        // treats `root` as a key prefix prepended to every operation,
+        // which would mean Laravel-side reads look at
+        // `<root>/<workerKey>` and miss what the worker actually
+        // wrote. The driver is hard-pinned to `s3` so the local-driver
+        // root-as-base-dir semantics don't apply here.
+        'a11y_screenshots' => [
+            'driver' => env('A11Y_SCREENSHOTS_DRIVER', 's3'),
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('A11Y_SCREENSHOTS_BUCKET', 'effectinsight-a11y-screenshots'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

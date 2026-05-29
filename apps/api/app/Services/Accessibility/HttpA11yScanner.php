@@ -30,8 +30,12 @@ final readonly class HttpA11yScanner implements AccessibilityScannerClientContra
      * @param  array<int, string>  $urls
      */
     #[\Override]
-    public function scan(Domain $domain, array $urls): AccessibilityScannerResult
-    {
+    public function scan(
+        Domain $domain,
+        array $urls,
+        string $organisationId,
+        string $scanId,
+    ): AccessibilityScannerResult {
         if ($this->workerUrl === '' || $this->secret === '') {
             throw new RuntimeException(
                 'Scanner worker is not configured. Set SCANNER_WORKER_URL + SCANNER_WORKER_SECRET '.
@@ -48,6 +52,8 @@ final readonly class HttpA11yScanner implements AccessibilityScannerClientContra
             ->post(rtrim($this->workerUrl, '/').'/scan-a11y', [
                 'urls' => array_values($urls),
                 'domainFqdn' => (string) $domain->getAttribute('fqdn'),
+                'organisationId' => $organisationId,
+                'scanId' => $scanId,
             ]);
 
         if (! $response->successful()) {
@@ -61,10 +67,16 @@ final readonly class HttpA11yScanner implements AccessibilityScannerClientContra
         /** @var array<string, mixed> $body */
         $body = $response->json();
 
+        /** @var list<string> $failedUrls */
+        $failedUrls = is_array($body['failedUrls'] ?? null)
+            ? array_values(array_map('strval', $body['failedUrls']))
+            : [];
+
         return new AccessibilityScannerResult(
             urlsDiscovered: (int) ($body['urlsDiscovered'] ?? 0),
             urlsScanned: (int) ($body['urlsScanned'] ?? 0),
             findings: $this->mapFindings($body['findings'] ?? []),
+            failedUrls: $failedUrls,
         );
     }
 

@@ -29,6 +29,7 @@ const statusColor: Record<string, BadgeColor> = {
   queued: 'neutral',
   running: 'info',
   completed: 'success',
+  partial: 'warning',
   failed: 'error',
 };
 
@@ -39,9 +40,9 @@ const triggerScan = async (): Promise<void> => {
   await scansStore.list(domainId.value);
   toast.add({
     title: `Scan ${scan.status}`,
-    description: `${scan.urlsScanned ?? 0} URLs scanned`,
-    color: scan.status === 'failed' ? 'error' : 'success',
-    icon: scan.status === 'failed' ? 'i-lucide-triangle-alert' : 'i-lucide-check',
+    description: 'Queued — refresh shortly to see results.',
+    color: 'success',
+    icon: 'i-lucide-check',
   });
 };
 
@@ -104,7 +105,9 @@ const formatTime = (iso: string | null): string => {
         <span class="text-sm">{{ row.original.trigger }}</span>
       </template>
       <template #urlsScanned-cell="{ row }">
-        <span class="text-sm tabular-nums">{{ row.original.urlsScanned }}</span>
+        <span class="text-sm tabular-nums">
+          {{ row.original.urlsScanned }} / {{ row.original.urlsDiscovered }}
+        </span>
       </template>
       <template #finishedAt-cell="{ row }">
         <span class="text-sm text-gray-500">{{ formatTime(row.original.finishedAt) }}</span>

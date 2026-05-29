@@ -18,6 +18,7 @@ final readonly class ScannerResult
      * @param  array<int, ObservedAsset>  $scripts
      * @param  array<int, ObservedAsset>  $iframes
      * @param  array<int, ObservedAsset>  $requests
+     * @param  list<string>  $failedUrls  URLs the worker tried + gave up on
      */
     public function __construct(
         public int $urlsDiscovered,
@@ -26,5 +27,6 @@ final readonly class ScannerResult
         public array $scripts,
         public array $iframes,
         public array $requests,
+        public array $failedUrls = [],
     ) {}
 }

@@ -23,12 +23,26 @@ use RuntimeException;
 #[Fillable([
     'domain_id', 'organisation_id', 'status', 'trigger',
     'urls_discovered', 'urls_scanned', 'started_at', 'finished_at',
-    'error_log', 'created_by_user_id',
+    'error_log', 'failed_urls', 'created_by_user_id',
 ])]
 class Scan extends Model
 {
     /** @use HasFactory<ScanFactory> */
     use BelongsToOrganisation, HasFactory, HasUuids;
+
+    /**
+     * In-memory defaults so a freshly-`create()`d Scan serialises with 0
+     * counters rather than null — the migration defaults these columns
+     * to 0 on disk, but Eloquent doesn't refresh after insert, so without
+     * this the controller's `ScanResource::make($scan)` would emit
+     * `urlsScanned: null` for queued rows.
+     *
+     * @var array<string, int>
+     */
+    protected $attributes = [
+        'urls_discovered' => 0,
+        'urls_scanned' => 0,
+    ];
 
     /**
      * @return array<string, string>
@@ -42,6 +56,7 @@ class Scan extends Model
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
             'error_log' => 'array',
+            'failed_urls' => 'array',
         ];
     }
 

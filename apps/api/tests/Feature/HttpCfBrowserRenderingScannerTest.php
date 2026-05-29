@@ -59,13 +59,15 @@ class HttpCfBrowserRenderingScannerTest extends TestCase
             ]),
         ]);
 
-        $this->scanner()->scan($this->makeDomain(), ['https://example.test/']);
+        $this->scanner()->scan($this->makeDomain(), ['https://example.test/'], 'test-org-id', 'test-scan-id');
 
         Http::assertSent(static fn ($request): bool => $request->url() === 'https://scanner.example.test/scan'
             && $request->method() === 'POST'
             && $request->header('X-Effect-Scanner-Secret')[0] === 'test-secret'
             && $request['urls'] === ['https://example.test/']
-            && $request['domainFqdn'] === 'example.test');
+            && $request['domainFqdn'] === 'example.test'
+            && $request['organisationId'] === 'test-org-id'
+            && $request['scanId'] === 'test-scan-id');
     }
 
     #[Test]
@@ -93,7 +95,7 @@ class HttpCfBrowserRenderingScannerTest extends TestCase
             ]),
         ]);
 
-        $result = $this->scanner()->scan($this->makeDomain(), ['https://example.test/']);
+        $result = $this->scanner()->scan($this->makeDomain(), ['https://example.test/'], 'test-org-id', 'test-scan-id');
 
         $this->assertSame(2, $result->urlsScanned);
         $this->assertSame('_ga_ABC', $result->cookies[0]['name']);
@@ -113,7 +115,7 @@ class HttpCfBrowserRenderingScannerTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessageMatches('/Scanner worker returned 502/');
 
-        $this->scanner()->scan($this->makeDomain(), ['https://example.test/']);
+        $this->scanner()->scan($this->makeDomain(), ['https://example.test/'], 'test-org-id', 'test-scan-id');
     }
 
     #[Test]
@@ -128,6 +130,6 @@ class HttpCfBrowserRenderingScannerTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessageMatches('/Scanner worker is not configured/');
 
-        $scanner->scan($this->makeDomain(), ['https://example.test/']);
+        $scanner->scan($this->makeDomain(), ['https://example.test/'], 'test-org-id', 'test-scan-id');
     }
 }

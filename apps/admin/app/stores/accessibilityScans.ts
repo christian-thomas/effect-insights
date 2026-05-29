@@ -12,8 +12,8 @@ interface ItemResponse {
 }
 
 interface DetailResponse {
-  scan: { data: AccessibilityScan };
-  findings: { data: AccessibilityFinding[] };
+  scan: AccessibilityScan;
+  findings: AccessibilityFinding[];
 }
 
 interface AccessibilityScansState {
@@ -74,17 +74,21 @@ export const useAccessibilityScansStore = defineStore('accessibilityScans', {
       }
     },
 
-    async show(scanId: string): Promise<void> {
-      this.loading = true;
+    async show(scanId: string, options: { silent?: boolean } = {}): Promise<void> {
+      if (!options.silent) {
+        this.loading = true;
+      }
       this.error = null;
       try {
         const response = await $api<DetailResponse>(`/api/accessibility-scans/${scanId}`);
-        this.selected = response.scan.data;
-        this.findings = response.findings.data;
+        this.selected = response.scan;
+        this.findings = response.findings;
       } catch (caught) {
         this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
-        this.loading = false;
+        if (!options.silent) {
+          this.loading = false;
+        }
       }
     },
 
@@ -102,6 +106,19 @@ export const useAccessibilityScansStore = defineStore('accessibilityScans', {
       } finally {
         this.triggering = false;
       }
+    },
+
+    /**
+     * POSTs to the retry-failed endpoint and refreshes the selected
+     * scan silently. Mirror of the cookie store action.
+     */
+    async retryFailed(scanId: string): Promise<AccessibilityScan> {
+      const response = await $api<ItemResponse>(
+        `/api/accessibility-scans/${scanId}/retry-failed`,
+        { method: 'POST' },
+      );
+      await this.show(scanId, { silent: true });
+      return response.data;
     },
   },
 });

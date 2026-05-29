@@ -28,8 +28,8 @@ export interface ScanDiff {
 }
 
 interface ScanDetailResponse {
-  scan: { data: Scan };
-  findings: { data: ScanFinding[] };
+  scan: Scan;
+  findings: ScanFinding[];
   diff: ScanDiff | null;
 }
 
@@ -88,18 +88,24 @@ export const useScansStore = defineStore('scans', {
       }
     },
 
-    async show(scanId: string): Promise<void> {
-      this.loading = true;
+    async show(scanId: string, options: { silent?: boolean } = {}): Promise<void> {
+      // Silent refresh skips the loading flag so the live-progress
+      // poller doesn't make the findings table flicker every tick.
+      if (!options.silent) {
+        this.loading = true;
+      }
       this.error = null;
       try {
         const response = await $api<ScanDetailResponse>(`/api/scans/${scanId}`);
-        this.selected = response.scan.data;
-        this.findings = response.findings.data;
+        this.selected = response.scan;
+        this.findings = response.findings;
         this.diff = response.diff;
       } catch (caught) {
         this.error = caught instanceof Error ? caught : new Error(String(caught));
       } finally {
-        this.loading = false;
+        if (!options.silent) {
+          this.loading = false;
+        }
       }
     },
 
@@ -115,6 +121,19 @@ export const useScansStore = defineStore('scans', {
       } finally {
         this.triggering = false;
       }
+    },
+
+    /**
+     * POSTs to the retry-failed endpoint and refreshes the selected
+     * scan silently so the existing live-progress polling picks up the
+     * new urls_scanned ticks without flashing the table loading state.
+     */
+    async retryFailed(scanId: string): Promise<Scan> {
+      const response = await $api<{ data: Scan }>(`/api/scans/${scanId}/retry-failed`, {
+        method: 'POST',
+      });
+      await this.show(scanId, { silent: true });
+      return response.data;
     },
   },
 });

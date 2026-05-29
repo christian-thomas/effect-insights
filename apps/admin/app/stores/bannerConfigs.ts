@@ -3,8 +3,8 @@ import type { BannerDraftInput } from '@effectinsight/types/schemas/banner';
 import type { BannerConfig } from '~/types/banner';
 
 interface FetchResponse {
-  draft: { data: BannerConfig };
-  published: { data: BannerConfig } | null;
+  draft: BannerConfig;
+  published: BannerConfig | null;
 }
 
 interface ItemResponse {
@@ -84,8 +84,8 @@ export const useBannerConfigsStore = defineStore('bannerConfigs', {
       slot.error = null;
       try {
         const response = await $api<FetchResponse>(`/api/domains/${domainId}/banner-config`);
-        slot.draft = response.draft.data;
-        slot.published = response.published?.data ?? null;
+        slot.draft = response.draft;
+        slot.published = response.published ?? null;
         await this.fetchDiff(domainId);
       } catch (caught) {
         slot.error = caught instanceof Error ? caught : new Error(String(caught));

@@ -23,7 +23,7 @@ use RuntimeException;
 #[Fillable([
     'accessibility_scan_id', 'organisation_id',
     'rule_id', 'impact', 'description', 'help_text', 'help_url',
-    'url', 'tags', 'nodes',
+    'url', 'tags', 'nodes', 'screenshot_key',
 ])]
 class AccessibilityFinding extends Model
 {

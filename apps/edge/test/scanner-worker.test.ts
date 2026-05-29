@@ -110,7 +110,12 @@ const postA11y = async (body: unknown, init?: RequestInit): Promise<Response> =>
 };
 
 describe('scanner worker', () => {
-  const validBody = { urls: ['https://example.test/'], domainFqdn: 'example.test' };
+  const validBody = {
+    urls: ['https://example.test/'],
+    domainFqdn: 'example.test',
+    organisationId: '019e60b2-be47-7200-a821-71dc087649a2',
+    scanId: '019e60b4-44ee-7373-898b-5e73e9a164b7',
+  };
 
   it('rejects requests missing the scanner secret', async () => {
     const response = await post(validBody);
@@ -170,7 +175,12 @@ describe('scanner worker', () => {
 });
 
 describe('scanner worker — /scan-a11y', () => {
-  const validBody = { urls: ['https://example.test/'], domainFqdn: 'example.test' };
+  const validBody = {
+    urls: ['https://example.test/'],
+    domainFqdn: 'example.test',
+    organisationId: '019e60b2-be47-7200-a821-71dc087649a2',
+    scanId: '019e60b4-44ee-7373-898b-5e73e9a164b7',
+  };
 
   it('rejects requests missing the scanner secret', async () => {
     const response = await postA11y(validBody);

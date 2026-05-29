@@ -20,6 +20,11 @@ type Bindings = {
   readonly BROWSER: Fetcher;
   readonly SCANNER_SECRET: string;
   readonly ENVIRONMENT: string;
+  // Cloudflare R2 bucket for accessibility-scan element screenshots.
+  // The worker writes PNG bytes directly here; Laravel serves them back
+  // to the admin via the s3-driver `a11y_screenshots` disk pointing at
+  // the same bucket.
+  readonly A11Y_SCREENSHOTS: R2Bucket;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -58,6 +63,8 @@ const timingSafeEqual = (a: string, b: string): boolean => {
 };
 
 app.post('/scan', zValidator('json', scannerRequestSchema), async (c) => {
+  // organisationId/scanId are validated by the schema but the cookie
+  // scanner doesn't need them — only /scan-a11y uses them for R2 keys.
   const { urls, domainFqdn } = c.req.valid('json');
 
   const browser = await launch(c.env.BROWSER);
@@ -83,12 +90,18 @@ app.post('/scan', zValidator('json', scannerRequestSchema), async (c) => {
 // and returns violations in a flat list. Heavier per-URL (axe.run
 // is 2-5s) so the runner side gives this a longer HTTP timeout.
 app.post('/scan-a11y', zValidator('json', scannerRequestSchema), async (c) => {
-  const { urls } = c.req.valid('json');
+  const { urls, organisationId, scanId } = c.req.valid('json');
 
   const browser = await launch(c.env.BROWSER);
 
   try {
-    const result = await runAxeScans(browser, urls);
+    const result = await runAxeScans(
+      browser,
+      urls,
+      c.env.A11Y_SCREENSHOTS,
+      organisationId,
+      scanId,
+    );
     return c.json(result satisfies AccessibilityScannerResultInput);
   } catch (error: unknown) {
     return c.json(
@@ -114,6 +127,7 @@ const crawl = async (
   const requests = new Map<string, ScannerResultInput['requests'][number]>();
 
   let urlsScanned = 0;
+  const failedUrls: string[] = [];
 
   for (const url of urls) {
     const page = await browser.newPage();
@@ -127,6 +141,14 @@ const crawl = async (
       await captureAssets(page, iframes, 'iframe[src]', 'src', domainFqdn, url);
 
       urlsScanned++;
+    } catch (error: unknown) {
+      // Per-URL failures are isolated — one bad page must not poison
+      // the other URLs in the chunk. The chunk endpoint stays 200 OK
+      // and Laravel records the URL in scans.failed_urls.
+      failedUrls.push(url);
+      console.warn(
+        `[scanner] failed to scan ${url}: ${error instanceof Error ? error.message : String(error)}`,
+      );
     } finally {
       await page.close();
     }
@@ -139,6 +161,7 @@ const crawl = async (
     scripts: [...scripts.values()],
     iframes: [...iframes.values()],
     requests: [...requests.values()],
+    failedUrls,
   };
 };
 
@@ -239,9 +262,13 @@ interface AxeViolation {
 const runAxeScans = async (
   browser: Browser,
   urls: ReadonlyArray<string>,
+  screenshotBucket: R2Bucket,
+  organisationId: string,
+  scanId: string,
 ): Promise<AccessibilityScannerResultInput> => {
   const findings: AccessibilityScannerResultInput['findings'] = [];
   let urlsScanned = 0;
+  const failedUrls: string[] = [];
 
   for (const url of urls) {
     const page = await browser.newPage();
@@ -268,15 +295,30 @@ const runAxeScans = async (
       })) as AxeRunResult;
 
       for (const violation of result.violations) {
-        const nodes: AccessibilityScannerResultInput['findings'][number]['nodes'] =
-          violation.nodes.map((node) => {
-            const finding: AccessibilityScannerResultInput['findings'][number]['nodes'][number] =
-              {};
-            if (node.target !== undefined) finding.target = [...node.target];
-            if (node.html !== undefined) finding.html = node.html;
-            if (node.failureSummary !== undefined) finding.failureSummary = node.failureSummary;
-            return finding;
-          });
+        const nodes: AccessibilityScannerResultInput['findings'][number]['nodes'] = [];
+        for (let nodeIndex = 0; nodeIndex < violation.nodes.length; nodeIndex++) {
+          const node = violation.nodes[nodeIndex];
+          if (node === undefined) continue;
+          const finding: AccessibilityScannerResultInput['findings'][number]['nodes'][number] = {};
+          if (node.target !== undefined) finding.target = [...node.target];
+          if (node.html !== undefined) finding.html = node.html;
+          if (node.failureSummary !== undefined) finding.failureSummary = node.failureSummary;
+
+          // Only screenshot the first node per violation. axe sometimes
+          // returns dozens of nodes per rule; one image is enough.
+          const selector = node.target?.[0];
+          if (nodeIndex === 0 && selector !== undefined) {
+            const screenshotKey = await captureAndStoreElementScreenshot(
+              page,
+              selector,
+              screenshotBucket,
+              organisationId,
+              scanId,
+            );
+            if (screenshotKey !== undefined) finding.screenshotKey = screenshotKey;
+          }
+          nodes.push(finding);
+        }
 
         findings.push({
           ruleId: violation.id,
@@ -293,6 +335,12 @@ const runAxeScans = async (
       }
 
       urlsScanned++;
+    } catch (error: unknown) {
+      // Per-URL isolation — same shape as crawl().
+      failedUrls.push(url);
+      console.warn(
+        `[scanner-a11y] failed to scan ${url}: ${error instanceof Error ? error.message : String(error)}`,
+      );
     } finally {
       await page.close();
     }
@@ -302,7 +350,49 @@ const runAxeScans = async (
     urlsDiscovered: urls.length,
     urlsScanned,
     findings,
+    failedUrls,
   };
+};
+
+/**
+ * Resolves a CSS selector to an element, screenshots it, uploads the
+ * PNG to R2, and returns the bucket key. Best-effort: any failure
+ * (unresolved selector, hidden element, zero-size box, puppeteer
+ * error, R2 put error) returns undefined so the scan continues without
+ * a screenshot for that violation. The handle is always disposed so we
+ * don't leak browser-side memory between pages.
+ *
+ * Uploading directly to R2 here (rather than base64-inlining the bytes
+ * in the worker→Laravel response) avoids blowing PHP's memory limit
+ * during json_decode on dense pages.
+ */
+const captureAndStoreElementScreenshot = async (
+  page: Page,
+  selector: string,
+  bucket: R2Bucket,
+  organisationId: string,
+  scanId: string,
+): Promise<string | undefined> => {
+  try {
+    const handle = await page.$(selector);
+    if (handle === null) return undefined;
+    try {
+      const bbox = await handle.boundingBox();
+      if (bbox === null || bbox.width <= 0 || bbox.height <= 0) return undefined;
+      // Default `encoding` ('binary') returns a Uint8Array we can hand
+      // straight to R2.put without round-tripping through base64.
+      const result = await handle.screenshot({ type: 'png' });
+      if (!(result instanceof Uint8Array)) return undefined;
+
+      const key = `${organisationId}/${scanId}/${crypto.randomUUID()}.png`;
+      await bucket.put(key, result, { httpMetadata: { contentType: 'image/png' } });
+      return key;
+    } finally {
+      await handle.dispose();
+    }
+  } catch {
+    return undefined;
+  }
 };
 
 export default app;

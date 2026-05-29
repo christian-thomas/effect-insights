@@ -43,7 +43,7 @@ class ScanFailureAlertTest extends TenantTestCase
             public function __construct(private string $message) {}
 
             #[\Override]
-            public function scan(Domain $domain, array $urls): ScannerResult
+            public function scan(Domain $domain, array $urls, string $organisationId, string $scanId): ScannerResult
             {
                 throw new RuntimeException($this->message);
             }

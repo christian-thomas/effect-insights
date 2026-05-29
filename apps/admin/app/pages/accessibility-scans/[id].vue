@@ -71,6 +71,7 @@ const statusColor: Record<string, BadgeColor> = {
   queued: 'neutral',
   running: 'info',
   completed: 'success',
+  partial: 'warning',
   failed: 'error',
 };
 
@@ -164,6 +165,73 @@ const confirmMute = async (close: () => void): Promise<void> => {
     muting.value = null;
   }
 };
+
+const isInFlight = computed((): boolean => scan.value?.status === 'running' || scan.value?.status === 'queued');
+
+const progressPercent = computed((): number => {
+  if (!scan.value || !scan.value.urlsDiscovered) return 0;
+  return Math.min(100, Math.round((scan.value.urlsScanned / scan.value.urlsDiscovered) * 100));
+});
+
+// Poll the scan endpoint while the batch is still running so
+// urls_scanned + findings populate live. `silent: true` keeps the
+// findings list from flashing its loading state on every tick.
+const POLL_INTERVAL_MS = 2000;
+let pollHandle: ReturnType<typeof setInterval> | null = null;
+
+const startPolling = (): void => {
+  if (pollHandle !== null) return;
+  pollHandle = setInterval((): void => {
+    if (!isInFlight.value) {
+      stopPolling();
+      return;
+    }
+    void scansStore.show(scanId.value, { silent: true });
+  }, POLL_INTERVAL_MS);
+};
+
+const stopPolling = (): void => {
+  if (pollHandle !== null) {
+    clearInterval(pollHandle);
+    pollHandle = null;
+  }
+};
+
+onMounted((): void => {
+  if (isInFlight.value) startPolling();
+});
+
+onBeforeUnmount(stopPolling);
+
+watch(isInFlight, (running: boolean): void => {
+  if (running) startPolling();
+  else stopPolling();
+});
+
+const retrying = ref(false);
+
+const retryFailed = async (): Promise<void> => {
+  if (!scan.value || retrying.value) return;
+  retrying.value = true;
+  try {
+    await scansStore.retryFailed(scan.value.id);
+    toast.add({
+      title: 'Retrying failed URLs',
+      description: 'The scan will resume — progress should pick back up shortly.',
+      color: 'success',
+      icon: 'i-lucide-refresh-cw',
+    });
+  } catch (error: unknown) {
+    toast.add({
+      title: 'Could not retry',
+      description: error instanceof Error ? error.message : 'Unknown error',
+      color: 'error',
+      icon: 'i-lucide-triangle-alert',
+    });
+  } finally {
+    retrying.value = false;
+  }
+};
 </script>
 
 <template>
@@ -171,7 +239,7 @@ const confirmMute = async (close: () => void): Promise<void> => {
     :title="scan ? `Accessibility scan ${scan.id.slice(0, 8)}…` : 'Accessibility scan'"
     :description="
       scan
-        ? `Status: ${scan.status} · ${scan.urlsScanned} URLs scanned · ${scan.violationsTotal} violations`
+        ? `Status: ${scan.status} · ${scan.urlsScanned}/${scan.urlsDiscovered} URLs scanned · ${scan.violationsTotal} violations`
         : undefined
     "
   >
@@ -184,13 +252,59 @@ const confirmMute = async (close: () => void): Promise<void> => {
 
   <div class="px-4 sm:px-6 lg:px-8 pt-4 pb-6 space-y-4">
     <div v-if="scan">
+      <UCard v-if="isInFlight" class="mt-4">
+        <div class="flex items-center gap-4">
+          <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-primary-500" />
+          <div class="flex-1">
+            <div class="flex items-center justify-between text-sm mb-1">
+              <span class="font-medium">
+                {{ scan.status === 'queued' ? 'Waiting for worker…' : 'Running axe-core…' }}
+              </span>
+              <span class="text-gray-500">
+                {{ scan.urlsScanned }} / {{ scan.urlsDiscovered }} ({{ progressPercent }}%)
+              </span>
+            </div>
+            <UProgress :model-value="progressPercent" :max="100" />
+          </div>
+        </div>
+      </UCard>
+
       <UAlert
-        v-if="scan.errorLog"
+        v-if="scan.status === 'partial' && scan.failedUrls.length > 0"
+        color="warning"
+        variant="soft"
+        icon="i-lucide-circle-alert"
+        :title="`Partial scan — ${scan.failedUrls.length} URL${scan.failedUrls.length === 1 ? '' : 's'} didn't make it`"
+        description="The chunk job hit infra failures it couldn't ride out. Retry just the failed URLs against this scan — successful findings are kept."
+        class="mt-4"
+      >
+        <template #actions>
+          <UButton
+            icon="i-lucide-refresh-cw"
+            :loading="retrying"
+            :label="`Retry failed URLs (${scan.failedUrls.length})`"
+            @click="retryFailed"
+          />
+        </template>
+      </UAlert>
+
+      <UAlert
+        v-else-if="scan.errorLog"
         color="error"
         variant="soft"
         :title="`Scan failed: ${String(scan.errorLog.message ?? 'unknown error')}`"
+        :description="scan.failedUrls.length > 0 ? `${scan.failedUrls.length} URL${scan.failedUrls.length === 1 ? '' : 's'} can be retried below.` : undefined"
         class="mt-4"
-      />
+      >
+        <template v-if="scan.failedUrls.length > 0" #actions>
+          <UButton
+            icon="i-lucide-refresh-cw"
+            :loading="retrying"
+            :label="`Retry failed URLs (${scan.failedUrls.length})`"
+            @click="retryFailed"
+          />
+        </template>
+      </UAlert>
 
       <UCard v-if="scan.violationsByImpact" class="mt-6">
         <template #header>
@@ -321,6 +435,29 @@ const confirmMute = async (close: () => void): Promise<void> => {
               v-if="expandedRule === finding.id"
               class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 space-y-3"
             >
+              <div>
+                <p class="text-xs font-medium text-gray-500 mb-1">Screenshot</p>
+                <!--
+                  The screenshot endpoint is cross-origin (api vs admin)
+                  and tenant-scoped via Sanctum's session cookie, so the
+                  img tag has to opt in to credentials with
+                  `crossorigin="use-credentials"`. Without it the cookie
+                  doesn't travel and the API treats the request as
+                  unauthenticated.
+                -->
+                <img
+                  v-if="finding.screenshotUrl"
+                  :src="finding.screenshotUrl"
+                  :alt="`Element triggering ${finding.ruleId}`"
+                  loading="lazy"
+                  crossorigin="use-credentials"
+                  class="max-w-md max-h-96 rounded-md border border-gray-200 dark:border-gray-800"
+                />
+                <p v-else class="text-xs text-gray-400 italic">
+                  Screenshot unavailable — the scanner couldn't render this element.
+                </p>
+              </div>
+
               <div>
                 <p class="text-xs font-medium text-gray-500 mb-1">Help</p>
                 <p class="text-sm">{{ finding.helpText }}</p>

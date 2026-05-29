@@ -7,10 +7,12 @@ namespace Tests\Feature;
 use App\Enums\ScanCadence;
 use App\Enums\ScanStatus;
 use App\Enums\ScanTrigger;
+use App\Models\AccessibilityFinding;
 use App\Models\AccessibilityScan;
 use App\Models\Domain;
 use App\Services\Accessibility\AccessibilityScannerClientContract;
 use App\Services\Accessibility\AccessibilityScannerResult;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\TenantTestCase;
@@ -170,8 +172,12 @@ class AccessibilityScansTest extends TenantTestCase
         $failing = new class implements AccessibilityScannerClientContract
         {
             #[\Override]
-            public function scan(Domain $domain, array $urls): AccessibilityScannerResult
-            {
+            public function scan(
+                Domain $domain,
+                array $urls,
+                string $organisationId,
+                string $scanId,
+            ): AccessibilityScannerResult {
                 throw new \RuntimeException('Browser binding timeout');
             }
         };
@@ -180,13 +186,156 @@ class AccessibilityScansTest extends TenantTestCase
             $failing,
         );
 
-        $response = $this->actingAsMember($this->user, $this->org)
-            ->postJson(sprintf('/api/domains/%s/accessibility-scans', $this->domain->getKey()))
-            ->assertStatus(Response::HTTP_ACCEPTED);
+        // Exercises the synchronous `run()` failure branch — the
+        // dispatch() flow goes via Bus::batch and a real worker would
+        // record the per-job failure in Horizon and let `finaliseBatch`
+        // mark the scan failed; the sync queue driver used in tests
+        // rethrows instead, so we test the failure-persistence logic
+        // through the synchronous path that already owns it.
+        $scan = $this->app->make(\App\Services\Accessibility\AccessibilityScanRunner::class)
+            ->run($this->domain, ['https://example.test/'], ScanTrigger::Manual);
 
-        $this->assertDatabaseHas('accessibility_scans', [
-            'id' => $response->json('data.id'),
-            'status' => ScanStatus::Failed->value,
+        $this->assertSame(ScanStatus::Failed, $scan->getAttribute('status'));
+        $this->assertSame('Browser binding timeout', $scan->getAttribute('error_log')['message'] ?? null);
+    }
+
+    #[Test]
+    public function persists_finding_screenshot_key_when_worker_returns_one(): void
+    {
+        // The worker now uploads PNGs to R2 directly and returns just
+        // the key on the first node — no base64 in transit. The runner
+        // just persists the key string and strips it off the node JSON.
+        $expectedKey = sprintf('%s/%s/abc-def-uuid.png', $this->org->getKey(), 'will-be-set-below');
+
+        $this->a11yScanner->setNext(new AccessibilityScannerResult(
+            urlsDiscovered: 1,
+            urlsScanned: 1,
+            findings: [
+                [
+                    'rule_id' => 'color-contrast',
+                    'impact' => 'serious',
+                    'description' => 'Elements must have sufficient color contrast',
+                    'help_text' => 'Help text',
+                    'help_url' => 'https://dequeuniversity.com/rules/axe/4.x/color-contrast',
+                    'url' => 'https://example.test/',
+                    'tags' => ['wcag2aa'],
+                    'nodes' => [
+                        [
+                            'target' => ['#a'],
+                            'html' => '<p>x</p>',
+                            'failureSummary' => 'fix this',
+                            'screenshotKey' => 'fake-org/fake-scan/fake-uuid.png',
+                        ],
+                    ],
+                ],
+            ],
+        ));
+
+        $scan = $this->app->make(\App\Services\Accessibility\AccessibilityScanRunner::class)
+            ->run($this->domain, ['https://example.test/'], ScanTrigger::Manual);
+
+        /** @var AccessibilityFinding $finding */
+        $finding = $scan->findings()->firstOrFail();
+
+        // Key is passed through verbatim — Laravel doesn't reconstruct
+        // the path now; that's the worker's job.
+        $this->assertSame('fake-org/fake-scan/fake-uuid.png', $finding->getAttribute('screenshot_key'));
+
+        // screenshotKey is stripped from the persisted nodes JSON so the
+        // DB row doesn't double-store the key (it lives on the column).
+        $nodes = $finding->getAttribute('nodes');
+        $this->assertArrayNotHasKey('screenshotKey', $nodes[0]);
+    }
+
+    #[Test]
+    public function show_finding_screenshot_streams_bytes_for_own_tenant(): void
+    {
+        Storage::fake('a11y_screenshots');
+
+        $scan = AccessibilityScan::create([
+            'domain_id' => $this->domain->getKey(),
+            'status' => ScanStatus::Completed,
+            'trigger' => ScanTrigger::Manual,
         ]);
+        $finding = AccessibilityFinding::create([
+            'accessibility_scan_id' => $scan->getKey(),
+            'rule_id' => 'image-alt',
+            'impact' => 'critical',
+            'description' => 'Images must have alternate text',
+            'help_text' => 'help',
+            'help_url' => 'https://example.test/help',
+            'url' => 'https://example.test/',
+            'tags' => [],
+            'nodes' => [],
+        ]);
+
+        $bytes = "\x89PNG\r\n\x1a\nmybytes";
+        $key = sprintf('%s/%s/%s.png', $this->org->getKey(), $scan->getKey(), $finding->getKey());
+        Storage::disk('a11y_screenshots')->put($key, $bytes);
+        $finding->update(['screenshot_key' => $key]);
+
+        $response = $this->actingAsMember($this->user, $this->org)
+            ->get(sprintf('/api/accessibility-findings/%s/screenshot', $finding->getKey()));
+
+        $response->assertOk();
+        $this->assertSame($bytes, $response->streamedContent());
+    }
+
+    #[Test]
+    public function show_finding_screenshot_returns_404_for_other_tenant(): void
+    {
+        Storage::fake('a11y_screenshots');
+
+        $foreignDomain = Domain::factory()->for($this->otherOrg)->create();
+        $foreignScan = AccessibilityScan::create([
+            'domain_id' => $foreignDomain->getKey(),
+            'status' => ScanStatus::Completed,
+            'trigger' => ScanTrigger::Manual,
+        ]);
+        $foreignFinding = AccessibilityFinding::create([
+            'accessibility_scan_id' => $foreignScan->getKey(),
+            'rule_id' => 'image-alt',
+            'impact' => 'critical',
+            'description' => 'desc',
+            'help_text' => 'help',
+            'help_url' => 'https://example.test/help',
+            'url' => 'https://example.test/',
+            'tags' => [],
+            'nodes' => [],
+            'screenshot_key' => 'foreign/key.png',
+        ]);
+        Storage::disk('a11y_screenshots')->put('foreign/key.png', 'bytes');
+
+        $this->actingAsMember($this->user, $this->org)
+            ->get(sprintf('/api/accessibility-findings/%s/screenshot', $foreignFinding->getKey()))
+            ->assertStatus(Response::HTTP_NOT_FOUND);
+    }
+
+    #[Test]
+    public function show_finding_screenshot_returns_404_when_key_missing(): void
+    {
+        Storage::fake('a11y_screenshots');
+
+        $scan = AccessibilityScan::create([
+            'domain_id' => $this->domain->getKey(),
+            'status' => ScanStatus::Completed,
+            'trigger' => ScanTrigger::Manual,
+        ]);
+        $finding = AccessibilityFinding::create([
+            'accessibility_scan_id' => $scan->getKey(),
+            'rule_id' => 'image-alt',
+            'impact' => 'critical',
+            'description' => 'desc',
+            'help_text' => 'help',
+            'help_url' => 'https://example.test/help',
+            'url' => 'https://example.test/',
+            'tags' => [],
+            'nodes' => [],
+            // screenshot_key intentionally null — element wasn't resolvable
+        ]);
+
+        $this->actingAsMember($this->user, $this->org)
+            ->get(sprintf('/api/accessibility-findings/%s/screenshot', $finding->getKey()))
+            ->assertStatus(Response::HTTP_NOT_FOUND);
     }
 }

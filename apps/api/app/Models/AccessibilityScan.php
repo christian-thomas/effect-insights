@@ -28,11 +28,25 @@ use RuntimeException;
     'urls_discovered', 'urls_scanned',
     'violations_total', 'violations_by_impact',
     'started_at', 'finished_at',
-    'error_log', 'created_by_user_id',
+    'error_log', 'failed_urls', 'created_by_user_id',
 ])]
 class AccessibilityScan extends Model
 {
     use BelongsToOrganisation, HasUuids;
+
+    /**
+     * In-memory defaults so a freshly-`create()`d row serialises with 0
+     * counters rather than null. Mirrors the migration's column defaults
+     * but populates the attribute bag at instantiation time, before any
+     * post-insert refresh that Eloquent won't do.
+     *
+     * @var array<string, int>
+     */
+    protected $attributes = [
+        'urls_discovered' => 0,
+        'urls_scanned' => 0,
+        'violations_total' => 0,
+    ];
 
     /**
      * @return array<string, string>
@@ -47,6 +61,7 @@ class AccessibilityScan extends Model
             'finished_at' => 'datetime',
             'violations_by_impact' => 'array',
             'error_log' => 'array',
+            'failed_urls' => 'array',
         ];
     }
 

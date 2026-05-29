@@ -31,6 +31,7 @@ const statusColor: Record<string, BadgeColor> = {
   queued: 'neutral',
   running: 'info',
   completed: 'success',
+  partial: 'warning',
   failed: 'error',
 };
 
@@ -39,8 +40,9 @@ const triggerScan = async (): Promise<void> => {
   const scan = await scansStore.trigger(selectedDomain.value);
   toast.add({
     title: `Scan ${scan.status}`,
-    description: `${scan.urlsScanned} URLs scanned`,
-    color: scan.status === 'completed' ? 'success' : 'warning',
+    description: 'Queued — refresh shortly to see results.',
+    color: 'success',
+    icon: 'i-lucide-check',
   });
 };
 
@@ -96,6 +98,11 @@ const domainFqdn = (id: string): string =>
         <UBadge :color="statusColor[row.original.status] ?? 'neutral'" variant="soft">
           {{ row.original.status }}
         </UBadge>
+      </template>
+      <template #urlsScanned-cell="{ row }">
+        <span class="text-sm tabular-nums">
+          {{ row.original.urlsScanned }} / {{ row.original.urlsDiscovered }}
+        </span>
       </template>
       <template #actions-cell="{ row }">
         <UButton size="xs" variant="soft" :to="`/scans/${row.original.id}`">View</UButton>

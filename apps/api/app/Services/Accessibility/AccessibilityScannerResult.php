@@ -27,10 +27,12 @@ final readonly class AccessibilityScannerResult
 {
     /**
      * @param  array<int, ObservedFinding>  $findings
+     * @param  list<string>  $failedUrls  URLs the worker tried + gave up on
      */
     public function __construct(
         public int $urlsDiscovered,
         public int $urlsScanned,
         public array $findings,
+        public array $failedUrls = [],
     ) {}
 }

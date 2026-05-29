@@ -8,7 +8,7 @@ export default defineConfig({
         compatibilityDate: '2026-05-01',
         compatibilityFlags: ['nodejs_compat'],
         kvNamespaces: ['BANNER_CONFIGS'],
-        r2Buckets: ['BUNDLES'],
+        r2Buckets: ['BUNDLES', 'A11Y_SCREENSHOTS'],
         d1Databases: ['CONSENT_DB'],
         bindings: {
           ENVIRONMENT: 'test',

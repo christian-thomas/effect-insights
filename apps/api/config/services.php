@@ -67,7 +67,17 @@ return [
         // Shared secret — must match the SCANNER_SECRET set on the worker
         // via `wrangler secret put SCANNER_SECRET`.
         'secret' => env('SCANNER_WORKER_SECRET'),
-        'timeout_seconds' => (int) env('SCANNER_TIMEOUT_SECONDS', 60),
+        // Wall-clock budget for the entire /scan call. The worker crawls
+        // sequentially with a 30s per-page nav timeout, so for a chunk of
+        // N URLs the upper bound is N*30s. Defaults are sized for the
+        // chunk size below (~5 URLs); bump via env for larger chunks.
+        'timeout_seconds' => (int) env('SCANNER_TIMEOUT_SECONDS', 600),
+        'a11y_timeout_seconds' => (int) env('SCANNER_A11Y_TIMEOUT_SECONDS', 600),
+        // Number of URLs bundled into a single ScanUrlsJob. Smaller =
+        // smoother progress ticks on the admin (urls_scanned bumps per
+        // chunk) and shorter per-job runtimes; larger = fewer browser
+        // launches on the Cloudflare worker side. 5 is a balance.
+        'url_chunk_size' => (int) env('SCANNER_URL_CHUNK_SIZE', 5),
     ],
 
     'banner_config' => [

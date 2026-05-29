@@ -103,7 +103,7 @@ class ScanRunnerTest extends TenantTestCase
             new class implements ScannerClientContract
             {
                 #[\Override]
-                public function scan($domain, array $urls): ScannerResult
+                public function scan($domain, array $urls, string $organisationId, string $scanId): ScannerResult
                 {
                     throw new \RuntimeException('Upstream CF Browser Rendering returned 502');
                 }

@@ -31,6 +31,7 @@ const statusColor: Record<string, BadgeColor> = {
   queued: 'neutral',
   running: 'info',
   completed: 'success',
+  partial: 'warning',
   failed: 'error',
 };
 

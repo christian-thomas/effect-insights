@@ -32,6 +32,11 @@ class CookiePolicyTest extends TenantTestCase
         ]);
     }
 
+    /**
+     * Idempotent helper — matches the per-URL-job behaviour in
+     * production where the unique (scan_id, type, name) index dedupes
+     * repeated sightings of the same cookie within a single scan.
+     */
     private function addCookieFinding(
         Scan $scan,
         string $name,
@@ -39,16 +44,21 @@ class CookiePolicyTest extends TenantTestCase
         ?string $purpose = null,
         ?string $domainSetOn = '.example.test',
     ): ScanFinding {
-        return ScanFinding::create([
-            'scan_id' => $scan->getKey(),
-            'type' => FindingType::Cookie,
-            'name' => $name,
-            'domain_set_on' => $domainSetOn,
-            'party' => FindingParty::Third,
-            'category' => $category,
-            'purpose_text' => $purpose,
-            'first_seen_url' => 'https://example.test/',
-        ]);
+        return ScanFinding::query()->firstOrCreate(
+            [
+                'scan_id' => $scan->getKey(),
+                'type' => FindingType::Cookie,
+                'name_hash' => hash('sha256', $name),
+            ],
+            [
+                'name' => $name,
+                'domain_set_on' => $domainSetOn,
+                'party' => FindingParty::Third,
+                'category' => $category,
+                'purpose_text' => $purpose,
+                'first_seen_url' => 'https://example.test/',
+            ],
+        );
     }
 
     #[Test]

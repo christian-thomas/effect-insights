@@ -32,7 +32,7 @@ final readonly class HttpCfBrowserRenderingScanner implements ScannerClientContr
      * @param  array<int, string>  $urls
      */
     #[\Override]
-    public function scan(Domain $domain, array $urls): ScannerResult
+    public function scan(Domain $domain, array $urls, string $organisationId, string $scanId): ScannerResult
     {
         if ($this->workerUrl === '' || $this->secret === '') {
             throw new RuntimeException(
@@ -50,6 +50,8 @@ final readonly class HttpCfBrowserRenderingScanner implements ScannerClientContr
             ->post(rtrim($this->workerUrl, '/').'/scan', [
                 'urls' => array_values($urls),
                 'domainFqdn' => (string) $domain->getAttribute('fqdn'),
+                'organisationId' => $organisationId,
+                'scanId' => $scanId,
             ]);
 
         if (! $response->successful()) {
@@ -63,6 +65,11 @@ final readonly class HttpCfBrowserRenderingScanner implements ScannerClientContr
         /** @var array<string, mixed> $body */
         $body = $response->json();
 
+        /** @var list<string> $failedUrls */
+        $failedUrls = is_array($body['failedUrls'] ?? null)
+            ? array_values(array_map('strval', $body['failedUrls']))
+            : [];
+
         return new ScannerResult(
             urlsDiscovered: (int) ($body['urlsDiscovered'] ?? 0),
             urlsScanned: (int) ($body['urlsScanned'] ?? 0),
@@ -70,6 +77,7 @@ final readonly class HttpCfBrowserRenderingScanner implements ScannerClientContr
             scripts: $this->mapAssets($body['scripts'] ?? []),
             iframes: $this->mapAssets($body['iframes'] ?? []),
             requests: $this->mapAssets($body['requests'] ?? []),
+            failedUrls: $failedUrls,
         );
     }
 

@@ -116,6 +116,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/scans', Api\Scans\ListScans::class);
         Route::get('/scans/{scan}', Api\Scans\ShowScan::class);
         Route::post('/domains/{domain}/scans', Api\Scans\TriggerScan::class);
+        // Re-runs only the URLs from scan.failed_urls — same scan row,
+        // findings merge in. Drives the admin "Retry failed URLs"
+        // button on Partial scans.
+        Route::post('/scans/{scan}/retry-failed', Api\Scans\RetryFailedUrls::class)
+            ->name('scans.retry-failed');
 
         // Accessibility scans — sibling of the cookie scanner. Same
         // pagination + `?domain_id=` filter shape so the admin reads
@@ -123,6 +128,14 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/accessibility-scans', Api\AccessibilityScans\ListAccessibilityScans::class);
         Route::get('/accessibility-scans/{accessibilityScan}', Api\AccessibilityScans\ShowAccessibilityScan::class);
         Route::post('/domains/{domain}/accessibility-scans', Api\AccessibilityScans\TriggerAccessibilityScan::class);
+        Route::post('/accessibility-scans/{accessibilityScan}/retry-failed', Api\AccessibilityScans\RetryFailedAccessibilityUrls::class)
+            ->name('accessibility-scans.retry-failed');
+        // Streams the element screenshot (PNG bytes) for one finding.
+        // Route model binding + BelongsToOrganisation scope = tenant
+        // isolation; cross-org IDs resolve to 404 before the action
+        // runs.
+        Route::get('/accessibility-findings/{accessibilityFinding}/screenshot', Api\AccessibilityFindings\ShowFindingScreenshot::class)
+            ->name('accessibility-findings.screenshot');
         // Per-domain time series of completed-scan violation counts.
         // ?days=N (7-365, default 90) for the window. One data point
         // per completed scan, oldest-first.

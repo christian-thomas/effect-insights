@@ -24,7 +24,7 @@ use RuntimeException;
  * Both NULL means no match — surfaces in the manual review queue.
  */
 #[Fillable([
-    'scan_id', 'organisation_id', 'type', 'name', 'domain_set_on',
+    'scan_id', 'organisation_id', 'type', 'name', 'name_hash', 'domain_set_on',
     'value_pattern', 'party', 'category', 'category_source',
     'purpose_text', 'first_seen_url', 'cookie_id', 'cookie_override_id',
     'raw_data',
@@ -68,6 +68,13 @@ class ScanFinding extends Model
                 }
 
                 $finding->setAttribute('organisation_id', $scan->getAttribute('organisation_id'));
+            }
+
+            // Backstop in case a caller bypassed the hash on the query
+            // attributes — the unique (scan_id, type, name_hash) index
+            // requires it set.
+            if (! $finding->getAttribute('name_hash')) {
+                $finding->setAttribute('name_hash', hash('sha256', (string) $finding->getAttribute('name')));
             }
         });
     }

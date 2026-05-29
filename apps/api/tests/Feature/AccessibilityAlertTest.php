@@ -147,8 +147,12 @@ class AccessibilityAlertTest extends TenantTestCase
         $failing = new class implements AccessibilityScannerClientContract
         {
             #[\Override]
-            public function scan(Domain $domain, array $urls): AccessibilityScannerResult
-            {
+            public function scan(
+                Domain $domain,
+                array $urls,
+                string $organisationId,
+                string $scanId,
+            ): AccessibilityScannerResult {
                 throw new RuntimeException('Browser binding timeout');
             }
         };

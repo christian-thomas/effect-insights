@@ -103,7 +103,7 @@ class EmailNotificationChannelTest extends TenantTestCase
         $failing = new class implements ScannerClientContract
         {
             #[\Override]
-            public function scan(Domain $domain, array $urls): ScannerResult
+            public function scan(Domain $domain, array $urls, string $organisationId, string $scanId): ScannerResult
             {
                 throw new RuntimeException('boom');
             }
@@ -162,8 +162,12 @@ class EmailNotificationChannelTest extends TenantTestCase
         $failing = new class implements AccessibilityScannerClientContract
         {
             #[\Override]
-            public function scan(Domain $domain, array $urls): AccessibilityScannerResult
-            {
+            public function scan(
+                Domain $domain,
+                array $urls,
+                string $organisationId,
+                string $scanId,
+            ): AccessibilityScannerResult {
                 throw new RuntimeException('boom');
             }
         };

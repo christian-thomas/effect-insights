@@ -30,9 +30,10 @@ class TriggerScan extends Controller
         // has no discoverable sitemap.
         $urls = $discovery->discover($domain);
 
-        // Returns immediately with the queued Scan; the actual crawl runs
-        // in the background via RunScanJob. The admin polls /api/scans/{id}
-        // for status updates.
+        // Returns immediately with the running Scan; the actual crawl
+        // fans out into ScanUrlsJob chunks via Bus::batch so the admin
+        // sees `urls_scanned` tick up live (chunk size: see
+        // services.scanner.url_chunk_size).
         $scan = $runner->dispatch($domain, $urls, ScanTrigger::Manual, $user);
 
         return ScanResource::make($scan)

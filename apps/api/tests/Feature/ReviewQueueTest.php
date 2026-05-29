@@ -69,7 +69,11 @@ class ReviewQueueTest extends TenantTestCase
     #[Test]
     public function lists_uncategorised_cookies_grouped_by_name(): void
     {
-        $this->runScan('_mystery_one', '_mystery_one', '_mystery_two', '_known_a');
+        // `_mystery_one` sighted on two separate scans — within one scan
+        // the unique (scan_id, type, name) index dedupes, so cross-scan
+        // observation is the real-world path to occurrences > 1.
+        $this->runScan('_mystery_one', '_mystery_two', '_known_a');
+        $this->runScan('_mystery_one');
 
         $response = $this->actingAsMember($this->user, $this->org)
             ->getJson('/api/scan-findings/review')

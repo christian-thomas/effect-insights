@@ -33,8 +33,12 @@ final class ArrayA11yScanner implements AccessibilityScannerClientContract
      * @param  array<int, string>  $urls
      */
     #[\Override]
-    public function scan(Domain $domain, array $urls): AccessibilityScannerResult
-    {
+    public function scan(
+        Domain $domain,
+        array $urls,
+        string $organisationId,
+        string $scanId,
+    ): AccessibilityScannerResult {
         return $this->next;
     }
 }

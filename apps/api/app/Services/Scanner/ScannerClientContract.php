@@ -19,6 +19,10 @@ interface ScannerClientContract
 {
     /**
      * @param  array<int, string>  $urls
+     * @param  string  $organisationId  Used by the worker to scope R2 keys
+     *                                  (only consumed by /scan-a11y today,
+     *                                  but passed uniformly for both).
+     * @param  string  $scanId  The Scan UUID; same scoping reason.
      */
-    public function scan(Domain $domain, array $urls): ScannerResult;
+    public function scan(Domain $domain, array $urls, string $organisationId, string $scanId): ScannerResult;
 }

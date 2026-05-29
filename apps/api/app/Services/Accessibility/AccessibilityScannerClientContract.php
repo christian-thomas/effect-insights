@@ -21,6 +21,14 @@ interface AccessibilityScannerClientContract
 {
     /**
      * @param  array<int, string>  $urls
+     * @param  string  $organisationId  Used by the worker to scope R2
+     *                                  screenshot keys.
+     * @param  string  $scanId  The AccessibilityScan UUID; same scoping.
      */
-    public function scan(Domain $domain, array $urls): AccessibilityScannerResult;
+    public function scan(
+        Domain $domain,
+        array $urls,
+        string $organisationId,
+        string $scanId,
+    ): AccessibilityScannerResult;
 }

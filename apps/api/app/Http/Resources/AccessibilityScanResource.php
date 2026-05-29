@@ -31,6 +31,10 @@ class AccessibilityScanResource extends JsonResource
             'startedAt' => $this->getAttribute('started_at')?->toIso8601String(),
             'finishedAt' => $this->getAttribute('finished_at')?->toIso8601String(),
             'errorLog' => $this->getAttribute('error_log'),
+            // URLs the scan tried and gave up on — populated by per-URL
+            // worker failures or chunk-job retry exhaustion. Drives the
+            // admin "Retry failed URLs" button.
+            'failedUrls' => array_values((array) $this->getAttribute('failed_urls')),
             'createdAt' => $this->getAttribute('created_at')?->toIso8601String(),
         ];
     }

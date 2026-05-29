@@ -1,6 +1,6 @@
 import type { CookieCategory } from '~/types/cookies';
 
-export type ScanStatus = 'queued' | 'running' | 'completed' | 'failed';
+export type ScanStatus = 'queued' | 'running' | 'completed' | 'partial' | 'failed';
 
 export type ScanTrigger = 'manual' | 'scheduled';
 
@@ -20,6 +20,11 @@ export interface Scan {
   readonly startedAt: string | null;
   readonly finishedAt: string | null;
   readonly errorLog: Record<string, unknown> | null;
+  // URLs the scan tried and gave up on (per-URL worker failures or
+  // chunk-job retry exhaustion). Non-empty implies status === 'partial'
+  // (some succeeded) or 'failed' (none succeeded); empty array on a
+  // clean completion. Drives the "Retry failed URLs (N)" button.
+  readonly failedUrls: ReadonlyArray<string>;
   readonly createdAt: string;
 }
 

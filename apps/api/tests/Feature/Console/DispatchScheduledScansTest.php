@@ -6,13 +6,14 @@ namespace Tests\Feature\Console;
 
 use App\Enums\ScanCadence;
 use App\Enums\ScanTrigger;
-use App\Jobs\RunScanJob;
+use App\Jobs\ScanUrlsJob;
 use App\Models\Domain;
 use App\Models\Scan;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Bus\PendingBatch;
+use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TenantTestCase;
 
@@ -28,7 +29,7 @@ class DispatchScheduledScansTest extends TenantTestCase
             '*/robots.txt' => Http::response('', 404),
         ]);
 
-        Queue::fake();
+        Bus::fake();
     }
 
     #[Test]
@@ -41,7 +42,7 @@ class DispatchScheduledScansTest extends TenantTestCase
 
         $this->artisan('scans:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertNothingPushed();
+        Bus::assertNothingBatched();
     }
 
     #[Test]
@@ -60,7 +61,8 @@ class DispatchScheduledScansTest extends TenantTestCase
 
         $this->artisan('scans:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertPushed(RunScanJob::class, 1);
+        Bus::assertBatchCount(1);
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->every(static fn (mixed $job): bool => $job instanceof ScanUrlsJob));
         $this->assertSame(1, Scan::query()->count());
         $this->assertSame(ScanTrigger::Scheduled->value, Scan::first()?->getAttribute('trigger')->value);
     }
@@ -81,7 +83,7 @@ class DispatchScheduledScansTest extends TenantTestCase
 
         $this->artisan('scans:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertNothingPushed();
+        Bus::assertNothingBatched();
     }
 
     #[Test]
@@ -97,7 +99,8 @@ class DispatchScheduledScansTest extends TenantTestCase
 
         $this->artisan('scans:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertPushed(RunScanJob::class, 1);
+        Bus::assertBatchCount(1);
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->every(static fn (mixed $job): bool => $job instanceof ScanUrlsJob));
     }
 
     #[Test]
@@ -113,7 +116,7 @@ class DispatchScheduledScansTest extends TenantTestCase
 
         $this->artisan('scans:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertNothingPushed();
+        Bus::assertNothingBatched();
     }
 
     #[Test]
@@ -134,7 +137,7 @@ class DispatchScheduledScansTest extends TenantTestCase
 
         $this->artisan('scans:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertPushed(RunScanJob::class, 2);
+        Bus::assertBatchCount(2);
     }
 
     private function dateForSlot(int $slot): CarbonImmutable

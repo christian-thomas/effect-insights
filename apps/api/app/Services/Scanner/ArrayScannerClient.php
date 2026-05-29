@@ -30,7 +30,7 @@ final class ArrayScannerClient implements ScannerClientContract
      * @param  array<int, string>  $urls
      */
     #[\Override]
-    public function scan(Domain $domain, array $urls): ScannerResult
+    public function scan(Domain $domain, array $urls, string $organisationId, string $scanId): ScannerResult
     {
         return $this->next;
     }

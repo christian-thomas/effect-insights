@@ -30,6 +30,13 @@ class AccessibilityFindingResource extends JsonResource
             'url' => $this->getAttribute('url'),
             'tags' => $this->getAttribute('tags'),
             'nodes' => $this->getAttribute('nodes'),
+            // Null when the scanner couldn't resolve the element or the
+            // model column was never set. Admin renders an <img> against
+            // this URL — bytes stream from the a11y_screenshots disk via
+            // ShowFindingScreenshot, which inherits the tenant scope.
+            'screenshotUrl' => $this->getAttribute('screenshot_key') !== null
+                ? route('accessibility-findings.screenshot', $this->getKey())
+                : null,
             // Computed at request time by ShowAccessibilityScan via
             // AccessibilityRuleMuteResolver. False when the controller
             // hasn't attached the flag so the field is always present.

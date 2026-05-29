@@ -212,9 +212,11 @@ return [
             'nice' => 0,
         ],
 
-        // Scan jobs (RunScanJob) — crawls can run minutes on big domains.
-        // Separate supervisor so a long-running scan doesn't starve the
-        // default queue.
+        // Scan jobs (ScanUrlsJob) — fanned out as a Bus::batch in chunks
+        // of services.scanner.url_chunk_size. Separate supervisor so a
+        // long-running scan doesn't starve the default queue. NOTE: the
+        // `tries` here is overridden by ScanUrlsJob's `$tries = 4` +
+        // `backoff()` for exponential retries on transient infra errors.
         'supervisor-scans' => [
             'connection' => 'redis',
             'queue' => ['scans'],
@@ -229,11 +231,11 @@ return [
             'nice' => 0,
         ],
 
-        // Accessibility scans (RunAccessibilityScanJob) — axe-core takes
+        // Accessibility scans (ScanAccessibilityUrlsJob) — axe-core takes
         // 2-5s per page (vs <2s for cookie scans), so a 50-URL crawl can
-        // run 4 minutes. Same 600s timeout and 2 retries as the cookie
-        // scanner; separate queue so a pile-up on either vertical can't
-        // starve the other.
+        // run 4 minutes. Separate queue so a pile-up on either vertical
+        // can't starve the other. As with the cookie supervisor, retry
+        // policy is overridden on the job class itself.
         'supervisor-accessibility-scans' => [
             'connection' => 'redis',
             'queue' => ['accessibility-scans'],

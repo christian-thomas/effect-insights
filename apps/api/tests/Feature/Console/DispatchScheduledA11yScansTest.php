@@ -6,13 +6,14 @@ namespace Tests\Feature\Console;
 
 use App\Enums\ScanCadence;
 use App\Enums\ScanTrigger;
-use App\Jobs\RunAccessibilityScanJob;
+use App\Jobs\ScanAccessibilityUrlsJob;
 use App\Models\AccessibilityScan;
 use App\Models\Domain;
 use Carbon\CarbonImmutable;
+use Illuminate\Bus\PendingBatch;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TenantTestCase;
 
@@ -34,7 +35,7 @@ class DispatchScheduledA11yScansTest extends TenantTestCase
             '*/robots.txt' => Http::response('', 404),
         ]);
 
-        Queue::fake();
+        Bus::fake();
     }
 
     #[Test]
@@ -47,7 +48,7 @@ class DispatchScheduledA11yScansTest extends TenantTestCase
 
         $this->artisan('accessibility:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertNothingPushed();
+        Bus::assertNothingBatched();
     }
 
     #[Test]
@@ -63,7 +64,8 @@ class DispatchScheduledA11yScansTest extends TenantTestCase
 
         $this->artisan('accessibility:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertPushed(RunAccessibilityScanJob::class, 1);
+        Bus::assertBatchCount(1);
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->every(static fn (mixed $job): bool => $job instanceof ScanAccessibilityUrlsJob));
         $this->assertSame(1, AccessibilityScan::query()->count());
         $this->assertSame(
             ScanTrigger::Scheduled->value,
@@ -85,7 +87,7 @@ class DispatchScheduledA11yScansTest extends TenantTestCase
 
         $this->artisan('accessibility:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertNothingPushed();
+        Bus::assertNothingBatched();
     }
 
     #[Test]
@@ -101,7 +103,7 @@ class DispatchScheduledA11yScansTest extends TenantTestCase
 
         $this->artisan('accessibility:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertPushed(RunAccessibilityScanJob::class, 1);
+        Bus::assertBatchCount(1);
     }
 
     #[Test]
@@ -117,7 +119,7 @@ class DispatchScheduledA11yScansTest extends TenantTestCase
 
         $this->artisan('accessibility:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertNothingPushed();
+        Bus::assertNothingBatched();
     }
 
     #[Test]
@@ -137,7 +139,7 @@ class DispatchScheduledA11yScansTest extends TenantTestCase
 
         $this->artisan('accessibility:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertNothingPushed();
+        Bus::assertNothingBatched();
     }
 
     #[Test]
@@ -158,7 +160,7 @@ class DispatchScheduledA11yScansTest extends TenantTestCase
 
         $this->artisan('accessibility:dispatch-scheduled')->assertSuccessful();
 
-        Queue::assertPushed(RunAccessibilityScanJob::class, 2);
+        Bus::assertBatchCount(2);
     }
 
     private function dateForSlot(int $slot): CarbonImmutable

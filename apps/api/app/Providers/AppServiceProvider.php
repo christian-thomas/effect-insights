@@ -82,7 +82,7 @@ class AppServiceProvider extends ServiceProvider
                 http: $app->make(HttpFactory::class),
                 workerUrl: (string) ($config['worker_url'] ?? ''),
                 secret: (string) ($config['secret'] ?? ''),
-                timeoutSeconds: (int) ($config['timeout_seconds'] ?? 60),
+                timeoutSeconds: (int) ($config['timeout_seconds'] ?? 600),
             );
         });
 
@@ -97,9 +97,9 @@ class AppServiceProvider extends ServiceProvider
                 http: $app->make(HttpFactory::class),
                 workerUrl: (string) ($config['worker_url'] ?? ''),
                 secret: (string) ($config['secret'] ?? ''),
-                // axe runs 2-5s per page so we give a11y scans a
-                // longer HTTP budget than cookie scans (default 60s).
-                timeoutSeconds: (int) ($config['a11y_timeout_seconds'] ?? 120),
+                // axe runs 2-5s per page on top of the 30s nav timeout —
+                // budget the full crawl, not just one page.
+                timeoutSeconds: (int) ($config['a11y_timeout_seconds'] ?? 600),
             );
         });
     }

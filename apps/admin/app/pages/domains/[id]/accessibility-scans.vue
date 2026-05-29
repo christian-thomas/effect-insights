@@ -30,6 +30,7 @@ const statusColor: Record<string, BadgeColor> = {
   queued: 'neutral',
   running: 'info',
   completed: 'success',
+  partial: 'warning',
   failed: 'error',
 };
 
@@ -110,7 +111,9 @@ const formatTime = (iso: string | null): string => {
         <span class="text-sm">{{ row.original.trigger }}</span>
       </template>
       <template #urlsScanned-cell="{ row }">
-        <span class="text-sm tabular-nums">{{ row.original.urlsScanned }}</span>
+        <span class="text-sm tabular-nums">
+          {{ row.original.urlsScanned }} / {{ row.original.urlsDiscovered }}
+        </span>
       </template>
       <template #violationsTotal-cell="{ row }">
         <div class="flex items-center gap-2">
